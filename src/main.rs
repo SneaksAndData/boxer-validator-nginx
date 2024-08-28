@@ -1,4 +1,5 @@
 mod http;
+mod models;
 
 use crate::http::urls::token_review;
 use actix_web::{App, HttpServer};
