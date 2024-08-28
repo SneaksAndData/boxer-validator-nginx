@@ -1,6 +1,6 @@
+use crate::models::token::BoxerToken;
 use actix_web::http::header::HeaderValue;
 use anyhow::bail;
-use crate::models::token::BoxerToken;
 
 impl TryFrom<&HeaderValue> for BoxerToken {
     type Error = anyhow::Error;
