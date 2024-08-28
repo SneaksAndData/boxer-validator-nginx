@@ -1,16 +1,16 @@
-/// Represents an external JWT Token used to authorize the `ExternalIdentity` and issue an `InternalToken`
+/// Represents an external JWT Token used by Boxer to validate the internal token
 pub struct BoxerToken {
     pub token: String,
 }
 
-/// Allows `ExternalToken` to be converted to a String
+/// Allows `InternalToken` to be converted to a String
 impl Into<String> for BoxerToken {
     fn into(self) -> String {
         self.token.clone()
     }
 }
 
-/// Allows a String to be converted to an `ExternalToken`
+/// Allows a String to be converted to an `InternalToken`
 impl From<String> for BoxerToken {
     fn from(token: String) -> Self {
         BoxerToken { token }
