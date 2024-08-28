@@ -4,4 +4,4 @@ use actix_web::{get, HttpRequest};
 #[get("/token/review")]
 async fn token_review(_: HttpRequest) -> String {
     "dummy endpoint".to_string()
-    }
+}
