@@ -1,0 +1,12 @@
+[package]
+name = "boxer-validator-nginx"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+actix-web = "4.9.0"
+futures-util = "0.3.8"
+jwt = "0.16.0"
+opentelemetry-datadog = "0.12.0"
+async-trait = "0.1.81"
