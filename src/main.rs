@@ -9,7 +9,7 @@ use std::io::Result;
 #[actix_web::main]
 async fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", "debug");
-    
+
     env_logger::init();
     let addr = ("127.0.0.1", 8081);
 

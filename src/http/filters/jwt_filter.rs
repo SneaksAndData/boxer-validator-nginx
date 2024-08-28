@@ -1,31 +1,31 @@
+use crate::models::token::BoxerToken;
+use crate::models::validation_settings::ValidationSettings;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::error::ErrorUnauthorized;
 use actix_web::Error;
 use futures_util::future::LocalBoxFuture;
 use jwt_authorizer::{Authorizer, JwtAuthorizer, Validation};
-use std::sync::Arc;
 use log::{debug, error};
-use crate::models::token::BoxerToken;
-use crate::models::validation_settings::ValidationSettings;
+use std::sync::Arc;
 
 /// Middleware for external token validation factory
-pub struct InternalTokenMiddlewareFactory {
-}
+pub struct InternalTokenMiddlewareFactory {}
 
 /// The ExternalTokenMiddlewareFactory's own methods implementation
 impl InternalTokenMiddlewareFactory {
     pub(crate) fn new() -> Self {
-        InternalTokenMiddlewareFactory {
-        }
+        InternalTokenMiddlewareFactory {}
     }
 }
 
 /// Transform trait implementation
 /// `NextServiceType` - type of the next service
 /// `BodyType` - type of response's body
-impl<NextService, BodyType> Transform<NextService, ServiceRequest> for InternalTokenMiddlewareFactory
+impl<NextService, BodyType> Transform<NextService, ServiceRequest>
+    for InternalTokenMiddlewareFactory
 where
-    NextService: Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
+    NextService:
+        Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
     NextService::Future: 'static,
     BodyType: 'static,
 {
@@ -33,25 +33,28 @@ where
     type Error = Error;
     type Transform = JwtAuthorizerMiddleware<NextService>;
     type InitError = ();
-    type Future = LocalBoxFuture<'static, Result<JwtAuthorizerMiddleware<NextService>, Self::InitError>>;
+    type Future =
+        LocalBoxFuture<'static, Result<JwtAuthorizerMiddleware<NextService>, Self::InitError>>;
 
     fn new_transform(&self, service: NextService) -> Self::Future {
-        Box::pin( async move { 
-                let settings = ValidationSettings::new();
-                let mut validation = Validation::new();
-                validation.iss = Some(settings.valid_issuers.clone());
-                validation.aud = Some(settings.valid_audiences.clone());
-                
-                // It's OK to unwrap here because we should panic if cannot build the authorizer
-                let authorizer = JwtAuthorizer::from_secret(settings.secret)
-                    .validation(validation)
-                    .build()
-                    .await
-                    .unwrap(); 
-                let mw = JwtAuthorizerMiddleware { service: Arc::new(service), authorizer: Arc::new(authorizer) };
-                Ok(mw)
-            }
-        )
+        Box::pin(async move {
+            let settings = ValidationSettings::new();
+            let mut validation = Validation::new();
+            validation.iss = Some(settings.valid_issuers.clone());
+            validation.aud = Some(settings.valid_audiences.clone());
+
+            // It's OK to unwrap here because we should panic if cannot build the authorizer
+            let authorizer = JwtAuthorizer::from_secret(settings.secret)
+                .validation(validation)
+                .build()
+                .await
+                .unwrap();
+            let mw = JwtAuthorizerMiddleware {
+                service: Arc::new(service),
+                authorizer: Arc::new(authorizer),
+            };
+            Ok(mw)
+        })
     }
 }
 
@@ -64,7 +67,8 @@ pub struct JwtAuthorizerMiddleware<NextService> {
 /// The middleware implementation
 impl<NextService, BodyType> Service<ServiceRequest> for JwtAuthorizerMiddleware<NextService>
 where
-    NextService: Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
+    NextService:
+        Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
     NextService::Future: 'static,
     BodyType: 'static,
 {
@@ -84,11 +88,14 @@ where
         Box::pin(async move {
             let token_value = req
                 .headers()
-                .get("Authorization").ok_or(ErrorUnauthorized("Unauthorized"))?;
-                
+                .get("Authorization")
+                .ok_or(ErrorUnauthorized("Unauthorized"))?;
 
-            let boxer_token = BoxerToken::try_from(token_value).map_err(|_| ErrorUnauthorized("Unauthorized"))?;
-            let validation_result = authorizer.check_auth(boxer_token.token.clone().as_str()).await;
+            let boxer_token =
+                BoxerToken::try_from(token_value).map_err(|_| ErrorUnauthorized("Unauthorized"))?;
+            let validation_result = authorizer
+                .check_auth(boxer_token.token.clone().as_str())
+                .await;
             if validation_result.is_err() {
                 error!("Failed to validate token: {:?}", validation_result.err());
                 return Err(ErrorUnauthorized("Unauthorized"));
