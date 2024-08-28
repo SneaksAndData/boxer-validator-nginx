@@ -10,14 +10,12 @@ use crate::models::validation_settings::ValidationSettings;
 
 /// Middleware for external token validation factory
 pub struct InternalTokenMiddlewareFactory {
-    validation_settings: ValidationSettings
 }
 
 /// The ExternalTokenMiddlewareFactory's own methods implementation
 impl InternalTokenMiddlewareFactory {
-    pub(crate) fn new(validation_settings: ValidationSettings) -> Self {
+    pub(crate) fn new() -> Self {
         InternalTokenMiddlewareFactory {
-            validation_settings
         }
     }
 }
@@ -38,13 +36,14 @@ where
     type Future = LocalBoxFuture<'static, Result<JwtAuthorizerMiddleware<NextService>, Self::InitError>>;
 
     fn new_transform(&self, service: NextService) -> Self::Future {
-        Box::pin( async { 
-                let validation = Validation::new()
-                    .iss(self.validation_settings.valid_issuers)
-                    .aud(self.validation_settings.valid_audiences);
+        Box::pin( async move { 
+                let settings = ValidationSettings::new();
+                let mut validation = Validation::new();
+                validation.iss = Some(settings.valid_issuers.clone());
+                validation.aud = Some(settings.valid_audiences.clone());
                 
                 // It's OK to unwrap here because we should panic if cannot build the authorizer
-                let authorizer = JwtAuthorizer::from_secret(self.validation_settings.secret)
+                let authorizer = JwtAuthorizer::from_secret(settings.secret)
                     .validation(validation)
                     .build()
                     .await
