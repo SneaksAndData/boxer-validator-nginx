@@ -1,4 +1,5 @@
 mod http;
+mod models;
 
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::urls::token_review;
