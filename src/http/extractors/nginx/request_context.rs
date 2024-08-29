@@ -30,7 +30,7 @@ fn extract_headers(req: &HttpRequest) -> anyhow::Result<(String, String)> {
     Ok((original_url, original_method))
 }
 
-fn extract_header(req: &HttpRequest, header_name: &str) -> anyhow::Result<String>{
+fn extract_header(req: &HttpRequest, header_name: &'static str) -> anyhow::Result<String>{
     let header_value = req.headers().get(header_name)
         .ok_or(anyhow::Error::msg("Missing original URL header").context(header_name))?
         .to_str()?.to_owned();
