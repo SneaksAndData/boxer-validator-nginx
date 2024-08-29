@@ -2,10 +2,12 @@ use crate::models::token::BoxerToken;
 use crate::models::validation_settings::ValidationSettings;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::error::ErrorUnauthorized;
-use actix_web::Error;
+use actix_web::{Error, HttpMessage};
 use futures_util::future::LocalBoxFuture;
 use jwt_authorizer::{Authorizer, JwtAuthorizer, Validation};
 use log::{debug, error};
+use serde_json::Value;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Middleware for external token validation factory
@@ -17,6 +19,8 @@ impl InternalTokenMiddlewareFactory {
         InternalTokenMiddlewareFactory {}
     }
 }
+
+pub type DynamicClaimsCollection = HashMap<String, Value>;
 
 /// Transform trait implementation
 /// `NextServiceType` - type of the next service
@@ -44,11 +48,12 @@ where
             validation.aud = Some(settings.valid_audiences.clone());
 
             // It's OK to unwrap here because we should panic if cannot build the authorizer
-            let authorizer = JwtAuthorizer::from_secret(settings.secret)
-                .validation(validation)
-                .build()
-                .await
-                .expect("Failed to build JwtAuthorizer.");
+            let authorizer: Authorizer<DynamicClaimsCollection> =
+                JwtAuthorizer::from_secret(settings.secret)
+                    .validation(validation)
+                    .build()
+                    .await
+                    .expect("Failed to build JwtAuthorizer.");
             let mw = JwtAuthorizerMiddleware {
                 service: Arc::new(service),
                 authorizer: Arc::new(authorizer),
@@ -61,7 +66,7 @@ where
 /// The middleware object
 pub struct JwtAuthorizerMiddleware<NextService> {
     service: Arc<NextService>,
-    authorizer: Arc<Authorizer>,
+    authorizer: Arc<Authorizer<DynamicClaimsCollection>>,
 }
 
 /// The middleware implementation
@@ -95,13 +100,18 @@ where
                 BoxerToken::try_from(token_value).map_err(|_| ErrorUnauthorized("Unauthorized"))?;
             let validation_result = authorizer
                 .check_auth(boxer_token.token.clone().as_str())
-                .await;
-            if validation_result.is_err() {
-                error!("Failed to validate token: {:?}", validation_result.err());
-                return Err(ErrorUnauthorized("Unauthorized"));
-            }
+                .await
+                .map_err(|err| {
+                    error!("Failed to validate token: {:?}", err);
+                    ErrorUnauthorized("Unauthorized")
+                })?;
             debug!("Token validated successfully");
 
+            // make nested block to avoid borrowing issues
+            {
+                let mut ext = req.extensions_mut();
+                ext.insert(validation_result.claims);
+            }
             let res = service.call(req).await?;
             Ok(res)
         })
