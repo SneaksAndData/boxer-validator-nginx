@@ -1,1 +1,1 @@
-mod boxer_claims;
+pub mod boxer_claims;
