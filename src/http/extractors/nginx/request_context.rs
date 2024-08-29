@@ -12,13 +12,10 @@ impl FromRequest for RequestContext {
     fn from_request(req: &HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
         let result = match extract_headers(req) {
             Ok((original_url, original_method)) => {
-                let request_context = RequestContext::new(
-                    original_url,
-                    original_method,
-                );
+                let request_context = RequestContext::new(original_url, original_method);
                 Ok(request_context)
             }
-            Err(e) => Err(ErrorBadRequest(e.to_string()))
+            Err(e) => Err(ErrorBadRequest(e.to_string())),
         };
         ready(result)
     }
@@ -30,10 +27,12 @@ fn extract_headers(req: &HttpRequest) -> anyhow::Result<(String, String)> {
     Ok((original_url, original_method))
 }
 
-fn extract_header(req: &HttpRequest, header_name: &'static str) -> anyhow::Result<String>{
-    let header_value = req.headers().get(header_name)
+fn extract_header(req: &HttpRequest, header_name: &'static str) -> anyhow::Result<String> {
+    let header_value = req
+        .headers()
+        .get(header_name)
         .ok_or(anyhow::Error::msg("Missing original URL header").context(header_name))?
-        .to_str()?.to_owned();
+        .to_str()?
+        .to_owned();
     Ok(header_value)
 }
-

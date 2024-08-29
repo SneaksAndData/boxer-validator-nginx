@@ -1,7 +1,7 @@
 use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
+use crate::models::request_context::RequestContext;
 use actix_web::get;
 use log::debug;
-use crate::models::request_context::RequestContext;
 
 // Dummy implementation of the token endpoint
 #[get("/token/review")]
