@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct RequestContext {
     original_url: String,
     original_method: String
