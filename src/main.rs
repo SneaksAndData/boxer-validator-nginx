@@ -16,6 +16,8 @@ async fn main() -> Result<()> {
     println!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
         App::new()
+            // The last middleware in the chain should always be InternalTokenMiddleware
+            // to ensure that the token is valid in the beginning of the request processing
             .wrap(InternalTokenMiddlewareFactory::new())
             .service(token_review)
     })
