@@ -48,7 +48,7 @@ where
                 .validation(validation)
                 .build()
                 .await
-                 .expect("Failed to build JwtAuthorizer.");
+                .expect("Failed to build JwtAuthorizer.");
             let mw = JwtAuthorizerMiddleware {
                 service: Arc::new(service),
                 authorizer: Arc::new(authorizer),
