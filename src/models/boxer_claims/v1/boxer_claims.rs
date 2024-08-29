@@ -1,0 +1,45 @@
+use crate::http::filters::jwt_filter::DynamicClaimsCollection;
+use std::convert::TryFrom;
+
+// This claim should be always present in the boxer token
+const API_VERSION_KEY: &str = "boxer.sneaksanddata.com/api-version";
+
+// Constants related to a particular API version
+const POLICY_KEY: &str = "boxer.sneaksanddata.com/policy";
+const USER_ID_KEY: &str = "boxer.sneaksanddata.com/user-id";
+const IDENTITY_PROVIDER_KEY: &str = "boxer.sneaksanddata.com/identity-provider";
+
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct BoxerClaims {
+    pub api_version: String,
+    pub policy: String,
+    pub user_id: String,
+    pub identity_provider: String,
+}
+
+impl TryFrom<&DynamicClaimsCollection> for BoxerClaims {
+    type Error = anyhow::Error;
+
+    fn try_from(c: &DynamicClaimsCollection) -> Result<Self, Self::Error> {
+        let api_version =
+            get_claim(c, API_VERSION_KEY).ok_or(anyhow::anyhow!("Missing api version"))?;
+        let policy = get_claim(c, POLICY_KEY).ok_or(anyhow::anyhow!("Missing policy"))?;
+        let user_id = get_claim(c, USER_ID_KEY).ok_or(anyhow::anyhow!("Missing user id"))?;
+        let identity_provider = get_claim(c, IDENTITY_PROVIDER_KEY)
+            .ok_or(anyhow::anyhow!("Missing identity provider"))?;
+
+        Ok(BoxerClaims {
+            api_version: api_version.to_string(),
+            policy: policy.to_string(),
+            user_id: user_id.to_string(),
+            identity_provider: identity_provider.to_string(),
+        })
+    }
+}
+
+fn get_claim(claims: &DynamicClaimsCollection, key: &str) -> Option<String> {
+    let value = claims.get(key)?;
+    let value = value.as_str()?;
+    Some(value.to_owned())
+}

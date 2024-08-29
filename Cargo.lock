@@ -447,6 +447,7 @@ dependencies = [
  "log",
  "opentelemetry-datadog",
  "rstest",
+ "serde_json",
  "tokio",
 ]
 
