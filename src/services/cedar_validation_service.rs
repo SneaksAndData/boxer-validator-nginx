@@ -3,14 +3,7 @@ use crate::models::request_context::RequestContext;
 use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
 use log::info;
 use std::str::FromStr;
-
-pub trait ValidationService {
-    fn validate(
-        &self,
-        boxer_claims: BoxerClaims,
-        request_context: RequestContext,
-    ) -> Result<(), anyhow::Error>;
-}
+use crate::services::base::validation_service::ValidationService;
 
 pub struct CedarValidationService {
     authorizer: Authorizer,

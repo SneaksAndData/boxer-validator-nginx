@@ -1,12 +1,11 @@
 use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
 use crate::models::request_context::RequestContext;
-use crate::services::validation_service::{CedarValidationService, ValidationService};
+use crate::services::cedar_validation_service::{CedarValidationService, ValidationService};
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{get, HttpResponse};
 use log::debug;
 
-// Dummy implementation of the token endpoint
 #[get("/token/review")]
 async fn token_review(
     boxer_claims: BoxerClaims,
