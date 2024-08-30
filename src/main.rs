@@ -4,7 +4,7 @@ mod services;
 
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::urls::token_review;
-use crate::services::validation_service::CedarValidationService;
+use crate::services::cedar_validation_service::CedarValidationService;
 use actix_web::{web, App, HttpServer};
 use std::io::Result;
 
