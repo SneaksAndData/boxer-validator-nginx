@@ -8,4 +8,3 @@ pub trait ValidationService {
         request_context: RequestContext,
     ) -> Result<(), anyhow::Error>;
 }
-

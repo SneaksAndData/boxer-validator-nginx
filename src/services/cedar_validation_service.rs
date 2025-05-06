@@ -1,9 +1,9 @@
 use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
 use crate::models::request_context::RequestContext;
+use crate::services::base::validation_service::ValidationService;
 use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
 use log::info;
 use std::str::FromStr;
-use crate::services::base::validation_service::ValidationService;
 
 pub struct CedarValidationService {
     authorizer: Authorizer,
@@ -16,7 +16,6 @@ impl CedarValidationService {
         }
     }
 }
-
 
 impl ValidationService for CedarValidationService {
     fn validate(
