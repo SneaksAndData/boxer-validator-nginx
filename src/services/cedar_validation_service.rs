@@ -4,6 +4,7 @@ use crate::services::base::validation_service::ValidationService;
 use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
 use log::info;
 use std::str::FromStr;
+use std::sync::Arc;
 
 pub struct CedarValidationService {
     authorizer: Authorizer,
@@ -17,7 +18,7 @@ impl CedarValidationService {
     }
 }
 
-impl ValidationService for CedarValidationService {
+impl ValidationService for Arc<Box<CedarValidationService>> {
     fn validate(
         &self,
         boxer_claims: BoxerClaims,
