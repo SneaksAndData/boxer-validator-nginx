@@ -1,6 +1,6 @@
 use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
 use crate::models::request_context::RequestContext;
-use crate::services::cedar_validation_service::{CedarValidationService};
+use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::base::validation_service::ValidationService;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
