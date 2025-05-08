@@ -1,16 +1,10 @@
 use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
 use crate::models::request_context::RequestContext;
+use crate::services::base::validation_service::ValidationService;
 use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
 use log::info;
 use std::str::FromStr;
-
-pub trait ValidationService {
-    fn validate(
-        &self,
-        boxer_claims: BoxerClaims,
-        request_context: RequestContext,
-    ) -> Result<(), anyhow::Error>;
-}
+use std::sync::Arc;
 
 pub struct CedarValidationService {
     authorizer: Authorizer,
@@ -24,7 +18,7 @@ impl CedarValidationService {
     }
 }
 
-impl ValidationService for CedarValidationService {
+impl ValidationService for Arc<Box<CedarValidationService>> {
     fn validate(
         &self,
         boxer_claims: BoxerClaims,
