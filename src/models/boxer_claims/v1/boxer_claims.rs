@@ -33,9 +33,7 @@ impl BoxerClaims {
             decoder.read_to_string(&mut result)?;
             result
         };
-        decompressed_policy
-            .parse::<PolicySet>()
-            .map_err(|e| anyhow::anyhow!(e))
+        decompressed_policy.parse::<PolicySet>().map_err(|e| anyhow::anyhow!(e))
     }
 }
 
@@ -43,12 +41,11 @@ impl TryFrom<&DynamicClaimsCollection> for BoxerClaims {
     type Error = anyhow::Error;
 
     fn try_from(c: &DynamicClaimsCollection) -> Result<Self, Self::Error> {
-        let api_version =
-            get_claim(c, API_VERSION_KEY).ok_or(anyhow::anyhow!("Missing api version"))?;
+        let api_version = get_claim(c, API_VERSION_KEY).ok_or(anyhow::anyhow!("Missing api version"))?;
         let policy = get_claim(c, POLICY_KEY).ok_or(anyhow::anyhow!("Missing policy"))?;
         let user_id = get_claim(c, USER_ID_KEY).ok_or(anyhow::anyhow!("Missing user id"))?;
-        let identity_provider = get_claim(c, IDENTITY_PROVIDER_KEY)
-            .ok_or(anyhow::anyhow!("Missing identity provider"))?;
+        let identity_provider =
+            get_claim(c, IDENTITY_PROVIDER_KEY).ok_or(anyhow::anyhow!("Missing identity provider"))?;
 
         Ok(BoxerClaims {
             api_version: api_version.to_string(),

@@ -19,27 +19,15 @@ impl CedarValidationService {
 }
 
 impl ValidationService for Arc<Box<CedarValidationService>> {
-    fn validate(
-        &self,
-        boxer_claims: BoxerClaims,
-        request_context: RequestContext,
-    ) -> Result<(), anyhow::Error> {
+    fn validate(&self, boxer_claims: BoxerClaims, request_context: RequestContext) -> Result<(), anyhow::Error> {
         let policy_set = boxer_claims.parse()?;
         let actor: EntityUid = boxer_claims.try_into()?;
         let action = request_context.to_action()?;
         let resource = request_context.to_resource()?;
 
         let entities = Entities::empty();
-        let request = Request::new(
-            Some(actor),
-            Some(action),
-            Some(resource),
-            Context::empty(),
-            None,
-        )?;
-        let answer = self
-            .authorizer
-            .is_authorized(&request, &policy_set, &entities);
+        let request = Request::new(Some(actor), Some(action), Some(resource), Context::empty(), None)?;
+        let answer = self.authorizer.is_authorized(&request, &policy_set, &entities);
         info!("validation {:?}", answer.decision());
         match answer.decision() {
             cedar_policy::Decision::Allow => Ok(()),
