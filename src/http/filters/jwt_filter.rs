@@ -25,11 +25,9 @@ pub type DynamicClaimsCollection = HashMap<String, Value>;
 /// Transform trait implementation
 /// `NextServiceType` - type of the next service
 /// `BodyType` - type of response's body
-impl<NextService, BodyType> Transform<NextService, ServiceRequest>
-    for InternalTokenMiddlewareFactory
+impl<NextService, BodyType> Transform<NextService, ServiceRequest> for InternalTokenMiddlewareFactory
 where
-    NextService:
-        Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
+    NextService: Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
     NextService::Future: 'static,
     BodyType: 'static,
 {
@@ -37,8 +35,7 @@ where
     type Error = Error;
     type Transform = JwtAuthorizerMiddleware<NextService>;
     type InitError = ();
-    type Future =
-        LocalBoxFuture<'static, Result<JwtAuthorizerMiddleware<NextService>, Self::InitError>>;
+    type Future = LocalBoxFuture<'static, Result<JwtAuthorizerMiddleware<NextService>, Self::InitError>>;
 
     fn new_transform(&self, service: NextService) -> Self::Future {
         Box::pin(async move {
@@ -48,12 +45,11 @@ where
             validation.aud = Some(settings.valid_audiences.clone());
 
             // It's OK to unwrap here because we should panic if cannot build the authorizer
-            let authorizer: Authorizer<DynamicClaimsCollection> =
-                JwtAuthorizer::from_secret(settings.secret)
-                    .validation(validation)
-                    .build()
-                    .await
-                    .expect("Failed to build JwtAuthorizer.");
+            let authorizer: Authorizer<DynamicClaimsCollection> = JwtAuthorizer::from_secret(settings.secret)
+                .validation(validation)
+                .build()
+                .await
+                .expect("Failed to build JwtAuthorizer.");
             let mw = JwtAuthorizerMiddleware {
                 service: Arc::new(service),
                 authorizer: Arc::new(authorizer),
@@ -72,8 +68,7 @@ pub struct JwtAuthorizerMiddleware<NextService> {
 /// The middleware implementation
 impl<NextService, BodyType> Service<ServiceRequest> for JwtAuthorizerMiddleware<NextService>
 where
-    NextService:
-        Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
+    NextService: Service<ServiceRequest, Response = ServiceResponse<BodyType>, Error = Error> + 'static,
     NextService::Future: 'static,
     BodyType: 'static,
 {
@@ -96,8 +91,7 @@ where
                 .get("Authorization")
                 .ok_or(ErrorUnauthorized("Unauthorized"))?;
 
-            let boxer_token =
-                BoxerToken::try_from(token_value).map_err(|_| ErrorUnauthorized("Unauthorized"))?;
+            let boxer_token = BoxerToken::try_from(token_value).map_err(|_| ErrorUnauthorized("Unauthorized"))?;
             let validation_result = authorizer
                 .check_auth(boxer_token.token.clone().as_str())
                 .await
