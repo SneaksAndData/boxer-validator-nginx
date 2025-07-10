@@ -9,7 +9,7 @@ actix-web = "4.9.0"
 futures-util = "0.3.8"
 jwt = "0.16.0"
 opentelemetry-datadog = "0.12.0"
-async-trait = "0.1.81"
+async-trait = "0.1.88"
 anyhow = "1.0.86"
 jwt-authorizer = "0.15.0"
 log = "0.4.22"
@@ -18,6 +18,11 @@ serde_json = "1.0.127"
 cedar-policy = "3.3.0"
 flate2 = "1.0"
 base64 = "0.22.1"
+config = "0.15.11"
+serde = { version = "1.0.209", features = ["derive"] }
+duration-string = "0.5.2"
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git" }
+
 
 [dev-dependencies]
 rstest = "0.22.0"
