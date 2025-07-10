@@ -2,14 +2,14 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
+use crate::http::controllers::schema;
 use crate::http::controllers::token_review;
+use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
 use actix_web::{web, App, HttpServer};
 use anyhow::Result;
 use log::info;
-use crate::http::controllers::schema;
 
 #[actix_web::main]
 async fn main() -> Result<()> {

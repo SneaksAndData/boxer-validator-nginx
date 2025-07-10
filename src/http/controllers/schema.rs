@@ -1,10 +1,10 @@
+use crate::http::errors::*;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Path};
 use actix_web::{delete, get, post, web, HttpResponse};
 use boxer_core::services::base::types::SchemaRepository;
 use cedar_policy::SchemaFragment;
 use std::sync::Arc;
-use crate::http::errors::*;
 
 #[utoipa::path(context_path = "/schema/", responses((status = OK)))]
 #[post("{id}")]
