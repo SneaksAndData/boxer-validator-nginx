@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use crate::models::token::BoxerToken;
 use actix_web::http::header::HeaderValue;
 use anyhow::bail;
@@ -25,31 +28,5 @@ impl TryFrom<&HeaderValue> for BoxerToken {
             }
             Err(_) => bail!("Invalid token format"),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rstest::rstest;
-
-    #[rstest]
-    fn test_parsing_valid_token() {
-        let header = HeaderValue::from_static("Bearer token");
-        let token = BoxerToken::try_from(&header).unwrap();
-        let string_token: String = token.into();
-        assert_eq!(string_token, "token".to_string());
-    }
-
-    #[rstest]
-    #[case("token")]
-    #[case("My token")]
-    #[case("My suer cool token")]
-    #[case("")]
-    #[case("Bearer")]
-    fn test_parsing_invalid_token(#[case] token: &str) {
-        let header = HeaderValue::from_str(token).unwrap();
-        let token = BoxerToken::try_from(&header);
-        assert_eq!(token.is_err_and(|e| e.to_string() == "Invalid token format"), true);
     }
 }
