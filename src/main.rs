@@ -2,14 +2,13 @@ mod http;
 mod models;
 mod services;
 
-
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::urls::token_review;
 use crate::services::cedar_validation_service::CedarValidationService;
+use crate::services::configuration::models::AppSettings;
 use actix_web::{web, App, HttpServer};
 use anyhow::Result;
 use log::info;
-use crate::services::configuration::models::AppSettings;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -20,7 +19,7 @@ async fn main() -> Result<()> {
 
     let cm = AppSettings::new()?;
     info!("Instance name {}", cm.instance_name);
-    
+
     println!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
         App::new()
