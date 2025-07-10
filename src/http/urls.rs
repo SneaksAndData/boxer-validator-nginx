@@ -13,7 +13,7 @@ async fn token_review(
     request_context: RequestContext,
     cedar_validation_service: Data<Box<CedarValidationService>>,
 ) -> HttpResponse {
-    let status_code = match (*cedar_validation_service).validate(boxer_claims, request_context) {
+    let status_code = match cedar_validation_service.validate(boxer_claims, request_context) {
         Ok(_) => {
             debug!("Token validated successfully");
             StatusCode::OK

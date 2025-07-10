@@ -5,8 +5,10 @@ mod services;
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::urls::token_review;
 use crate::services::cedar_validation_service::CedarValidationService;
+use crate::services::configuration::models::AppSettings;
 use actix_web::{web, App, HttpServer};
-use std::io::Result;
+use anyhow::Result;
+use log::info;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -14,6 +16,9 @@ async fn main() -> Result<()> {
 
     env_logger::init();
     let addr = ("127.0.0.1", 8081);
+
+    let cm = AppSettings::new()?;
+    info!("Instance name {}", cm.instance_name);
 
     println!("listening on {}:{}", &addr.0, &addr.1);
     HttpServer::new(move || {
@@ -27,4 +32,5 @@ async fn main() -> Result<()> {
     .bind(addr)?
     .run()
     .await
+    .map_err(anyhow::Error::from)
 }
