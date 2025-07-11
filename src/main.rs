@@ -2,8 +2,9 @@ mod http;
 mod models;
 mod services;
 
+use crate::http::controllers::schema;
+use crate::http::controllers::token_review;
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
-use crate::http::urls::token_review;
 use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
 use actix_web::{web, App, HttpServer};
@@ -27,7 +28,8 @@ async fn main() -> Result<()> {
             // The last middleware in the chain should always be InternalTokenMiddleware
             // to ensure that the token is valid in the beginning of the request processing
             .wrap(InternalTokenMiddlewareFactory::new())
-            .service(token_review)
+            .service(schema::crud())
+            .service(token_review::get)
     })
     .bind(addr)?
     .run()

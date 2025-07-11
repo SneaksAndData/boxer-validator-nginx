@@ -7,8 +7,9 @@ use actix_web::web::Data;
 use actix_web::{get, HttpResponse};
 use log::debug;
 
+#[utoipa::path(context_path = "/token/review", responses((status = OK)))]
 #[get("/token/review")]
-async fn token_review(
+async fn get(
     boxer_claims: BoxerClaims,
     request_context: RequestContext,
     cedar_validation_service: Data<Box<CedarValidationService>>,

@@ -26,7 +26,7 @@ impl ValidationService for Arc<Box<CedarValidationService>> {
         let resource = request_context.to_resource()?;
 
         let entities = Entities::empty();
-        let request = Request::new(Some(actor), Some(action), Some(resource), Context::empty(), None)?;
+        let request = Request::new(actor, action, resource, Context::empty(), None)?;
         let answer = self.authorizer.is_authorized(&request, &policy_set, &entities);
         info!("validation {:?}", answer.decision());
         match answer.decision() {
