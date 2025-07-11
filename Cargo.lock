@@ -558,6 +558,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
+source = "git+https://github.com/SneaksAndData/boxer-core.git#80443c17e04948c226f11fee7384c71d202bef41"
 dependencies = [
  "anyhow",
  "async-trait",
