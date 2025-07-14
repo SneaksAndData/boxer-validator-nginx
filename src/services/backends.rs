@@ -1,12 +1,12 @@
+use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::configuration::models::KubernetesBackendSettings;
 use anyhow::bail;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_command, from_file};
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::KubernetesSchemaRepository;
-use boxer_core::services::backends::{BackendConfiguration};
+use boxer_core::services::backends::BackendConfiguration;
 use std::sync::Arc;
-use crate::services::backends::kubernetes::KubernetesBackend;
 
 mod kubernetes;
 
@@ -26,9 +26,19 @@ impl BackendConfiguration for BackendBuilder {
         instance_name: String,
     ) -> anyhow::Result<Arc<Self::InitializedBackend>> {
         let kubeconfig = match settings {
-            KubernetesBackendSettings { kubeconfig: Some(path), .. } => from_file().load(&path).await?,
-            KubernetesBackendSettings { exec: Some(command), .. } => from_command().load(&command).await?,
-            KubernetesBackendSettings { kubeconfig: None, exec: None, .. } => { bail!("Kubernetes backend configuration is missing") }
+            KubernetesBackendSettings {
+                kubeconfig: Some(path), ..
+            } => from_file().load(&path).await?,
+            KubernetesBackendSettings {
+                exec: Some(command), ..
+            } => from_command().load(&command).await?,
+            KubernetesBackendSettings {
+                kubeconfig: None,
+                exec: None,
+                ..
+            } => {
+                bail!("Kubernetes backend configuration is missing")
+            }
         };
 
         let repository_config = KubernetesResourceManagerConfig {

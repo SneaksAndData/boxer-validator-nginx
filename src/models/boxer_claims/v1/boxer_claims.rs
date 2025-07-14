@@ -13,6 +13,7 @@ const API_VERSION_KEY: &str = "boxer.sneaksanddata.com/api-version";
 const POLICY_KEY: &str = "boxer.sneaksanddata.com/policy";
 const USER_ID_KEY: &str = "boxer.sneaksanddata.com/user-id";
 const IDENTITY_PROVIDER_KEY: &str = "boxer.sneaksanddata.com/identity-provider";
+const SCHEMA_KEY: &str = "boxer.sneaksanddata.com/schema";
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -21,6 +22,7 @@ pub struct BoxerClaims {
     pub policy: String,
     pub user_id: String,
     pub identity_provider: String,
+    pub schema: String,
 }
 
 impl BoxerClaims {
@@ -42,16 +44,18 @@ impl TryFrom<&DynamicClaimsCollection> for BoxerClaims {
 
     fn try_from(c: &DynamicClaimsCollection) -> Result<Self, Self::Error> {
         let api_version = get_claim(c, API_VERSION_KEY).ok_or(anyhow::anyhow!("Missing api version"))?;
-        let policy = get_claim(c, POLICY_KEY).ok_or(anyhow::anyhow!("Missing policy"))?;
+        // let policy = get_claim(c, POLICY_KEY).ok_or(anyhow::anyhow!("Missing policy"))?;
         let user_id = get_claim(c, USER_ID_KEY).ok_or(anyhow::anyhow!("Missing user id"))?;
         let identity_provider =
             get_claim(c, IDENTITY_PROVIDER_KEY).ok_or(anyhow::anyhow!("Missing identity provider"))?;
+        let schema = get_claim(c, SCHEMA_KEY).ok_or(anyhow::anyhow!("Missing schema"))?;
 
         Ok(BoxerClaims {
             api_version: api_version.to_string(),
-            policy: policy.to_string(),
+            policy: "".to_owned(),
             user_id: user_id.to_string(),
             identity_provider: identity_provider.to_string(),
+            schema: String::from_utf8(STANDARD.decode(&schema)?)?,
         })
     }
 }

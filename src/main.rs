@@ -28,7 +28,9 @@ async fn main() -> Result<()> {
 
     println!("listening on {}:{}", &addr.0, &addr.1);
 
-    let current_backend = backends::new().configure(&cm.backend.kubernetes, cm.instance_name.clone()).await?;
+    let current_backend = backends::new()
+        .configure(&cm.backend.kubernetes, cm.instance_name.clone())
+        .await?;
     let schema_provider = Arc::new(KubernetesSchemaProvider::new(current_backend.get_schemas_repository()));
     let cedar_validation_service = Arc::new(CedarValidationService::new(schema_provider));
 

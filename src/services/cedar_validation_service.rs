@@ -2,8 +2,9 @@ use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
 use crate::models::request_context::RequestContext;
 use crate::services::base::schema_provider::SchemaProvider;
 use crate::services::base::validation_service::ValidationService;
+use async_trait::async_trait;
 use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
-use log::info;
+use log::{debug, info};
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -22,8 +23,12 @@ impl CedarValidationService {
     }
 }
 
-impl ValidationService for Arc<Box<CedarValidationService>> {
-    fn validate(&self, boxer_claims: BoxerClaims, request_context: RequestContext) -> Result<(), anyhow::Error> {
+#[async_trait]
+impl ValidationService for CedarValidationService {
+    async fn validate(&self, boxer_claims: BoxerClaims, request_context: RequestContext) -> Result<(), anyhow::Error> {
+        let schema = self.schema_provider.get_schema(&boxer_claims).await?;
+        debug!("Cedar validation schemas: {:?}", schema);
+
         let policy_set = boxer_claims.parse()?;
         let actor: EntityUid = boxer_claims.try_into()?;
         let action = request_context.to_action()?;
@@ -32,6 +37,7 @@ impl ValidationService for Arc<Box<CedarValidationService>> {
         let entities = Entities::empty();
         let request = Request::new(actor, action, resource, Context::empty(), None)?;
         let answer = self.authorizer.is_authorized(&request, &policy_set, &entities);
+
         info!("validation {:?}", answer.decision());
         match answer.decision() {
             cedar_policy::Decision::Allow => Ok(()),
