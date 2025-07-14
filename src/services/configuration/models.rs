@@ -5,7 +5,7 @@ use serde::Deserialize;
 pub struct SchemaRepositorySettings {
     pub label_selector_key: String,
     pub label_selector_value: String,
-    pub name: String
+    pub name: String,
 }
 
 #[derive(Debug, Deserialize)]

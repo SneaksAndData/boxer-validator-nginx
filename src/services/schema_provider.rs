@@ -22,6 +22,9 @@ impl SchemaProvider for KubernetesSchemaProvider {
 
 impl KubernetesSchemaProvider {
     pub fn new(schema_repository: Arc<SchemaRepository>, schema_name: String) -> Self {
-        KubernetesSchemaProvider { schema_repository, schema_name }
+        KubernetesSchemaProvider {
+            schema_repository,
+            schema_name,
+        }
     }
 }
