@@ -5,8 +5,8 @@ use std::str::FromStr;
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct RequestContext {
-    original_url: String,
-    original_method: String,
+    pub original_url: String,
+    pub original_method: String,
 }
 
 impl RequestContext {
