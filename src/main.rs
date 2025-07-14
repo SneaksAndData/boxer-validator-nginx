@@ -31,7 +31,8 @@ async fn main() -> Result<()> {
     let current_backend = backends::new()
         .configure(&cm.backend.kubernetes, cm.instance_name.clone())
         .await?;
-    let schema_provider = Arc::new(KubernetesSchemaProvider::new(current_backend.get_schemas_repository()));
+    
+    let schema_provider = Arc::new(KubernetesSchemaProvider::new(current_backend.get_schemas_repository(), cm.backend.kubernetes.schema_repository.name));
     let cedar_validation_service = Arc::new(CedarValidationService::new(schema_provider));
 
     HttpServer::new(move || {

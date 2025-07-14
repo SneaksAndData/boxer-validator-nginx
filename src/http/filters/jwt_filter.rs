@@ -43,8 +43,6 @@ where
             let mut validation = Validation::new();
             validation.iss = Some(settings.valid_issuers.clone());
             validation.aud = Some(settings.valid_audiences.clone());
-            validation.validate_signature = false;
-            validation.validate_exp = false;
 
             // It's OK to unwrap here because we should panic if cannot build the authorizer
             let authorizer: Authorizer<DynamicClaimsCollection> = JwtAuthorizer::from_secret(settings.secret)

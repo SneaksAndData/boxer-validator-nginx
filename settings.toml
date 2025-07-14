@@ -14,3 +14,4 @@ lease_renew_duration = "15s"             # Duration string for lease renewal int
 [backend.kubernetes.schema_repository]
 label_selector_key = "app.kubernetes.io/component"
 label_selector_value = "validator-schema"
+name = "boxer-validator-schema"

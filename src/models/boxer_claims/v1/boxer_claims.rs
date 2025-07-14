@@ -44,7 +44,7 @@ impl TryFrom<&DynamicClaimsCollection> for BoxerClaims {
 
     fn try_from(c: &DynamicClaimsCollection) -> Result<Self, Self::Error> {
         let api_version = get_claim(c, API_VERSION_KEY).ok_or(anyhow::anyhow!("Missing api version"))?;
-        // let policy = get_claim(c, POLICY_KEY).ok_or(anyhow::anyhow!("Missing policy"))?;
+        let policy = get_claim(c, POLICY_KEY).ok_or(anyhow::anyhow!("Missing policy"))?;
         let user_id = get_claim(c, USER_ID_KEY).ok_or(anyhow::anyhow!("Missing user id"))?;
         let identity_provider =
             get_claim(c, IDENTITY_PROVIDER_KEY).ok_or(anyhow::anyhow!("Missing identity provider"))?;
@@ -52,7 +52,7 @@ impl TryFrom<&DynamicClaimsCollection> for BoxerClaims {
 
         Ok(BoxerClaims {
             api_version: api_version.to_string(),
-            policy: "".to_owned(),
+            policy: policy.to_string(),
             user_id: user_id.to_string(),
             identity_provider: identity_provider.to_string(),
             schema: String::from_utf8(STANDARD.decode(&schema)?)?,
