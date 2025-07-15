@@ -1,6 +1,6 @@
 use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
 use crate::models::request_context::RequestContext;
-use crate::services::action_repository::{ActionReadOnlyRepository, ActionRepository};
+use crate::services::action_repository::ActionReadOnlyRepository;
 use crate::services::base::schema_provider::SchemaProvider;
 use crate::services::base::validation_service::ValidationService;
 use async_trait::async_trait;

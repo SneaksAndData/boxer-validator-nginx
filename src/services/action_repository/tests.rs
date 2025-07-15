@@ -4,7 +4,7 @@ use crate::services::action_repository::models::HTTPMethod::Get;
 use crate::services::action_repository::models::RequestSegment;
 use crate::services::action_repository::models::RequestSegment::{Hostname, Parameter, Static, Verb};
 use crate::services::action_repository::{ActionData, TrieData};
-use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
+use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::EntityUid;
 use rstest::rstest;
 use std::cmp::Ordering;
