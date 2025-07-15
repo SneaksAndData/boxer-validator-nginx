@@ -47,6 +47,54 @@ async fn test_can_insert() {
     assert_eq!("TestApp::\"RunAction\"", action.to_string());
 }
 
+#[tokio::test]
+async fn test_parameters() {
+    let rc = RequestContext::new("https://example.com/api/v1/resource".to_string(), "GET".to_string());
+    // The method `GET`, host `example.com` and route `/api/{version}/resource`
+    let parametrized_path = vec![Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Parameter, Static("resource".to_string())];
+
+    let action_repo = action_repository::new();
+    let path: Vec<RequestSegment> = rc.clone().try_into().unwrap();
+    
+    let entity = EntityUid::from_str("TestApp::\"RunAction\"").unwrap();
+    action_repo.upsert(path, entity).await.unwrap();
+
+    let action = action_repo.get(parametrized_path).await.unwrap();
+    assert_eq!("TestApp::\"RunAction\"", action.to_string());
+}
+
+#[tokio::test]
+async fn test_missing_parameter_in_route() {
+    let rc = RequestContext::new("https://example.com/api/v1/resource".to_string(), "GET".to_string());
+    // The method `GET`, host `example.com` and route `/api/{version}/resource`
+    let parametrized_path = vec![Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Static("v2".to_string()), Static("resource".to_string())];
+
+    let action_repo = action_repository::new();
+    let path: Vec<RequestSegment> = rc.clone().try_into().unwrap();
+
+    let entity = EntityUid::from_str("TestApp::\"RunAction\"").unwrap();
+    action_repo.upsert(path, entity).await.unwrap();
+
+    let result = action_repo.get(parametrized_path).await;
+    assert_eq!(result.is_err(), true);
+}
+
+#[tokio::test]
+async fn test_missing_parameter_in_the_end() {
+    let rc = RequestContext::new("https://example.com/api/v1/resource".to_string(), "GET".to_string());
+    // The method `GET`, host `example.com` and route `/api/{version}/resource`
+    let parametrized_path = vec![Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Static("v1".to_string()), Static("resource".to_string()), Parameter];
+
+    let action_repo = action_repository::new();
+    let path: Vec<RequestSegment> = rc.clone().try_into().unwrap();
+
+    let entity = EntityUid::from_str("TestApp::\"RunAction\"").unwrap();
+    action_repo.upsert(path, entity).await.unwrap();
+
+    let result = action_repo.get(parametrized_path).await;
+    assert_eq!(result.is_err(), true);
+}
+
 #[rstest]
 fn test_reflexivity(
     #[values(Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Parameter)] x: RequestSegment,
