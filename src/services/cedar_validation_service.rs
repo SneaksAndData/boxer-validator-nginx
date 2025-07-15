@@ -1,5 +1,6 @@
 use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
 use crate::models::request_context::RequestContext;
+use crate::services::action_repository::{ActionReadOnlyRepository, ActionRepository};
 use crate::services::base::schema_provider::SchemaProvider;
 use crate::services::base::validation_service::ValidationService;
 use async_trait::async_trait;
@@ -12,13 +13,15 @@ pub struct CedarValidationService {
     authorizer: Authorizer,
     #[allow(dead_code)]
     schema_provider: Arc<dyn SchemaProvider>,
+    action_repository: Arc<ActionReadOnlyRepository>,
 }
 
 impl CedarValidationService {
-    pub fn new(schema_provider: Arc<dyn SchemaProvider>) -> Self {
+    pub fn new(schema_provider: Arc<dyn SchemaProvider>, action_repository: Arc<ActionReadOnlyRepository>) -> Self {
         CedarValidationService {
             authorizer: Authorizer::new(),
             schema_provider,
+            action_repository,
         }
     }
 }
@@ -31,7 +34,8 @@ impl ValidationService for CedarValidationService {
 
         let policy_set = boxer_claims.parse()?;
         let actor: EntityUid = boxer_claims.try_into()?;
-        let action = request_context.to_action()?;
+        let action = self.action_repository.get(request_context.clone().try_into()?).await?;
+
         let resource = request_context.to_resource()?;
 
         let entities = Entities::empty();

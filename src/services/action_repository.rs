@@ -1,108 +1,78 @@
 #[cfg(test)]
 mod tests;
 
+pub mod models;
+
+use crate::services::action_repository::models::RequestSegment;
 use anyhow::anyhow;
 use async_trait::async_trait;
-use boxer_core::services::base::upsert_repository::UpsertRepository;
+use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
 use cedar_policy::EntityUid;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use trie_rs::map::{Trie, TrieBuilder};
-use crate::models::request_context::RequestContext;
-use url::Url;
 
-#[derive(Debug, Clone)]
-struct ActionMapping {
-    pub verb: String,
-    pub hostname: String,
-    pub path: String,
+pub type ActionReadOnlyRepository = dyn ReadOnlyRepository<Vec<RequestSegment>, EntityUid, ReadError = anyhow::Error>;
+
+pub trait ActionRepository:
+    ReadOnlyRepository<Vec<RequestSegment>, EntityUid, ReadError = anyhow::Error>
+    + UpsertRepository<Vec<RequestSegment>, EntityUid, Error = anyhow::Error>
+{
 }
 
-impl TryFrom<RequestContext> for ActionMapping {
-    type Error = anyhow::Error;
-
-    fn try_from(context: RequestContext) -> Result<Self, Self::Error> {
-        let verb = context.original_method.clone();
-        let uri = Url::parse(context.original_url.as_str())?;
-        let host = uri.host_str()
-            .ok_or_else(|| anyhow!("Invalid URL: missing host"))?
-            .to_string();
-        
-        Ok(ActionMapping{ verb, hostname: host, path: uri.path().to_string() })
-    }
+pub fn new() -> Arc<dyn ActionRepository> {
+    Arc::new(ActionData {
+        rw_lock: RwLock::new(TrieData {
+            builder: Box::new(TrieBuilder::new()),
+            maybe_trie: None,
+        }),
+    })
 }
 
-struct ActionRepositoryData {
-    builder: Box<TrieBuilder<u8, EntityUid>>,
-    maybe_trie: Option<Arc<Trie<u8, EntityUid>>>
+struct TrieData {
+    builder: Box<TrieBuilder<RequestSegment, EntityUid>>,
+    maybe_trie: Option<Arc<Trie<RequestSegment, EntityUid>>>,
 }
 
-struct ActionRepository {
-    rw_lock: RwLock<ActionRepositoryData>,
+struct ActionData {
+    rw_lock: RwLock<TrieData>,
 }
 
-impl ActionRepository {
-    pub fn new() -> ActionRepository {
-        ActionRepository {
-            rw_lock: RwLock::new(ActionRepositoryData {
-                builder: Box::new(TrieBuilder::new()),
-                maybe_trie: None,
-            }),
-        }
+#[async_trait]
+impl ReadOnlyRepository<Vec<RequestSegment>, EntityUid> for ActionData {
+    type ReadError = anyhow::Error;
+
+    async fn get(&self, key: Vec<RequestSegment>) -> Result<EntityUid, Self::ReadError> {
+        let guard = self.rw_lock.read().await;
+        guard
+            .maybe_trie
+            .clone()
+            .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
+            .ok_or(anyhow!("Entity not found: {:?}", key))
     }
 }
 
 #[async_trait]
-impl ReadOnlyRepository<ActionMapping, EntityUid> for ActionRepository {
+impl UpsertRepository<Vec<RequestSegment>, EntityUid> for ActionData {
     type Error = anyhow::Error;
 
-    async fn get(&self, key: ActionMapping) -> Result<EntityUid, Self::Error> {
-        let line = format!("{} {} {}", key.verb, key.hostname, key.path);
-        let guard = self.rw_lock.read().await;
-        guard.maybe_trie.clone()
-            .and_then(|trie| trie.exact_match(&line).map(|e|e.clone()))
-            .ok_or(anyhow!("Entity not found: {:?}", key))
-    }
-
-    async fn upsert(&self, key: ActionMapping, entity: EntityUid) -> Result<(), Self::Error> {
-        let line = format!("{} {} {}", key.verb, key.hostname, key.path);
+    async fn upsert(&self, key: Vec<RequestSegment>, entity: EntityUid) -> Result<(), Self::Error> {
         let mut guard = self.rw_lock.write().await;
         let mut builder = guard.builder.clone();
-        builder.push(line, entity.clone());
+        builder.push(key, entity.clone());
         guard.builder = builder.clone();
         guard.maybe_trie = Some(Arc::new(builder.build()));
         Ok(())
     }
 
-    async fn delete(&self, key: ActionMapping) -> Result<(), Self::Error> {
-        todo!()
-    }
-
-    async fn exists(&self, key: ActionMapping) -> Result<bool, Self::Error> {
-        todo!()
+    async fn exists(&self, key: Vec<RequestSegment>) -> Result<bool, Self::Error> {
+        let guard = self.rw_lock.read().await;
+        Ok(guard
+            .maybe_trie
+            .clone()
+            .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
+            .is_some())
     }
 }
 
-// struct ResourceMapping {
-//     pub verb: String,
-//     pub hostname: String,
-//     pub path: String,
-// }
-// 
-// struct ResourceMapper {
-// 
-// }
-// 
-// impl ResourceMapper {
-//     pub fn new() -> ResourceMapper {
-//         ResourceMapper {}
-//     }
-// 
-//     pub fn add_mapping(&mut self, action_mapping: ActionMapping, action: EntityUid) {
-// 
-//     }
-//     
-//     pub fn get_mapping(&self, action_mapping: ActionMapping) -> Option<EntityUid> {
-//         None
-//     }
-// }
+impl ActionRepository for ActionData {}
