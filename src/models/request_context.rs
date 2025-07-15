@@ -2,11 +2,11 @@ use actix_web::http::Uri;
 use cedar_policy::{EntityId, EntityTypeName, EntityUid};
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct RequestContext {
-    original_url: String,
-    original_method: String,
+    pub original_url: String,
+    pub original_method: String,
 }
 
 impl RequestContext {
@@ -15,12 +15,6 @@ impl RequestContext {
             original_url,
             original_method,
         }
-    }
-
-    pub fn to_action(&self) -> anyhow::Result<EntityUid> {
-        let tp = EntityTypeName::from_str("Action")?;
-        let n = EntityId::from_str(&self.original_method)?;
-        Ok(EntityUid::from_type_name_and_id(tp, n))
     }
 
     pub fn to_resource(&self) -> anyhow::Result<EntityUid> {

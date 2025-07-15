@@ -6,10 +6,10 @@ mod services;
 use crate::http::controllers::schema;
 use crate::http::controllers::token_review;
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
-use crate::services::backends;
 use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
 use crate::services::schema_provider::KubernetesSchemaProvider;
+use crate::services::{action_repository, backends};
 use actix_web::{web, App, HttpServer};
 use anyhow::Result;
 use boxer_core::services::backends::BackendConfiguration;
@@ -36,7 +36,8 @@ async fn main() -> Result<()> {
         current_backend.get_schemas_repository(),
         cm.backend.kubernetes.schema_repository.name,
     ));
-    let cedar_validation_service = Arc::new(CedarValidationService::new(schema_provider));
+    let action_repository = action_repository::new();
+    let cedar_validation_service = Arc::new(CedarValidationService::new(schema_provider, action_repository));
 
     HttpServer::new(move || {
         App::new()

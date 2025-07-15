@@ -1,3 +1,4 @@
+pub mod action_repository;
 pub mod backends;
 pub mod base;
 pub mod cedar_validation_service;
