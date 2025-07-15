@@ -51,11 +51,17 @@ async fn test_can_insert() {
 async fn test_parameters() {
     let rc = RequestContext::new("https://example.com/api/v1/resource".to_string(), "GET".to_string());
     // The method `GET`, host `example.com` and route `/api/{version}/resource`
-    let parametrized_path = vec![Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Parameter, Static("resource".to_string())];
+    let parametrized_path = vec![
+        Verb(Get),
+        Hostname("example.com".to_string()),
+        Static("api".to_string()),
+        Parameter,
+        Static("resource".to_string()),
+    ];
 
     let action_repo = action_repository::new();
     let path: Vec<RequestSegment> = rc.clone().try_into().unwrap();
-    
+
     let entity = EntityUid::from_str("TestApp::\"RunAction\"").unwrap();
     action_repo.upsert(path, entity).await.unwrap();
 
@@ -67,7 +73,13 @@ async fn test_parameters() {
 async fn test_missing_parameter_in_route() {
     let rc = RequestContext::new("https://example.com/api/v1/resource".to_string(), "GET".to_string());
     // The method `GET`, host `example.com` and route `/api/{version}/resource`
-    let parametrized_path = vec![Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Static("v2".to_string()), Static("resource".to_string())];
+    let parametrized_path = vec![
+        Verb(Get),
+        Hostname("example.com".to_string()),
+        Static("api".to_string()),
+        Static("v2".to_string()),
+        Static("resource".to_string()),
+    ];
 
     let action_repo = action_repository::new();
     let path: Vec<RequestSegment> = rc.clone().try_into().unwrap();
@@ -83,7 +95,14 @@ async fn test_missing_parameter_in_route() {
 async fn test_missing_parameter_in_the_end() {
     let rc = RequestContext::new("https://example.com/api/v1/resource".to_string(), "GET".to_string());
     // The method `GET`, host `example.com` and route `/api/{version}/resource`
-    let parametrized_path = vec![Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Static("v1".to_string()), Static("resource".to_string()), Parameter];
+    let parametrized_path = vec![
+        Verb(Get),
+        Hostname("example.com".to_string()),
+        Static("api".to_string()),
+        Static("v1".to_string()),
+        Static("resource".to_string()),
+        Parameter,
+    ];
 
     let action_repo = action_repository::new();
     let path: Vec<RequestSegment> = rc.clone().try_into().unwrap();
