@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests;
 
+pub mod kubernetes_action_repository_backend;
 pub mod models;
 
 use crate::services::action_repository::models::RequestSegment;

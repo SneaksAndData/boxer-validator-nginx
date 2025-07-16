@@ -1,8 +1,10 @@
 use crate::models::request_context::RequestContext;
 use anyhow::anyhow;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use strum_macros::EnumString;
 use url::Url;
+
 impl TryFrom<RequestContext> for Vec<RequestSegment> {
     type Error = anyhow::Error;
 
@@ -29,7 +31,7 @@ impl TryFrom<RequestContext> for Vec<RequestSegment> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, EnumString)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, EnumString, Serialize, Deserialize)]
 pub enum HTTPMethod {
     #[strum(ascii_case_insensitive)]
     Get,

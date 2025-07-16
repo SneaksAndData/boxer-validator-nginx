@@ -546,8 +546,12 @@ dependencies = [
  "duration-string",
  "env_logger",
  "flate2",
+ "futures",
  "futures-util",
  "jwt-authorizer",
+ "k8s-openapi",
+ "kube",
+ "kubert",
  "log",
  "rstest",
  "serde",
@@ -563,7 +567,6 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git#d7fe5176feed33798b7c15b26abf8e9220068234"
 dependencies = [
  "anyhow",
  "async-trait",
