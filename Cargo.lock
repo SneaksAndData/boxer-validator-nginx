@@ -552,7 +552,6 @@ dependencies = [
  "jwt-authorizer",
  "k8s-openapi",
  "kube",
- "kubert",
  "log",
  "rstest",
  "serde",
@@ -570,6 +569,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
+source = "git+https://github.com/SneaksAndData/boxer-core.git#e10f9946d2a46a8a21f91b2976a838c234e1fa7e"
 dependencies = [
  "anyhow",
  "async-trait",

@@ -1,5 +1,5 @@
 use crate::models::request_context::RequestContext;
-use crate::services::action_repository::kubernetes_action_repository_backend::ActionRepositoryBackend;
+use crate::services::action_repository::backend::ActionRepositoryBackend;
 use crate::services::action_repository::models::RequestSegment;
 use crate::services::action_repository::ActionData;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;

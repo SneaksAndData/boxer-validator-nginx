@@ -9,12 +9,10 @@ use std::{println as warn, println as debug};
 #[cfg(test)]
 mod tests;
 
-pub mod kubernetes_action_repository_backend;
+pub mod backend;
 pub mod models;
 
-use crate::services::action_repository::kubernetes_action_repository_backend::{
-    ActionDiscoveryDocument, ActionDiscoveryResource,
-};
+use crate::services::action_repository::backend::{ActionDiscoveryDocument, ActionDiscoveryResource};
 use crate::services::action_repository::models::RequestSegment;
 use anyhow::anyhow;
 use async_trait::async_trait;
