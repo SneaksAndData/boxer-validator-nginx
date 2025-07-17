@@ -1,8 +1,8 @@
-use crate::services::action_repository::backend::ActionRepositoryBackend;
-use crate::services::action_repository::ActionData;
 use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::KubernetesBackendSettings;
+use crate::services::repositories::action_repository::backend::ActionRepositoryBackend;
+use crate::services::repositories::action_repository::ActionData;
 use anyhow::bail;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_command, from_file};

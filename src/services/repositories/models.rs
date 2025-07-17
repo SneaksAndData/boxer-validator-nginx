@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use crate::models::request_context::RequestContext;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
@@ -24,7 +27,7 @@ impl TryFrom<RequestContext> for Vec<RequestSegment> {
             if part.is_empty() {
                 continue; // Skip empty segments
             }
-            segments.push(RequestSegment::Static(part.to_string()));
+            segments.push(RequestSegment::Path(PathSegment::Static(part.to_string())));
         }
 
         Ok(segments)
@@ -62,42 +65,41 @@ pub enum HTTPMethod {
 pub enum RequestSegment {
     Verb(HTTPMethod),
     Hostname(String),
-    Static(String),
-    Parameter,
+    Path(PathSegment),
 }
-
 /// Implements the `Ord` trait for `PathSegment`.
 /// VERB < HOSTNAME < (STATIC == PARAMETER)
 /// NOTE: This ordering is not consistent with the `PartialOrd` trait, which is intentional.
 /// This is because `PathSegment` is used in a Trie, and the Trie requires a total order for its keys.
 /// Additionally, this implementation ensures that the `Parameter` segment is always considered less than any other segment,
 /// and equal to `Static` segments.
+/// Also, see the `PartialOrd` implementation for `PathSegment` below.
 impl Ord for RequestSegment {
     fn cmp(&self, other: &Self) -> Ordering {
         match self {
             RequestSegment::Verb(v1) => match other {
                 RequestSegment::Verb(v2) => v1.cmp(v2),
                 RequestSegment::Hostname(_) => Ordering::Greater,
-                RequestSegment::Static(_) => Ordering::Greater,
-                RequestSegment::Parameter => Ordering::Greater,
+                RequestSegment::Path(PathSegment::Static(_)) => Ordering::Greater,
+                RequestSegment::Path(PathSegment::Parameter) => Ordering::Greater,
             },
             RequestSegment::Hostname(p1) => match other {
                 RequestSegment::Verb(_) => Ordering::Less,
                 RequestSegment::Hostname(p2) => p1.cmp(p2),
-                RequestSegment::Static(_) => Ordering::Greater,
-                RequestSegment::Parameter => Ordering::Greater,
+                RequestSegment::Path(PathSegment::Static(_)) => Ordering::Greater,
+                RequestSegment::Path(PathSegment::Parameter) => Ordering::Greater,
             },
-            RequestSegment::Static(s1) => match other {
+            RequestSegment::Path(PathSegment::Static(s1)) => match other {
                 RequestSegment::Verb(_) => Ordering::Less,
                 RequestSegment::Hostname(_) => Ordering::Less,
-                RequestSegment::Static(s2) => s1.cmp(s2),
-                RequestSegment::Parameter => Ordering::Equal,
+                RequestSegment::Path(PathSegment::Static(s2)) => s1.cmp(s2),
+                RequestSegment::Path(PathSegment::Parameter) => Ordering::Equal,
             },
-            RequestSegment::Parameter => match other {
+            RequestSegment::Path(PathSegment::Parameter) => match other {
                 RequestSegment::Verb(_) => Ordering::Less,
                 RequestSegment::Hostname(_) => Ordering::Less,
-                RequestSegment::Static(_) => Ordering::Equal,
-                RequestSegment::Parameter => Ordering::Equal,
+                RequestSegment::Path(PathSegment::Static(_)) => Ordering::Equal,
+                RequestSegment::Path(PathSegment::Parameter) => Ordering::Equal,
             },
         }
     }
@@ -116,3 +118,37 @@ impl PartialEq for RequestSegment {
 }
 
 impl Eq for RequestSegment {}
+
+#[derive(Debug, Clone, Display)]
+pub enum PathSegment {
+    Static(String),
+    Parameter,
+}
+
+impl Ord for PathSegment {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self {
+            PathSegment::Static(s1) => match other {
+                PathSegment::Static(s2) => s1.cmp(s2),
+                PathSegment::Parameter => Ordering::Greater,
+            },
+            PathSegment::Parameter => match other {
+                PathSegment::Static(_) => Ordering::Less,
+                PathSegment::Parameter => Ordering::Equal,
+            },
+        }
+    }
+}
+
+impl PartialOrd for PathSegment {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl PartialEq for PathSegment {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+
+impl Eq for PathSegment {}

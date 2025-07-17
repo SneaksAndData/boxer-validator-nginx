@@ -1,8 +1,8 @@
 use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
 use crate::models::request_context::RequestContext;
-use crate::services::action_repository::ActionReadOnlyRepository;
 use crate::services::base::schema_provider::SchemaProvider;
 use crate::services::base::validation_service::ValidationService;
+use crate::services::repositories::action_repository::ActionReadOnlyRepository;
 use async_trait::async_trait;
 use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
 use log::{debug, info};

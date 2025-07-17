@@ -1,13 +1,12 @@
 use crate::models::request_context::RequestContext;
-use crate::services::action_repository;
-use crate::services::action_repository::models::HTTPMethod::Get;
-use crate::services::action_repository::models::RequestSegment;
-use crate::services::action_repository::models::RequestSegment::{Hostname, Parameter, Static, Verb};
-use crate::services::action_repository::{ActionData, TrieData};
+use crate::services::repositories::action_repository;
+use crate::services::repositories::action_repository::{ActionData, TrieData};
+use crate::services::repositories::models::HTTPMethod::Get;
+use crate::services::repositories::models::PathSegment::{Parameter, Static};
+use crate::services::repositories::models::RequestSegment;
+use crate::services::repositories::models::RequestSegment::{Hostname, Path, Verb};
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::EntityUid;
-use rstest::rstest;
-use std::cmp::Ordering;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -54,9 +53,9 @@ async fn test_parameters() {
     let parametrized_path = vec![
         Hostname("example.com".to_string()),
         Verb(Get),
-        Static("api".to_string()),
-        Parameter,
-        Static("resource".to_string()),
+        Path(Static("api".to_string())),
+        Path(Parameter),
+        Path(Static("resource".to_string())),
     ];
 
     let action_repo = action_repository::new();
@@ -76,9 +75,9 @@ async fn test_missing_parameter_in_route() {
     let parametrized_path = vec![
         Hostname("example.com".to_string()),
         Verb(Get),
-        Static("api".to_string()),
-        Static("v2".to_string()),
-        Static("resource".to_string()),
+        Path(Static("api".to_string())),
+        Path(Static("v2".to_string())),
+        Path(Static("resource".to_string())),
     ];
 
     let action_repo = action_repository::new();
@@ -98,10 +97,10 @@ async fn test_missing_parameter_in_the_end() {
     let parametrized_path = vec![
         Hostname("example.com".to_string()),
         Verb(Get),
-        Static("api".to_string()),
-        Static("v1".to_string()),
-        Static("resource".to_string()),
-        Parameter,
+        Path(Static("api".to_string())),
+        Path(Static("v1".to_string())),
+        Path(Static("resource".to_string())),
+        Path(Parameter),
     ];
 
     let action_repo = action_repository::new();
@@ -112,58 +111,4 @@ async fn test_missing_parameter_in_the_end() {
 
     let result = action_repo.get(parametrized_path).await;
     assert_eq!(result.is_err(), true);
-}
-
-#[rstest]
-fn test_reflexivity(
-    #[values(Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Parameter)] x: RequestSegment,
-) {
-    assert_eq!(x.cmp(&x), Ordering::Equal);
-}
-
-#[rstest]
-fn test_symmetry(
-    #[values(Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Parameter)] x: RequestSegment,
-    #[values(Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Parameter)] y: RequestSegment,
-) {
-    let ordering = x.cmp(&y);
-
-    match ordering {
-        Ordering::Less => assert_eq!(y.cmp(&x), Ordering::Greater),
-        Ordering::Equal => assert_eq!(y.cmp(&x), Ordering::Equal),
-        Ordering::Greater => assert_eq!(y.cmp(&x), Ordering::Less),
-    }
-}
-
-#[rstest]
-fn test_transitivity(
-    #[values(Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Parameter)] x: RequestSegment,
-    #[values(Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Parameter)] y: RequestSegment,
-    #[values(Verb(Get), Hostname("example.com".to_string()), Static("api".to_string()), Parameter)] z: RequestSegment,
-) {
-    let ordering = x.cmp(&y);
-
-    match ordering {
-        // if x < y and y < z, then x < z
-        // if x < y and y == z, then x < z
-        Ordering::Less => match y.cmp(&z) {
-            Ordering::Less => assert_eq!(x.cmp(&z), Ordering::Less),
-            Ordering::Equal => assert_eq!(x.cmp(&z), Ordering::Less),
-            _ => assert_eq!(true, true), // Skip this case if y > z, we cannot guarantee x < z
-        },
-
-        // if x == y and y == z, then x == z
-        Ordering::Equal => match y.cmp(&z) {
-            Ordering::Equal => assert_eq!(x.cmp(&z), Ordering::Equal),
-            _ => assert_eq!(true, x.cmp(&z) == Ordering::Greater || x.cmp(&z) == Ordering::Less),
-        },
-
-        // if x > y and y > z, then x > z
-        // if x > y and y == z, then x > z
-        Ordering::Greater => match y.cmp(&z) {
-            Ordering::Greater => assert_eq!(x.cmp(&z), Ordering::Greater),
-            Ordering::Equal => assert_eq!(x.cmp(&z), Ordering::Greater),
-            _ => assert_eq!(true, true), // Skip this case if y < z, we cannot guarantee x > z
-        },
-    }
 }

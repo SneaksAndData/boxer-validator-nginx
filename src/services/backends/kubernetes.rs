@@ -1,8 +1,8 @@
 mod configuration;
 
-use crate::services::action_repository::backend::ActionRepositoryBackend;
-use crate::services::action_repository::ActionRepository;
 use crate::services::base::actions_repository_source::ActionRepositorySource;
+use crate::services::repositories::action_repository::backend::ActionRepositoryBackend;
+use crate::services::repositories::action_repository::ActionRepository;
 use boxer_core::services::backends::{Backend, SchemaRepositorySource};
 use boxer_core::services::base::types::SchemaRepository;
 use std::sync::Arc;
