@@ -542,18 +542,24 @@ dependencies = [
  "base64 0.22.1",
  "boxer_core",
  "cedar-policy",
+ "collection_macros",
  "config",
  "duration-string",
  "env_logger",
  "flate2",
+ "futures",
  "futures-util",
  "jwt-authorizer",
+ "k8s-openapi",
+ "kube",
  "log",
  "rstest",
  "serde",
  "serde_json",
+ "serde_yml",
  "strum",
  "strum_macros",
+ "test-context",
  "tokio",
  "trie-rs",
  "url",
@@ -563,7 +569,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git#d7fe5176feed33798b7c15b26abf8e9220068234"
+source = "git+https://github.com/SneaksAndData/boxer-core.git#e10f9946d2a46a8a21f91b2976a838c234e1fa7e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -725,6 +731,12 @@ dependencies = [
  "wasm-bindgen",
  "windows-link",
 ]
+
+[[package]]
+name = "collection_macros"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50b180e6a75e306052a61658f832b4fc565a6e5a204da05f0fe7f50a31fb827a"
 
 [[package]]
 name = "colorchoice"
@@ -3570,6 +3582,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a43bddab41f8626c7bdaab872bbba75f8df5847b516d77c569c746e2ae5eb746"
 dependencies = [
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "test-context"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb69cce03e432993e2dc1f93f7899b952300fcb6dc44191a1b830b60b8c3c8aa"
+dependencies = [
+ "futures",
+ "test-context-macros",
+]
+
+[[package]]
+name = "test-context-macros"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97e0639209021e54dbe19cafabfc0b5574b078c37358945e6d473eabe39bb974"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
