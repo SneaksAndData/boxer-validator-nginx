@@ -52,8 +52,8 @@ async fn test_parameters() {
     let rc = RequestContext::new("https://example.com/api/v1/resource".to_string(), "GET".to_string());
     // The method `GET`, host `example.com` and route `/api/{version}/resource`
     let parametrized_path = vec![
-        Verb(Get),
         Hostname("example.com".to_string()),
+        Verb(Get),
         Static("api".to_string()),
         Parameter,
         Static("resource".to_string()),
@@ -74,8 +74,8 @@ async fn test_missing_parameter_in_route() {
     let rc = RequestContext::new("https://example.com/api/v1/resource".to_string(), "GET".to_string());
     // The method `GET`, host `example.com` and route `/api/{version}/resource`
     let parametrized_path = vec![
-        Verb(Get),
         Hostname("example.com".to_string()),
+        Verb(Get),
         Static("api".to_string()),
         Static("v2".to_string()),
         Static("resource".to_string()),
@@ -96,8 +96,8 @@ async fn test_missing_parameter_in_the_end() {
     let rc = RequestContext::new("https://example.com/api/v1/resource".to_string(), "GET".to_string());
     // The method `GET`, host `example.com` and route `/api/{version}/resource`
     let parametrized_path = vec![
-        Verb(Get),
         Hostname("example.com".to_string()),
+        Verb(Get),
         Static("api".to_string()),
         Static("v1".to_string()),
         Static("resource".to_string()),
