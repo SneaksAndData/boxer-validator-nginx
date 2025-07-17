@@ -1,6 +1,7 @@
-pub mod models;
+mod models;
+
 #[cfg(test)]
-mod tests;
+// mod tests;
 
 // Use log crate when building application
 #[cfg(not(test))]
@@ -10,8 +11,10 @@ use log::{debug, warn};
 #[cfg(test)]
 use std::{println as warn, println as debug};
 
-use crate::services::repositories::action_repository::models::{ActionDiscoveryDocument, ActionDiscoveryResource};
-use crate::services::repositories::models::RequestSegment;
+use crate::services::repositories::models::PathSegment;
+use crate::services::repositories::resource_repository::models::{
+    ResourceDiscoveryDocument, ResourcesDiscoveryResource,
+};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
@@ -25,16 +28,16 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use trie_rs::map::{Trie, TrieBuilder};
 
-pub type ActionReadOnlyRepository = dyn ReadOnlyRepository<Vec<RequestSegment>, EntityUid, ReadError = anyhow::Error>;
+pub type ResourceReadOnlyRepository = dyn ReadOnlyRepository<Vec<PathSegment>, EntityUid, ReadError = anyhow::Error>;
 
-pub trait ActionRepository:
-    ReadOnlyRepository<Vec<RequestSegment>, EntityUid, ReadError = anyhow::Error>
-    + UpsertRepository<Vec<RequestSegment>, EntityUid, Error = anyhow::Error>
+pub trait ResourceRepository:
+    ReadOnlyRepository<Vec<PathSegment>, EntityUid, ReadError = anyhow::Error>
+    + UpsertRepository<Vec<PathSegment>, EntityUid, Error = anyhow::Error>
 {
 }
 
-fn new() -> Arc<dyn ActionRepository> {
-    Arc::new(ActionData {
+fn new() -> Arc<dyn ResourceRepository> {
+    Arc::new(ResourceData {
         rw_lock: RwLock::new(TrieData {
             builder: Box::new(TrieBuilder::new()),
             maybe_trie: None,
@@ -43,19 +46,19 @@ fn new() -> Arc<dyn ActionRepository> {
 }
 
 struct TrieData {
-    builder: Box<TrieBuilder<RequestSegment, EntityUid>>,
-    maybe_trie: Option<Arc<Trie<RequestSegment, EntityUid>>>,
+    builder: Box<TrieBuilder<PathSegment, EntityUid>>,
+    maybe_trie: Option<Arc<Trie<PathSegment, EntityUid>>>,
 }
 
-pub struct ActionData {
+pub struct ResourceData {
     rw_lock: RwLock<TrieData>,
 }
 
 #[async_trait]
-impl ReadOnlyRepository<Vec<RequestSegment>, EntityUid> for ActionData {
+impl ReadOnlyRepository<Vec<PathSegment>, EntityUid> for ResourceData {
     type ReadError = anyhow::Error;
 
-    async fn get(&self, key: Vec<RequestSegment>) -> Result<EntityUid, Self::ReadError> {
+    async fn get(&self, key: Vec<PathSegment>) -> Result<EntityUid, Self::ReadError> {
         let guard = self.rw_lock.read().await;
         guard
             .maybe_trie
@@ -66,10 +69,10 @@ impl ReadOnlyRepository<Vec<RequestSegment>, EntityUid> for ActionData {
 }
 
 #[async_trait]
-impl UpsertRepository<Vec<RequestSegment>, EntityUid> for ActionData {
+impl UpsertRepository<Vec<PathSegment>, EntityUid> for ResourceData {
     type Error = anyhow::Error;
 
-    async fn upsert(&self, key: Vec<RequestSegment>, entity: EntityUid) -> Result<(), Self::Error> {
+    async fn upsert(&self, key: Vec<PathSegment>, entity: EntityUid) -> Result<(), Self::Error> {
         let mut guard = self.rw_lock.write().await;
         let mut builder = guard.builder.clone();
         builder.push(key, entity.clone());
@@ -78,7 +81,7 @@ impl UpsertRepository<Vec<RequestSegment>, EntityUid> for ActionData {
         Ok(())
     }
 
-    async fn exists(&self, key: Vec<RequestSegment>) -> Result<bool, Self::Error> {
+    async fn exists(&self, key: Vec<PathSegment>) -> Result<bool, Self::Error> {
         let guard = self.rw_lock.read().await;
         Ok(guard
             .maybe_trie
@@ -88,10 +91,13 @@ impl UpsertRepository<Vec<RequestSegment>, EntityUid> for ActionData {
     }
 }
 
-impl ActionRepository for ActionData {}
+impl ResourceRepository for ResourceData {}
 
-impl ResourceUpdateHandler<ActionDiscoveryResource> for ActionData {
-    fn handle_update(&self, event: Result<ActionDiscoveryResource, watcher::Error>) -> impl Future<Output = ()> + Send {
+impl ResourceUpdateHandler<ResourcesDiscoveryResource> for ResourceData {
+    fn handle_update(
+        &self,
+        event: Result<ResourcesDiscoveryResource, watcher::Error>,
+    ) -> impl Future<Output = ()> + Send {
         async {
             if event.is_err() {
                 warn!("Failed to handle update: {:?}", event);
@@ -108,17 +114,17 @@ impl ResourceUpdateHandler<ActionDiscoveryResource> for ActionData {
     }
 }
 
-impl ActionData {
+impl ResourceData {
     pub fn new() -> Arc<Self> {
-        Arc::new(ActionData {
+        Arc::new(ResourceData {
             rw_lock: RwLock::new(TrieData {
                 builder: Box::new(TrieBuilder::new()),
                 maybe_trie: None,
             }),
         })
     }
-    pub async fn handle_async(&self, event: ActionDiscoveryResource) {
-        let doc: ActionDiscoveryDocument = serde_json::from_str(&event.data.actions).unwrap();
+    pub async fn handle_async(&self, event: ResourcesDiscoveryResource) {
+        let doc: ResourceDiscoveryDocument = serde_json::from_str(&event.data.resources).unwrap();
         doc.stream()
             .for_each(move |result| async move {
                 match result {

@@ -2,7 +2,7 @@ use duration_string::DurationString;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-pub struct ActionsRepositorySettings {
+pub struct RepositorySettings {
     pub label_selector_key: String,
     pub label_selector_value: String,
 }
@@ -25,7 +25,8 @@ pub struct KubernetesBackendSettings {
     pub lease_renew_duration: DurationString,
 
     pub schema_repository: SchemaRepositorySettings,
-    pub actions_repository: ActionsRepositorySettings,
+    pub actions_repository: RepositorySettings,
+    pub resource_repository: RepositorySettings,
 }
 
 #[derive(Debug, Deserialize)]
