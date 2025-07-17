@@ -2,7 +2,7 @@ use crate::models::request_context::RequestContext;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
-use strum_macros::EnumString;
+use strum_macros::{Display, EnumString};
 use url::Url;
 
 impl TryFrom<RequestContext> for Vec<RequestSegment> {
@@ -17,8 +17,8 @@ impl TryFrom<RequestContext> for Vec<RequestSegment> {
             .to_string();
         let mut segments = vec![];
         let method = verb.parse::<HTTPMethod>()?;
-        segments.push(RequestSegment::Verb(method));
         segments.push(RequestSegment::Hostname(hostname));
+        segments.push(RequestSegment::Verb(method));
 
         for part in uri.path().split('/') {
             if part.is_empty() {
@@ -58,7 +58,7 @@ pub enum HTTPMethod {
 ///   - Static: `resource`
 ///   - Parameter: `{id}`
 /// Does not include the query string or fragment.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Display)]
 pub enum RequestSegment {
     Verb(HTTPMethod),
     Hostname(String),
