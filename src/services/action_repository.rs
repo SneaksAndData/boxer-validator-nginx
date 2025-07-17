@@ -21,6 +21,7 @@ use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRe
 use cedar_policy::EntityUid;
 use futures::stream::StreamExt;
 use kube::runtime::watcher;
+use log::info;
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -34,7 +35,7 @@ pub trait ActionRepository:
 {
 }
 
-pub fn new() -> Arc<dyn ActionRepository> {
+fn new() -> Arc<dyn ActionRepository> {
     Arc::new(ActionData {
         rw_lock: RwLock::new(TrieData {
             builder: Box::new(TrieBuilder::new()),
@@ -97,7 +98,14 @@ impl ResourceUpdateHandler<ActionDiscoveryResource> for ActionData {
             if event.is_err() {
                 warn!("Failed to handle update: {:?}", event);
             }
-            self.handle_async(event.unwrap()).await
+            {
+                info!("Updating action discovery trie");
+                let mut guard = self.rw_lock.write().await;
+                guard.builder = Box::new(TrieBuilder::new());
+                guard.maybe_trie = None;
+            }
+            self.handle_async(event.unwrap()).await;
+            info!("Finished updating action discovery trie");
         }
     }
 }
