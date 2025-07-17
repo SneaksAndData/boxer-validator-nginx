@@ -1,4 +1,4 @@
-use crate::action_repository::ActionRepository;
+use crate::services::repositories::action_repository::ActionRepository;
 use std::sync::Arc;
 
 pub trait ActionRepositorySource: Send + Sync {

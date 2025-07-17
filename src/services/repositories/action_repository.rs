@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 // Use log crate when building application
 #[cfg(not(test))]
 use log::{debug, warn};
@@ -6,14 +9,10 @@ use log::{debug, warn};
 #[cfg(test)]
 use std::{println as warn, println as debug};
 
-#[cfg(test)]
-mod tests;
-
 pub mod backend;
-pub mod models;
 
-use crate::services::action_repository::backend::{ActionDiscoveryDocument, ActionDiscoveryResource};
-use crate::services::action_repository::models::RequestSegment;
+use crate::services::repositories::action_repository::backend::{ActionDiscoveryDocument, ActionDiscoveryResource};
+use crate::services::repositories::models::RequestSegment;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;

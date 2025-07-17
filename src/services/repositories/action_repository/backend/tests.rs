@@ -1,8 +1,8 @@
 use crate::models::request_context::RequestContext;
-use crate::services::action_repository::backend::test_data::{test_routes, test_updated_routes};
-use crate::services::action_repository::backend::ActionRepositoryBackend;
-use crate::services::action_repository::models::RequestSegment;
-use crate::services::action_repository::ActionData;
+use crate::services::repositories::action_repository::backend::test_data::{test_routes, test_updated_routes};
+use crate::services::repositories::action_repository::backend::ActionRepositoryBackend;
+use crate::services::repositories::action_repository::ActionData;
+use crate::services::repositories::models::RequestSegment;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;

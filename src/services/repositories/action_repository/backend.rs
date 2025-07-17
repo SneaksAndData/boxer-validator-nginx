@@ -2,8 +2,9 @@ mod test_data;
 #[cfg(test)]
 mod tests;
 
-use crate::services::action_repository::models::RequestSegment::{Parameter, Verb};
-use crate::services::action_repository::models::{HTTPMethod, RequestSegment};
+use crate::services::repositories::models::PathSegment::{Parameter, Static};
+use crate::services::repositories::models::RequestSegment::{Path, Verb};
+use crate::services::repositories::models::{HTTPMethod, RequestSegment};
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::{
@@ -41,9 +42,9 @@ impl TryInto<Vec<RequestSegment>> for ActionRoute {
                 continue;
             }
             if segment.starts_with('{') && segment.ends_with('}') {
-                segments.push(Parameter)
+                segments.push(Path(Parameter))
             } else {
-                segments.push(RequestSegment::Static(segment.to_string()))
+                segments.push(Path(Static(segment.to_string())))
             }
         }
         Ok(segments)
