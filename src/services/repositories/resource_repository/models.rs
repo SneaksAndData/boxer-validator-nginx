@@ -48,6 +48,7 @@ pub struct ResourceDiscoveryDocumentData {
 }
 
 impl ResourceDiscoveryDocument {
+    #[allow(dead_code)]
     pub fn stream(self) -> impl Stream<Item = Result<(Vec<PathSegment>, EntityUid), anyhow::Error>> {
         stream::iter(self.routes).map(move |route| {
             let action_uid: EntityUid = EntityUid::from_str(&route.resource_uid).map_err(anyhow::Error::from)?;

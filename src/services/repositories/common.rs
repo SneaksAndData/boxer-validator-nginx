@@ -23,7 +23,10 @@ pub trait TrieRepository<Key>:
 where
     Key: Ord + 'static + Send + Sync + Debug + Clone,
 {
+    #[allow(dead_code)]
     async fn write_lock(&self) -> RwLockWriteGuard<'_, TrieData<Key>>;
+
+    #[allow(dead_code)]
     async fn refresh_trie(&self) -> () {
         info!("Updating action discovery trie");
         let mut guard = self.write_lock().await;
@@ -108,6 +111,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 trait CollectionResource<'de, In, Out>: Resource + Serialize + Deserialize<'de> + Clone
 where
     In: TryInto<EntityUid, Error = anyhow::Error>
@@ -131,6 +135,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 trait CollectionResourceUpdateHandler<Key, In, R>: ResourceUpdateHandler<R>
 where
     In: TryInto<EntityUid, Error = anyhow::Error>
