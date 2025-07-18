@@ -125,6 +125,22 @@ pub enum PathSegment {
     Parameter,
 }
 
+impl TryFrom<RequestContext> for Vec<PathSegment> {
+    type Error = anyhow::Error;
+
+    fn try_from(context: RequestContext) -> Result<Self, Self::Error> {
+        let uri = Url::parse(context.original_url.as_str())?;
+        let mut segments = vec![];
+        for part in uri.path().split('/') {
+            if part.is_empty() {
+                continue; // Skip empty segments
+            }
+            segments.push(PathSegment::Static(part.to_string()));
+        }
+        Ok(segments)
+    }
+}
+
 impl Ord for PathSegment {
     fn cmp(&self, other: &Self) -> Ordering {
         match self {

@@ -1,3 +1,4 @@
+pub mod models;
 #[cfg(test)]
 mod tests;
 
@@ -9,9 +10,7 @@ use log::{debug, warn};
 #[cfg(test)]
 use std::{println as warn, println as debug};
 
-pub mod backend;
-
-use crate::services::repositories::action_repository::backend::{ActionDiscoveryDocument, ActionDiscoveryResource};
+use crate::services::repositories::action_repository::models::{ActionDiscoveryDocument, ActionDiscoveryResource};
 use crate::services::repositories::models::RequestSegment;
 use anyhow::anyhow;
 use async_trait::async_trait;

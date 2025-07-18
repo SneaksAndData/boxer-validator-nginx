@@ -1,7 +1,8 @@
 use crate::models::request_context::RequestContext;
-use crate::services::repositories::action_repository::backend::test_data::{test_routes, test_updated_routes};
-use crate::services::repositories::action_repository::backend::ActionRepositoryBackend;
+use crate::services::repositories::action_repository::models::ActionDiscoveryResource;
 use crate::services::repositories::action_repository::ActionData;
+use crate::services::repositories::backend::test_data::{test_routes, test_updated_routes};
+use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
 use crate::services::repositories::models::RequestSegment;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
@@ -17,7 +18,7 @@ use test_context::{test_context, AsyncTestContext};
 
 struct ActionRepositoryTestContext {
     raw_api: Arc<Api<ConfigMap>>,
-    repository: Arc<ActionRepositoryBackend>,
+    repository: Arc<ReadOnlyRepositoryBackend>,
     action_data: Arc<ActionData>,
     namespace: String,
 }
@@ -42,7 +43,7 @@ impl AsyncTestContext for ActionRepositoryTestContext {
         };
 
         let action_data = ActionData::new();
-        let repository = ActionRepositoryBackend::start(config, action_data.clone())
+        let repository = ReadOnlyRepositoryBackend::start(config, action_data.clone())
             .await
             .expect("Failed to start ActionReadOnlyRepository");
 
@@ -55,7 +56,8 @@ impl AsyncTestContext for ActionRepositoryTestContext {
     }
 
     async fn teardown(self) {
-        self.repository.stop().unwrap()
+        <ReadOnlyRepositoryBackend as KubernetesResourceWatcher<ActionDiscoveryResource>>::stop(&self.repository)
+            .unwrap()
     }
 }
 
