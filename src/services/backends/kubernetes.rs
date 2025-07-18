@@ -12,7 +12,7 @@ use std::sync::Arc;
 pub struct KubernetesBackend {
     schema_repository: Arc<SchemaRepository>,
     action_repository: Arc<dyn ActionRepository>,
-    resource_repository: Arc<dyn ResourceRepository>,
+    resource_repository: Arc<ResourceRepository>,
 
     // This field is required since we want to hold the reference to the backend until
     // the backend is dropped.
@@ -35,7 +35,7 @@ impl ActionRepositorySource for KubernetesBackend {
 }
 
 impl ResourceRepositorySource for KubernetesBackend {
-    fn get_resource_repository(&self) -> Arc<dyn ResourceRepository> {
+    fn get_resource_repository(&self) -> Arc<ResourceRepository> {
         self.resource_repository.clone()
     }
 }

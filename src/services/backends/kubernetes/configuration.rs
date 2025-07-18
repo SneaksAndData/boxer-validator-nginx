@@ -3,7 +3,7 @@ use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::KubernetesBackendSettings;
 use crate::services::repositories::action_repository::ActionData;
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
-use crate::services::repositories::resource_repository::ResourceData;
+use crate::services::repositories::resource_repository::ResourceRepository;
 use anyhow::bail;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_command, from_file};
@@ -65,7 +65,6 @@ impl BackendConfiguration for BackendBuilder {
         let action_data = ActionData::new();
         let action_repository = ReadOnlyRepositoryBackend::start(repository_config, action_data.clone()).await?;
 
-        let resource_data = ResourceData::new();
         let repository_config = KubernetesResourceManagerConfig {
             namespace: settings.namespace.clone(),
             label_selector_key: settings.resource_repository.label_selector_key.clone(),
@@ -81,7 +80,7 @@ impl BackendConfiguration for BackendBuilder {
         Ok(Arc::new(KubernetesBackend {
             schema_repository: Arc::new(schema_repository),
             action_repository: action_data,
-            resource_repository: resource_data,
+            resource_repository: Arc::new(ResourceRepository::new()),
 
             action_repository_backend: Arc::new(action_repository),
             resource_repository_backend: Arc::new(resource_repository),
