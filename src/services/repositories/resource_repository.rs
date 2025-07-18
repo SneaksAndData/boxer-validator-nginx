@@ -36,15 +36,6 @@ pub trait ResourceRepository:
 {
 }
 
-fn new() -> Arc<dyn ResourceRepository> {
-    Arc::new(ResourceData {
-        rw_lock: RwLock::new(TrieData {
-            builder: Box::new(TrieBuilder::new()),
-            maybe_trie: None,
-        }),
-    })
-}
-
 struct TrieData {
     builder: Box<TrieBuilder<PathSegment, EntityUid>>,
     maybe_trie: Option<Arc<Trie<PathSegment, EntityUid>>>,
