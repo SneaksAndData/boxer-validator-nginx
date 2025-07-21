@@ -7,7 +7,7 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::Res
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::PolicySet;
 use kube::runtime::watcher;
-use log::{debug, info, warn};
+use log::{debug, warn};
 use std::future::Future;
 use std::str::FromStr;
 use tokio::sync::RwLock;
