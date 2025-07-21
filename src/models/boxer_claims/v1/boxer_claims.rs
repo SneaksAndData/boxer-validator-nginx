@@ -1,10 +1,7 @@
 use crate::http::filters::jwt_filter::DynamicClaimsCollection;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
-use cedar_policy::PolicySet;
-use flate2::read::ZlibDecoder;
 use std::convert::TryFrom;
-use std::io::Read;
 
 // This claim should be always present in the boxer token
 const API_VERSION_KEY: &str = "boxer.sneaksanddata.com/api-version";
@@ -23,20 +20,6 @@ pub struct BoxerClaims {
     pub user_id: String,
     pub identity_provider: String,
     pub schema: String,
-}
-
-impl BoxerClaims {
-    pub fn parse(&self) -> Result<PolicySet, anyhow::Error> {
-        let policy = self.policy.clone();
-        let decompressed_policy = {
-            let bytes = STANDARD.decode(policy)?;
-            let mut decoder = ZlibDecoder::new(&bytes[..]);
-            let mut result = String::new();
-            decoder.read_to_string(&mut result)?;
-            result
-        };
-        decompressed_policy.parse::<PolicySet>().map_err(|e| anyhow::anyhow!(e))
-    }
 }
 
 impl TryFrom<&DynamicClaimsCollection> for BoxerClaims {

@@ -27,6 +27,7 @@ pub struct KubernetesBackendSettings {
     pub schema_repository: SchemaRepositorySettings,
     pub actions_repository: RepositorySettings,
     pub resource_repository: RepositorySettings,
+    pub policy_repository: RepositorySettings,
 }
 
 #[derive(Debug, Deserialize)]
