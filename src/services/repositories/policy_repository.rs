@@ -7,7 +7,7 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::Res
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::PolicySet;
 use kube::runtime::watcher;
-use log::{info, warn};
+use log::{debug, info, warn};
 use std::future::Future;
 use std::str::FromStr;
 use tokio::sync::RwLock;
@@ -49,7 +49,7 @@ impl ResourceUpdateHandler<PolicyResource> for PolicyRepositoryData {
             match event {
                 Err(err) => warn!("Error while fetching policy: {:?}", err),
                 Ok(event) => {
-                    info!("Received policy update: {:?}", event);
+                    debug!("Received policy update: {:?}", event);
                     let policies = PolicySet::from_str(&event.data.policies);
                     match policies {
                         Err(err) => warn!("Failed to parse policy set: {:?}", err),
@@ -57,7 +57,6 @@ impl ResourceUpdateHandler<PolicyResource> for PolicyRepositoryData {
                     }
                 }
             }
-            info!("Finished updating action discovery trie");
         }
     }
 }
