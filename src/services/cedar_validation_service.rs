@@ -3,6 +3,7 @@ use crate::models::request_context::RequestContext;
 use crate::services::base::schema_provider::SchemaProvider;
 use crate::services::base::validation_service::ValidationService;
 use crate::services::repositories::action_repository::ActionReadOnlyRepository;
+use crate::services::repositories::policy_repository::PolicyRepository;
 use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use async_trait::async_trait;
 use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
@@ -12,10 +13,10 @@ use std::sync::Arc;
 
 pub struct CedarValidationService {
     authorizer: Authorizer,
-    #[allow(dead_code)]
     schema_provider: Arc<dyn SchemaProvider>,
     action_repository: Arc<ActionReadOnlyRepository>,
     resource_repository: Arc<ResourceReadOnlyRepository>,
+    policy_repository: Arc<PolicyRepository>,
 }
 
 impl CedarValidationService {
@@ -23,12 +24,14 @@ impl CedarValidationService {
         schema_provider: Arc<dyn SchemaProvider>,
         action_repository: Arc<ActionReadOnlyRepository>,
         resource_repository: Arc<ResourceReadOnlyRepository>,
+        policy_repository: Arc<PolicyRepository>,
     ) -> Self {
         CedarValidationService {
             authorizer: Authorizer::new(),
             schema_provider,
             action_repository,
             resource_repository,
+            policy_repository,
         }
     }
 }
@@ -43,8 +46,8 @@ impl ValidationService for CedarValidationService {
             .resource_repository
             .get(request_context.clone().try_into()?)
             .await?;
+        let policy_set = self.policy_repository.get(()).await?;
 
-        let policy_set = boxer_claims.parse()?;
         let actor: EntityUid = boxer_claims.try_into()?;
 
         let entities = Entities::empty();
