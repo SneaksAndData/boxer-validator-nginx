@@ -3,6 +3,7 @@ use crate::models::request_context::RequestContext;
 use crate::services::base::schema_provider::SchemaProvider;
 use crate::services::base::validation_service::ValidationService;
 use crate::services::repositories::action_repository::ActionReadOnlyRepository;
+use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use async_trait::async_trait;
 use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
 use log::{debug, info};
@@ -14,14 +15,20 @@ pub struct CedarValidationService {
     #[allow(dead_code)]
     schema_provider: Arc<dyn SchemaProvider>,
     action_repository: Arc<ActionReadOnlyRepository>,
+    resource_repository: Arc<ResourceReadOnlyRepository>,
 }
 
 impl CedarValidationService {
-    pub fn new(schema_provider: Arc<dyn SchemaProvider>, action_repository: Arc<ActionReadOnlyRepository>) -> Self {
+    pub fn new(
+        schema_provider: Arc<dyn SchemaProvider>,
+        action_repository: Arc<ActionReadOnlyRepository>,
+        resource_repository: Arc<ResourceReadOnlyRepository>,
+    ) -> Self {
         CedarValidationService {
             authorizer: Authorizer::new(),
             schema_provider,
             action_repository,
+            resource_repository,
         }
     }
 }
@@ -31,12 +38,14 @@ impl ValidationService for CedarValidationService {
     async fn validate(&self, boxer_claims: BoxerClaims, request_context: RequestContext) -> Result<(), anyhow::Error> {
         let schema = self.schema_provider.get_schema(&boxer_claims).await?;
         debug!("Cedar validation schemas: {:?}", schema);
+        let action = self.action_repository.get(request_context.clone().try_into()?).await?;
+        let resource = self
+            .resource_repository
+            .get(request_context.clone().try_into()?)
+            .await?;
 
         let policy_set = boxer_claims.parse()?;
         let actor: EntityUid = boxer_claims.try_into()?;
-        let action = self.action_repository.get(request_context.clone().try_into()?).await?;
-
-        let resource = request_context.to_resource()?;
 
         let entities = Entities::empty();
         let request = Request::new(actor, action, resource, Context::empty(), None)?;
