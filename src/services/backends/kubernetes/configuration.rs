@@ -3,6 +3,7 @@ use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::KubernetesBackendSettings;
 use crate::services::repositories::action_repository::ActionData;
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
+use crate::services::repositories::policy_repository::PolicyRepositoryData;
 use crate::services::repositories::resource_repository::ResourceRepository;
 use anyhow::bail;
 use async_trait::async_trait;
@@ -76,18 +77,34 @@ impl BackendConfiguration for BackendBuilder {
             lease_name: settings.lease_name.clone(),
             lease_duration: settings.lease_duration.into(),
             renew_deadline: settings.lease_renew_duration.into(),
+            claimant: instance_name.clone(),
+            kubeconfig: kubeconfig.clone(),
+        };
+        let resource_repository = ReadOnlyRepositoryBackend::start(repository_config, action_data.clone()).await?;
+
+        let repository_config = KubernetesResourceManagerConfig {
+            namespace: settings.namespace.clone(),
+            label_selector_key: settings.policy_repository.label_selector_key.clone(),
+            label_selector_value: settings.policy_repository.label_selector_value.clone(),
+            lease_name: settings.lease_name.clone(),
+            lease_duration: settings.lease_duration.into(),
+            renew_deadline: settings.lease_renew_duration.into(),
             claimant: instance_name,
             kubeconfig,
         };
-        let resource_repository = ReadOnlyRepositoryBackend::start(repository_config, action_data.clone()).await?;
+        let policy_data = Arc::new(PolicyRepositoryData::new());
+        let policy_repository_backend =
+            ReadOnlyRepositoryBackend::start(repository_config, policy_data.clone()).await?;
 
         Ok(Arc::new(KubernetesBackend {
             schema_repository: Arc::new(schema_repository),
             action_repository: action_data,
             resource_repository: Arc::new(ResourceRepository::new()),
+            policy_repository: policy_data,
 
             action_repository_backend: Arc::new(action_repository),
             resource_repository_backend: Arc::new(resource_repository),
+            policy_repository_backend: Arc::new(policy_repository_backend),
         }))
     }
 }
