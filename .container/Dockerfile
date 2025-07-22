@@ -11,5 +11,4 @@ RUN apt-get update -y && apt-get install -y curl
 
 WORKDIR /app
 COPY --from=build-env /app/src/target/release .
-USER app
-ENTRYPOINT ["boxer-validator-nginx"]
+CMD ["/app/boxer-validator-nginx"]
