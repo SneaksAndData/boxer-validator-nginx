@@ -8,6 +8,7 @@ use crate::http::controllers::token_review;
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::services::backends;
 use crate::services::base::actions_repository_source::ActionRepositorySource;
+use crate::services::base::policy_repository_source::PolicyRepositorySource;
 use crate::services::base::resource_repository_source::ResourceRepositorySource;
 use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
@@ -40,10 +41,12 @@ async fn main() -> Result<()> {
     ));
     let action_repository = current_backend.get_actions_repository();
     let resource_repository = current_backend.get_resource_repository();
+    let policy_repository = current_backend.get_policy_repository();
     let cedar_validation_service = Arc::new(CedarValidationService::new(
         schema_provider,
         action_repository,
         resource_repository,
+        policy_repository,
     ));
 
     HttpServer::new(move || {
