@@ -73,9 +73,9 @@ spec:
               value: {{ .Values.validator.config.backend.kubernetes.actionDiscoverySettings.labelSelectorKey}}
             - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__ACTIONS_REPOSITORY__LABEL_SELECTOR_VALUE
               value: {{ .Values.validator.config.backend.kubernetes.actionDiscoverySettings.labelSelectorValue}}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__RESOURCES_REPOSITORY__LABEL_SELECTOR_KEY
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__RESOURCE_REPOSITORY__LABEL_SELECTOR_KEY
               value: {{ .Values.validator.config.backend.kubernetes.resourceDiscoverySettings.labelSelectorKey}}
-            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__RESOURCES_REPOSITORY__LABEL_SELECTOR_VALUE
+            - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__RESOURCE_REPOSITORY__LABEL_SELECTOR_VALUE
               value: {{ .Values.validator.config.backend.kubernetes.resourceDiscoverySettings.labelSelectorValue}}
             - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__POLICY_REPOSITORY__LABEL_SELECTOR_KEY
               value: {{ .Values.validator.config.backend.kubernetes.policySettings.labelSelectorKey}}
