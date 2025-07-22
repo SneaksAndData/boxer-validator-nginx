@@ -92,3 +92,26 @@ Generate lease name
 {{- printf "%s-%s" (include "app.fullname" .) "lease" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end }}
+
+
+{{/*
+Generate the Template editor cluster role name
+*/}}
+{{- define "app.clusteRole.configMapEditor" -}}
+{{- if .Values.rbac.clusterRole.configMapEditor.nameOverride }}
+{{- .Values.rbac.clusterRole.configMapEditor.nameOverride }}
+{{- else }}
+{{- printf "%s-configmap-editor" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate the Template editor cluster role name
+*/}}
+{{- define "app.clusteRole.leaseEditor" -}}
+{{- if .Values.rbac.clusterRole.leaseEditor.nameOverride }}
+{{- .Values.rbac.clusterRole.leaseEditor.nameOverride }}
+{{- else }}
+{{- printf "%s-lease-editor" (include "app.fullname" .) }}
+{{- end }}
+{{- end }}

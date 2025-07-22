@@ -105,6 +105,36 @@ securityContext:
   seccompProfile:
     type: RuntimeDefault
 
+
+### Role Based Access Control configuration
+rbac:
+
+  # Specifies whether RBAC resources should be created
+  clusterRole:
+
+    # Allows Nexus to manage its custom resources in the installation namespace
+    configMapEditor:
+      additionalLabels: { }
+      additionalAnnotations: { }
+      create: true
+      nameOverride: ""
+
+    # Allows Nexus to manage its custom resources in the installation namespace
+    leaseEditor:
+      additionalLabels: { }
+      additionalAnnotations: { }
+      create: true
+      nameOverride: ""
+
+  # This parameter determines whether role binding resources need to be created.
+  # If you have any roles in your configuration set to 'true', then this parameter for creating role binding resources
+  # should also be set to 'true'.
+  clusterRoleBindings:
+    additionalLabels: { }
+    additionalAnnotations: { }
+    create: true
+
+
 # The Boxer validator configuration
 validator:
 
@@ -141,6 +171,9 @@ validator:
   # Whole config can also be overridden by setting config.enabled=false and mounting a new settings.toml to /app path in the container
   config:
     enabled: true
+
+    # The port on which the validator listens for HTTP requests
+    port: 8081
 
     # The instance name for the validator
     # Used to generate the lease name and other instance-specific settings

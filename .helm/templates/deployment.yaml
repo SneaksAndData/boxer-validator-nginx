@@ -37,6 +37,10 @@ spec:
       {{- end }}
       containers:
         - name: boxer-validator
+          ports:
+            - containerPort: {{ .Values.validator.config.port }}
+              name: http
+              protocol: TCP
         {{- with .Values.securityContext }}
           securityContext:
         {{ toYaml . | nindent 12 }}
