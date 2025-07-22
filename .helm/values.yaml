@@ -111,6 +111,8 @@ validator:
   # Number of replicas for the validator deployment
   replicas: 3
 
+  maxUnavailable: 1
+
   # The deployment strategy for the validator
   deploymentStrategy:
     type: RollingUpdate
@@ -123,7 +125,6 @@ validator:
       # Maximum number of pods that can be created over the desired number of pods
       maxSurge: 1
 
-  # TODO
   # autoscaling configuration
   autoscaling:
     enabled: false
