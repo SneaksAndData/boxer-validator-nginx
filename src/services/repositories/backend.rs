@@ -1,3 +1,4 @@
+#[cfg(test)]
 mod test_data;
 #[cfg(test)]
 mod tests;
