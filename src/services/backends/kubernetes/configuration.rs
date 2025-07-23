@@ -7,7 +7,7 @@ use crate::services::repositories::policy_repository::PolicyRepositoryData;
 use crate::services::repositories::resource_repository::ResourceRepository;
 use anyhow::bail;
 use async_trait::async_trait;
-use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_command, from_file};
+use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::KubernetesSchemaRepository;
@@ -25,12 +25,16 @@ impl BackendConfiguration for BackendBuilder {
         instance_name: String,
     ) -> anyhow::Result<Arc<Self::InitializedBackend>> {
         let kubeconfig = match settings {
+            KubernetesBackendSettings { in_cluster: true, .. } => from_cluster().load()?,
+
             KubernetesBackendSettings {
                 kubeconfig: Some(path), ..
             } => from_file().load(&path).await?,
+
             KubernetesBackendSettings {
                 exec: Some(command), ..
             } => from_command().load(&command).await?,
+
             KubernetesBackendSettings {
                 kubeconfig: None,
                 exec: None,

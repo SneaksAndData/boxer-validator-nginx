@@ -1,4 +1,6 @@
 pub mod models;
+
+#[cfg(test)]
 mod tests;
 
 use crate::services::repositories::policy_repository::models::PolicyResource;

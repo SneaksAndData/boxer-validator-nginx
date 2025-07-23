@@ -33,6 +33,7 @@ pub trait ActionRepository:
 {
 }
 
+#[allow(dead_code)]
 fn new() -> Arc<dyn ActionRepository> {
     Arc::new(ActionData {
         rw_lock: RwLock::new(TrieData {

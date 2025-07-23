@@ -1,3 +1,4 @@
+#[cfg(test)]
 mod test_data;
 
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
