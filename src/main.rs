@@ -6,6 +6,7 @@ mod services;
 use crate::http::controllers::schema;
 use crate::http::controllers::token_review;
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
+use crate::http::openapi::ApiDoc;
 use crate::services::backends;
 use crate::services::base::actions_repository_source::ActionRepositorySource;
 use crate::services::base::policy_repository_source::PolicyRepositorySource;
@@ -13,11 +14,14 @@ use crate::services::base::resource_repository_source::ResourceRepositorySource;
 use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
 use crate::services::schema_provider::KubernetesSchemaProvider;
+use actix_web::middleware::Condition;
 use actix_web::{web, App, HttpServer};
 use anyhow::Result;
 use boxer_core::services::backends::BackendConfiguration;
 use log::info;
 use std::sync::Arc;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -49,14 +53,19 @@ async fn main() -> Result<()> {
         policy_repository,
     ));
 
+    let debug_mode = !std::env::var("BOXER_ISSUER_DEBUG").is_ok();
+
+    let schema_repository = current_backend.get_schemas_repository();
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(cedar_validation_service.clone()))
+            .app_data(web::Data::new(schema_repository.clone()))
             // The last middleware in the chain should always be InternalTokenMiddleware
             // to ensure that the token is valid in the beginning of the request processing
-            .wrap(InternalTokenMiddlewareFactory::new())
+            .wrap(Condition::new(debug_mode, InternalTokenMiddlewareFactory::new()))
             .service(schema::crud())
             .service(token_review::get)
+            .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(addr)?
     .run()

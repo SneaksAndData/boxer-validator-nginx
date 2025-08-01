@@ -79,13 +79,13 @@ impl UpsertRepository<Vec<RequestSegment>, EntityUid> for ActionData {
         Ok(())
     }
 
-    async fn exists(&self, key: Vec<RequestSegment>) -> Result<bool, Self::Error> {
+    async fn exists(&self, key: Vec<RequestSegment>) -> bool {
         let guard = self.rw_lock.read().await;
-        Ok(guard
+        guard
             .maybe_trie
             .clone()
             .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
-            .is_some())
+            .is_some()
     }
 }
 
