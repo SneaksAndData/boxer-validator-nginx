@@ -3,6 +3,7 @@ mod tests;
 
 use crate::models::request_context::RequestContext;
 use anyhow::anyhow;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use strum_macros::{Display, EnumString};
@@ -34,7 +35,7 @@ impl TryFrom<RequestContext> for Vec<RequestSegment> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, EnumString, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, EnumString, Serialize, Deserialize, JsonSchema)]
 pub enum HTTPMethod {
     #[strum(ascii_case_insensitive)]
     Get,

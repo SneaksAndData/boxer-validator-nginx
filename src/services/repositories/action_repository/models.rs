@@ -7,15 +7,31 @@ use futures::StreamExt;
 use futures_util::stream;
 use k8s_openapi::api::core::v1::ConfigMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kube::Resource;
+use kube::{CustomResource, Resource};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 struct ActionRoute {
     method: HTTPMethod,
     route_template: String,
     action_uid: String,
+}
+
+#[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+#[kube(
+    group = "auth.sneaksanddata.com",
+    version = "v1beta1",
+    kind = "ActionDiscoveryDocument",
+    plural = "action-discovery-documents",
+    singular = "action-discovery-document",
+    namespaced
+)]
+
+pub struct ActionDiscoveryDocumentSpec {
+    hostname: String,
+    routes: Vec<ActionRoute>,
 }
 
 impl TryInto<Vec<RequestSegment>> for ActionRoute {
@@ -37,18 +53,7 @@ impl TryInto<Vec<RequestSegment>> for ActionRoute {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ActionDiscoveryDocument {
-    hostname: String,
-    routes: Vec<ActionRoute>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ActionDiscoveryDocumentData {
-    pub(crate) actions: String,
-}
-
-impl ActionDiscoveryDocument {
+impl ActionDiscoveryDocumentSpec {
     pub fn stream(self) -> impl Stream<Item = Result<(Vec<RequestSegment>, EntityUid), anyhow::Error>> {
         stream::iter(self.routes).map(move |route| {
             let action_uid: EntityUid = EntityUid::from_str(&route.action_uid).map_err(anyhow::Error::from)?;
@@ -58,11 +63,4 @@ impl ActionDiscoveryDocument {
             Ok((key, action_uid))
         })
     }
-}
-
-#[derive(Resource, Serialize, Deserialize, Clone, Debug)]
-#[resource(inherit = ConfigMap)]
-pub struct ActionDiscoveryResource {
-    metadata: ObjectMeta,
-    pub data: ActionDiscoveryDocumentData,
 }

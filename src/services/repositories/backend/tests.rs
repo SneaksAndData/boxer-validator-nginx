@@ -1,5 +1,5 @@
 use crate::models::request_context::RequestContext;
-use crate::services::repositories::action_repository::models::ActionDiscoveryResource;
+use crate::services::repositories::action_repository::models::ActionDiscoveryDocument;
 use crate::services::repositories::action_repository::ActionData;
 use crate::services::repositories::backend::test_data::{test_routes, test_updated_routes};
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
@@ -56,7 +56,7 @@ impl AsyncTestContext for ActionRepositoryTestContext {
     }
 
     async fn teardown(self) {
-        <ReadOnlyRepositoryBackend as KubernetesResourceWatcher<ActionDiscoveryResource>>::stop(&self.repository)
+        <ReadOnlyRepositoryBackend as KubernetesResourceWatcher<ActionDiscoveryDocument>>::stop(&self.repository)
             .unwrap()
     }
 }

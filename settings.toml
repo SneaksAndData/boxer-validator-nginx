@@ -19,4 +19,12 @@ name = "boxer-validator-schema"
 
 [backend.kubernetes.actions_repository]
 label_selector_key = "app.kubernetes.io/component"
-label_selector_value = "validator-schema"
+label_selector_value = "validator-actions"
+
+[backend.kubernetes.resource_repository]
+label_selector_key = "app.kubernetes.io/component"
+label_selector_value = "validator-resources"
+
+[backend.kubernetes.policy_repository]
+label_selector_key = "app.kubernetes.io/component"
+label_selector_value = "validator-policies"
