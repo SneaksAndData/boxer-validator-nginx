@@ -10,7 +10,7 @@ use log::{debug, warn};
 #[cfg(test)]
 use std::{println as warn, println as debug};
 
-use crate::services::repositories::action_repository::models::ActionDiscoveryDocument;
+use crate::services::repositories::action_repository::models::{ActionDiscoveryDocument, ActionDiscoveryResource};
 use crate::services::repositories::models::RequestSegment;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -91,8 +91,8 @@ impl UpsertRepository<Vec<RequestSegment>, EntityUid> for ActionData {
 
 impl ActionRepository for ActionData {}
 
-impl ResourceUpdateHandler<ActionDiscoveryDocument> for ActionData {
-    fn handle_update(&self, event: Result<ActionDiscoveryDocument, watcher::Error>) -> impl Future<Output = ()> + Send {
+impl ResourceUpdateHandler<ActionDiscoveryResource> for ActionData {
+    fn handle_update(&self, event: Result<ActionDiscoveryResource, watcher::Error>) -> impl Future<Output = ()> + Send {
         async {
             if event.is_err() {
                 warn!("Failed to handle update: {:?}", event);
@@ -118,10 +118,9 @@ impl ActionData {
             }),
         })
     }
-    pub async fn handle_async(&self, event: ActionDiscoveryDocument) {
-        event
-            .spec
-            .stream()
+    pub async fn handle_async(&self, event: ActionDiscoveryResource) {
+        let doc: ActionDiscoveryDocument = serde_json::from_str(&event.data.actions).unwrap();
+        doc.stream()
             .for_each(move |result| async move {
                 match result {
                     Ok((segments, action_uid)) => {
