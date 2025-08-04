@@ -2,8 +2,6 @@ pub mod models;
 pub mod read_only;
 pub mod read_write;
 #[cfg(test)]
-mod test_data;
-#[cfg(test)]
 mod tests;
 
 use crate::services::repositories::action_repository::models::{ActionDiscoveryDocument, ActionDiscoveryDocumentSpec};

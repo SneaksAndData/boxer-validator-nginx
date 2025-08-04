@@ -1,7 +1,6 @@
 use crate::services::repositories::models::PathSegment::{Parameter, Static};
 use crate::services::repositories::models::RequestSegment::{Path, Verb};
 use crate::services::repositories::models::{HTTPMethod, RequestSegment};
-use boxer_core::services::backends::kubernetes::repositories::schema_repository::{SchemaDocument, SchemaDocumentSpec};
 use cedar_policy::EntityUid;
 use futures::Stream;
 use futures::StreamExt;

@@ -14,11 +14,12 @@ use std::time::Duration;
 use test_context::{test_context, AsyncTestContext};
 
 struct ActionRepositoryTestContext {
+    #[allow(dead_code)]
     lookup_listener: Arc<ReadOnlyRepositoryBackend>,
+    #[allow(dead_code)]
     repository_listener: Arc<ReadOnlyRepositoryBackend>,
     repository: Arc<ActionDataRepository>,
     lookup: Arc<ActionLookupTrie>,
-    namespace: String,
 }
 
 impl AsyncTestContext for ActionRepositoryTestContext {
@@ -56,7 +57,6 @@ impl AsyncTestContext for ActionRepositoryTestContext {
             repository_listener,
             repository,
             lookup,
-            namespace,
         }
     }
 

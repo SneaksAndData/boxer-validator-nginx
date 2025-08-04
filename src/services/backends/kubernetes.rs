@@ -23,6 +23,7 @@ pub struct KubernetesBackend {
     // the backend is dropped.
     #[allow(dead_code)]
     action_lookup_watcher: Arc<ReadOnlyRepositoryBackend>,
+    #[allow(dead_code)]
     action_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
     #[allow(dead_code)]
     resource_repository_backend: Arc<ReadOnlyRepositoryBackend>,
