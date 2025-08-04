@@ -43,7 +43,7 @@ async fn main() -> Result<()> {
         current_backend.get_schemas_repository(),
         cm.backend.kubernetes.schema_repository.name,
     ));
-    let action_repository = current_backend.get_actions_repository();
+    let action_repository = current_backend.get_readonly_repository();
     let resource_repository = current_backend.get_resource_repository();
     let policy_repository = current_backend.get_policy_repository();
     let cedar_validation_service = Arc::new(CedarValidationService::new(

@@ -1,0 +1,115 @@
+use super::ActionReadOnlyRepositoryInterface;
+use crate::services::repositories::action_repository::models::ActionDiscoveryDocument;
+use crate::services::repositories::models::RequestSegment;
+use anyhow::anyhow;
+use async_trait::async_trait;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
+use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
+use cedar_policy::EntityUid;
+use futures::stream::StreamExt;
+use kube::runtime::watcher;
+use log::{debug, info, warn};
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use trie_rs::map::{Trie, TrieBuilder};
+
+#[cfg(test)]
+mod tests;
+
+struct TrieData {
+    builder: Box<TrieBuilder<RequestSegment, EntityUid>>,
+    maybe_trie: Option<Arc<Trie<RequestSegment, EntityUid>>>,
+}
+
+pub struct ActionLookupTrie {
+    rw_lock: RwLock<TrieData>,
+}
+
+pub fn new() -> Arc<ActionLookupTrie> {
+    Arc::new(ActionLookupTrie {
+        rw_lock: RwLock::new(TrieData {
+            builder: Box::new(TrieBuilder::new()),
+            maybe_trie: None,
+        }),
+    })
+}
+
+#[async_trait]
+impl ReadOnlyRepository<Vec<RequestSegment>, EntityUid> for ActionLookupTrie {
+    type ReadError = anyhow::Error;
+
+    async fn get(&self, key: Vec<RequestSegment>) -> Result<EntityUid, Self::ReadError> {
+        let guard = self.rw_lock.read().await;
+        guard
+            .maybe_trie
+            .clone()
+            .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
+            .ok_or(anyhow!("Entity not found: {:?}", key))
+    }
+}
+
+#[async_trait]
+impl UpsertRepository<Vec<RequestSegment>, EntityUid> for ActionLookupTrie {
+    type Error = anyhow::Error;
+
+    async fn upsert(&self, key: Vec<RequestSegment>, entity: EntityUid) -> Result<(), Self::Error> {
+        let mut guard = self.rw_lock.write().await;
+        let mut builder = guard.builder.clone();
+        builder.push(key, entity.clone());
+        guard.builder = builder.clone();
+        guard.maybe_trie = Some(Arc::new(builder.build()));
+        Ok(())
+    }
+
+    async fn exists(&self, key: Vec<RequestSegment>) -> bool {
+        let guard = self.rw_lock.read().await;
+        guard
+            .maybe_trie
+            .clone()
+            .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
+            .is_some()
+    }
+}
+
+#[async_trait]
+impl ResourceUpdateHandler<ActionDiscoveryDocument> for ActionLookupTrie {
+    async fn handle_update(&self, event: Result<ActionDiscoveryDocument, watcher::Error>) -> () {
+        if event.is_err() {
+            warn!("Failed to handle update: {:?}", event);
+        }
+        {
+            info!("Updating action discovery trie");
+            let mut guard = self.rw_lock.write().await;
+            guard.builder = Box::new(TrieBuilder::new());
+            guard.maybe_trie = None;
+        }
+        self.handle_async(event.unwrap()).await;
+        info!("Finished updating action discovery trie");
+    }
+}
+
+impl ActionLookupTrie {
+    pub async fn handle_async(&self, event: ActionDiscoveryDocument) {
+        event
+            .spec
+            .stream()
+            .for_each(move |result| async move {
+                match result {
+                    Ok((segments, action_uid)) => {
+                        if let Err(e) = self.upsert(segments.clone(), action_uid.clone()).await {
+                            warn!("Failed to upsert action: {}", e);
+                        } else {
+                            debug!(
+                                "Successfully upserted action with key {:?} and UID: {}",
+                                segments, action_uid
+                            );
+                        }
+                    }
+                    Err(e) => warn!("Error processing action route: {}", e),
+                }
+            })
+            .await
+    }
+}
+
+impl ActionReadOnlyRepositoryInterface for ActionLookupTrie {}
