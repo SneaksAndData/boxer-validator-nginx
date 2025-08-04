@@ -1,7 +1,7 @@
 use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::KubernetesBackendSettings;
-use crate::services::repositories::action_repository::ActionData;
+use crate::services::repositories::action_repository;
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
 use crate::services::repositories::policy_repository::PolicyRepositoryData;
 use crate::services::repositories::resource_repository::ResourceRepository;
@@ -67,8 +67,13 @@ impl BackendConfiguration for BackendBuilder {
             claimant: instance_name.clone(),
             kubeconfig: kubeconfig.clone(),
         };
-        let action_data = ActionData::new();
-        let action_repository = ReadOnlyRepositoryBackend::start(repository_config, action_data.clone()).await?;
+        let action_lookup = action_repository::read_only::new();
+        let action_lookup_watcher =
+            ReadOnlyRepositoryBackend::start(repository_config.clone(), action_lookup.clone()).await?;
+
+        let action_repository = action_repository::read_write::new(repository_config.clone()).await;
+        let action_repository_watcher =
+            ReadOnlyRepositoryBackend::start(repository_config, action_lookup.clone()).await?;
 
         let repository_config = KubernetesResourceManagerConfig {
             namespace: settings.namespace.clone(),
@@ -80,7 +85,7 @@ impl BackendConfiguration for BackendBuilder {
             claimant: instance_name.clone(),
             kubeconfig: kubeconfig.clone(),
         };
-        let resource_repository = ReadOnlyRepositoryBackend::start(repository_config, action_data.clone()).await?;
+        let resource_repository = ReadOnlyRepositoryBackend::start(repository_config, action_lookup.clone()).await?;
 
         let repository_config = KubernetesResourceManagerConfig {
             namespace: settings.namespace.clone(),
@@ -98,11 +103,14 @@ impl BackendConfiguration for BackendBuilder {
 
         Ok(Arc::new(KubernetesBackend {
             schema_repository: Arc::new(schema_repository),
-            action_repository: action_data,
+            action_readonly_repository: action_lookup,
             resource_repository: Arc::new(ResourceRepository::new()),
             policy_repository: policy_data,
 
-            action_repository_backend: Arc::new(action_repository),
+            action_lookup_watcher: Arc::new(action_lookup_watcher),
+            action_repository_watcher: Arc::new(action_repository_watcher),
+            action_data_repository: action_repository,
+
             resource_repository_backend: Arc::new(resource_repository),
             policy_repository_backend: Arc::new(policy_repository_backend),
         }))

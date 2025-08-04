@@ -5,17 +5,18 @@ use cedar_policy::EntityUid;
 use futures::Stream;
 use futures::StreamExt;
 use futures_util::stream;
-use k8s_openapi::api::core::v1::ConfigMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kube::Resource;
+use kube::CustomResource;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-struct ActionRoute {
-    method: HTTPMethod,
-    route_template: String,
-    action_uid: String,
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ActionRoute {
+    pub method: HTTPMethod,
+    pub route_template: String,
+    pub action_uid: String,
 }
 
 impl TryInto<Vec<RequestSegment>> for ActionRoute {
@@ -38,31 +39,47 @@ impl TryInto<Vec<RequestSegment>> for ActionRoute {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ActionDiscoveryDocument {
-    hostname: String,
-    routes: Vec<ActionRoute>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ActionDiscoveryDocumentData {
     pub(crate) actions: String,
 }
 
-impl ActionDiscoveryDocument {
+#[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+#[kube(
+    group = "auth.sneaksanddata.com",
+    version = "v1beta1",
+    kind = "ActionDiscoveryDocument",
+    plural = "action-discovery-documents",
+    singular = "action-discovery-document",
+    namespaced
+)]
+
+pub struct ActionDiscoveryDocumentSpec {
+    pub active: bool,
+    pub hostname: String,
+    pub routes: Vec<ActionRoute>,
+}
+
+impl ActionDiscoveryDocumentSpec {
     pub fn stream(self) -> impl Stream<Item = Result<(Vec<RequestSegment>, EntityUid), anyhow::Error>> {
-        stream::iter(self.routes).map(move |route| {
+        let active = stream::repeat(self.active);
+        stream::iter(self.routes).zip(active).map(move |(route, active)| {
             let action_uid: EntityUid = EntityUid::from_str(&route.action_uid).map_err(anyhow::Error::from)?;
             let mut key: Vec<RequestSegment> = vec![RequestSegment::Hostname(self.hostname.clone())];
             let segments: Vec<RequestSegment> = route.try_into()?;
             key.extend(segments);
+            if !active {
+                return Err(anyhow::anyhow!("ActionDiscoveryDocument is not active"));
+            }
             Ok((key, action_uid))
         })
     }
 }
 
-#[derive(Resource, Serialize, Deserialize, Clone, Debug)]
-#[resource(inherit = ConfigMap)]
-pub struct ActionDiscoveryResource {
-    metadata: ObjectMeta,
-    pub data: ActionDiscoveryDocumentData,
+impl Default for ActionDiscoveryDocument {
+    fn default() -> Self {
+        ActionDiscoveryDocument {
+            metadata: ObjectMeta::default(),
+            spec: ActionDiscoveryDocumentSpec::default(),
+        }
+    }
 }

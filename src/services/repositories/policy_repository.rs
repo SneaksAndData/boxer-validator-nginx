@@ -10,7 +10,6 @@ use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::PolicySet;
 use kube::runtime::watcher;
 use log::{debug, warn};
-use std::future::Future;
 use std::str::FromStr;
 use tokio::sync::RwLock;
 
@@ -45,18 +44,17 @@ impl ReadOnlyRepository<(), PolicySet> for PolicyRepositoryData {
     }
 }
 
+#[async_trait]
 impl ResourceUpdateHandler<PolicyResource> for PolicyRepositoryData {
-    fn handle_update(&self, event: Result<PolicyResource, watcher::Error>) -> impl Future<Output = ()> + Send {
-        async {
-            match event {
-                Err(err) => warn!("Error while fetching policy: {:?}", err),
-                Ok(event) => {
-                    debug!("Received policy update: {:?}", event);
-                    let policies = PolicySet::from_str(&event.data.policies);
-                    match policies {
-                        Err(err) => warn!("Failed to parse policy set: {:?}", err),
-                        Ok(policies) => self.set_policies(policies).await,
-                    }
+    async fn handle_update(&self, event: Result<PolicyResource, watcher::Error>) -> () {
+        match event {
+            Err(err) => warn!("Error while fetching policy: {:?}", err),
+            Ok(event) => {
+                debug!("Received policy update: {:?}", event);
+                let policies = PolicySet::from_str(&event.data.policies);
+                match policies {
+                    Err(err) => warn!("Failed to parse policy set: {:?}", err),
+                    Ok(policies) => self.set_policies(policies).await,
                 }
             }
         }

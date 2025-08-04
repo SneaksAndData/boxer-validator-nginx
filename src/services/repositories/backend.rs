@@ -1,8 +1,3 @@
-#[cfg(test)]
-mod test_data;
-#[cfg(test)]
-mod tests;
-
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::{
