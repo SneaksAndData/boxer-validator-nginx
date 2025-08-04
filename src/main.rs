@@ -3,8 +3,8 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::controllers::schema;
 use crate::http::controllers::token_review;
+use crate::http::controllers::{action_set, schema};
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::openapi::ApiDoc;
 use crate::services::backends;
@@ -53,6 +53,8 @@ async fn main() -> Result<()> {
         policy_repository,
     ));
 
+    let action_repository = current_backend.get_action_data_repository();
+
     let debug_mode = !std::env::var("BOXER_ISSUER_DEBUG").is_ok();
 
     let schema_repository = current_backend.get_schemas_repository();
@@ -60,10 +62,12 @@ async fn main() -> Result<()> {
         App::new()
             .app_data(web::Data::new(cedar_validation_service.clone()))
             .app_data(web::Data::new(schema_repository.clone()))
+            .app_data(web::Data::new(action_repository.clone()))
             // The last middleware in the chain should always be InternalTokenMiddleware
             // to ensure that the token is valid in the beginning of the request processing
             .wrap(Condition::new(debug_mode, InternalTokenMiddlewareFactory::new()))
             .service(schema::crud())
+            .service(action_set::crud())
             .service(token_review::get)
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })

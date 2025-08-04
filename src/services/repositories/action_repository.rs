@@ -4,7 +4,8 @@ pub mod read_write;
 #[cfg(test)]
 mod tests;
 
-use crate::services::repositories::action_repository::models::{ActionDiscoveryDocument, ActionDiscoveryDocumentSpec};
+use crate::http::controllers::action_set::models::ActionSetRegistration;
+use crate::services::repositories::action_repository::models::ActionDiscoveryDocument;
 use crate::services::repositories::models::RequestSegment;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::{CanDelete, ReadOnlyRepository, UpsertRepository};
@@ -17,9 +18,9 @@ pub trait ActionReadOnlyRepositoryInterface:
 }
 
 pub trait ActionRepositoryInterface:
-    ReadOnlyRepository<String, ActionDiscoveryDocumentSpec, ReadError = anyhow::Error>
-    + UpsertRepository<String, ActionDiscoveryDocumentSpec, Error = anyhow::Error>
-    + CanDelete<String, ActionDiscoveryDocumentSpec, DeleteError = anyhow::Error>
+    ReadOnlyRepository<String, ActionSetRegistration, ReadError = anyhow::Error>
+    + UpsertRepository<String, ActionSetRegistration, Error = anyhow::Error>
+    + CanDelete<String, ActionSetRegistration, DeleteError = anyhow::Error>
 {
 }
 
