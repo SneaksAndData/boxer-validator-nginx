@@ -80,7 +80,7 @@ async fn test_create_read_document(ctx: &mut ActionRepositoryTestContext) {
     };
 
     ctx.repository
-        .upsert("action-discovery-document".to_string(), spec.clone())
+        .upsert("action-discovery-document".to_string(), spec.clone().into())
         .await
         .unwrap();
 
@@ -111,7 +111,7 @@ async fn test_create_read_path(ctx: &mut ActionRepositoryTestContext) {
     };
 
     ctx.repository
-        .upsert("action-discovery-document".to_string(), spec.clone())
+        .upsert("action-discovery-document".to_string(), spec.clone().into())
         .await
         .unwrap();
 
@@ -143,7 +143,7 @@ async fn test_reacts_on_deletions(ctx: &mut ActionRepositoryTestContext) {
     };
 
     ctx.repository
-        .upsert("action-discovery-document-deleted".to_string(), spec.clone())
+        .upsert("action-discovery-document-deleted".to_string(), spec.clone().into())
         .await
         .unwrap();
 

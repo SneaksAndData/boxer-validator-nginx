@@ -1,3 +1,4 @@
+use crate::http::controllers::action_set::models::ActionSetRegistration;
 use crate::services::repositories::action_repository::models::{ActionDiscoveryDocument, ActionDiscoveryDocumentSpec};
 use crate::services::repositories::action_repository::ActionRepositoryInterface;
 use anyhow::anyhow;
@@ -38,10 +39,10 @@ pub async fn new(config: KubernetesResourceManagerConfig) -> Arc<ActionDataRepos
 }
 
 #[async_trait]
-impl ReadOnlyRepository<String, ActionDiscoveryDocumentSpec> for ActionDataRepository {
+impl ReadOnlyRepository<String, ActionSetRegistration> for ActionDataRepository {
     type ReadError = anyhow::Error;
 
-    async fn get(&self, key: String) -> Result<ActionDiscoveryDocumentSpec, Self::ReadError> {
+    async fn get(&self, key: String) -> Result<ActionSetRegistration, Self::ReadError> {
         let or = ObjectRef::new(key.as_str()).within(self.resource_manager.namespace().as_str());
         let resource_object = self.resource_manager.get(or);
         let resource_object = match resource_object {
@@ -51,16 +52,16 @@ impl ReadOnlyRepository<String, ActionDiscoveryDocumentSpec> for ActionDataRepos
         if !resource_object.spec.active {
             return Err(anyhow!("Schema is not active"));
         }
-        let result = resource_object.spec.clone();
+        let result: ActionSetRegistration = resource_object.spec.clone().into();
         Ok(result)
     }
 }
 
 #[async_trait]
-impl UpsertRepository<String, ActionDiscoveryDocumentSpec> for ActionDataRepository {
+impl UpsertRepository<String, ActionSetRegistration> for ActionDataRepository {
     type Error = anyhow::Error;
 
-    async fn upsert(&self, key: String, entity: ActionDiscoveryDocumentSpec) -> Result<(), Self::Error> {
+    async fn upsert(&self, key: String, entity: ActionSetRegistration) -> Result<(), Self::Error> {
         let or = ObjectRef::new(key.as_str()).within(self.resource_manager.namespace().as_str());
         let mut resource_ref = self.resource_manager.get(or).unwrap_or_default();
         let resource_ref = Arc::make_mut(&mut resource_ref);
@@ -69,7 +70,7 @@ impl UpsertRepository<String, ActionDiscoveryDocumentSpec> for ActionDataReposit
             self.label_selector_key.clone() => self.label_selector_value.clone(),
         });
         resource_ref.metadata.namespace = Some(self.resource_manager.namespace().clone());
-        resource_ref.spec = entity;
+        resource_ref.spec = ActionDiscoveryDocumentSpec::try_from(entity)?;
         resource_ref.spec.active = true;
         self.resource_manager.replace(&key, resource_ref.clone()).await
     }
@@ -82,7 +83,7 @@ impl UpsertRepository<String, ActionDiscoveryDocumentSpec> for ActionDataReposit
 }
 
 #[async_trait]
-impl CanDelete<String, ActionDiscoveryDocumentSpec> for ActionDataRepository {
+impl CanDelete<String, ActionSetRegistration> for ActionDataRepository {
     type DeleteError = anyhow::Error;
 
     async fn delete(&self, key: String) -> Result<(), Self::DeleteError> {

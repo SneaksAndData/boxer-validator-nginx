@@ -35,7 +35,8 @@ impl TryFrom<RequestContext> for Vec<RequestSegment> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, EnumString, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, EnumString, Serialize, Deserialize, JsonSchema, Display)]
+#[strum(serialize_all = "UPPERCASE")]
 pub enum HTTPMethod {
     #[strum(ascii_case_insensitive)]
     Get,

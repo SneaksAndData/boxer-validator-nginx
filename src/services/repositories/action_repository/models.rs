@@ -1,3 +1,4 @@
+use crate::http::controllers::action_set::models::{ActionRouteRegistration, ActionSetRegistration};
 use crate::services::repositories::models::PathSegment::{Parameter, Static};
 use crate::services::repositories::models::RequestSegment::{Path, Verb};
 use crate::services::repositories::models::{HTTPMethod, RequestSegment};
@@ -80,6 +81,48 @@ impl Default for ActionDiscoveryDocument {
         ActionDiscoveryDocument {
             metadata: ObjectMeta::default(),
             spec: ActionDiscoveryDocumentSpec::default(),
+        }
+    }
+}
+
+impl TryFrom<ActionSetRegistration> for ActionDiscoveryDocumentSpec {
+    type Error = anyhow::Error;
+
+    fn try_from(value: ActionSetRegistration) -> Result<Self, Self::Error> {
+        let mut routes = Vec::<ActionRoute>::new();
+
+        for route in value.routes {
+            let method = HTTPMethod::from_str(&route.method)?;
+            let action_route = ActionRoute {
+                method,
+                route_template: route.route_template,
+                action_uid: route.action_uid.to_string(),
+            };
+            routes.push(action_route)
+        }
+        Ok(ActionDiscoveryDocumentSpec {
+            active: true,
+            hostname: value.hostname,
+            routes,
+        })
+    }
+}
+
+impl Into<ActionSetRegistration> for ActionDiscoveryDocumentSpec {
+    fn into(self) -> ActionSetRegistration {
+        let routes: Vec<ActionRouteRegistration> = self
+            .routes
+            .into_iter()
+            .map(|route| ActionRouteRegistration {
+                method: route.method.to_string(),
+                route_template: route.route_template,
+                action_uid: route.action_uid,
+            })
+            .collect();
+
+        ActionSetRegistration {
+            hostname: self.hostname,
+            routes,
         }
     }
 }
