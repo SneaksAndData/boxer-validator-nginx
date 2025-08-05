@@ -81,7 +81,7 @@ impl From<ResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
         for route in value.routes {
             let action_route = ResourceRoute {
                 route_template: route.route_template,
-                resource_uid: route.action_uid.to_string(),
+                resource_uid: route.resource_uid.to_string(),
             };
             routes.push(action_route)
         }
@@ -100,7 +100,7 @@ impl Into<ResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
             .into_iter()
             .map(|route| ResourceRouteRegistration {
                 route_template: route.route_template,
-                action_uid: route.resource_uid,
+                resource_uid: route.resource_uid,
             })
             .collect();
 
