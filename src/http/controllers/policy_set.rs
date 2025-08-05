@@ -18,7 +18,12 @@ async fn post_policy_set(
     request: Json<PolicySetRegistration>,
     data: Data<Arc<PolicyRepository>>,
 ) -> Result<impl Responder> {
-    let policy_set = PolicySet::from_str(&request.into_inner().policy).map_err(anyhow::Error::from)?;
+    let policy_set = PolicySet::from_str(&request.into_inner().policy)
+        .map_err(|e| {
+            error!("Failed to parse policy set: {:?}", e);
+            e
+        })
+        .map_err(anyhow::Error::from)?;
     data.upsert(id.to_string(), policy_set).await.map_err(|e| {
         error!("Failed ot insert policy_set: {:?}", e);
         e

@@ -1,7 +1,7 @@
 pub mod models;
 
 pub mod read_only;
-mod read_write;
+pub mod read_write;
 
 use crate::services::repositories::policy_repository::models::PolicyDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;

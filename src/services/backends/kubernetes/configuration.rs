@@ -2,10 +2,7 @@ use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::KubernetesBackendSettings;
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
-use crate::services::repositories::policy_repository::PolicyRepositoryData;
-use crate::services::repositories::{action_repository, resource_repository};
-use crate::services::repositories::resource_repository::ResourceRepository;
-use crate::services::repositories::{action_repository, policy_repository};
+use crate::services::repositories::{action_repository, policy_repository, resource_repository};
 use anyhow::bail;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
@@ -104,13 +101,18 @@ impl BackendConfiguration for BackendBuilder {
             claimant: instance_name,
             kubeconfig,
         };
-        let policy_data = policy_repository::read_only::new();
-        let policy_repository_backend =
-            ReadOnlyRepositoryBackend::start(repository_config, policy_data.clone()).await?;
+        let policy_lookup = policy_repository::read_only::new();
+        let policy_lookup_watcher =
+            ReadOnlyRepositoryBackend::start(repository_config.clone(), policy_lookup.clone()).await?;
+        let policy_repository = policy_repository::read_write::new(repository_config.clone()).await;
+        let policy_repository_watcher =
+            ReadOnlyRepositoryBackend::start(repository_config, policy_lookup.clone()).await?;
 
         Ok(Arc::new(KubernetesBackend {
             schema_repository: Arc::new(schema_repository),
-            policy_repository: policy_data,
+
+            policy_repository: policy_lookup,
+            policy_data_repository: policy_repository,
 
             action_readonly_repository: action_lookup,
             action_lookup_watcher: Arc::new(action_lookup_watcher),
@@ -122,7 +124,8 @@ impl BackendConfiguration for BackendBuilder {
             resource_repository_watcher: Arc::new(resource_repository_watcher),
             resource_data_repository: resource_repository,
 
-            policy_repository_backend: Arc::new(policy_repository_backend),
+            policy_lookup_watcher: Arc::new(policy_lookup_watcher),
+            policy_repository_watcher: Arc::new(policy_repository_watcher),
         }))
     }
 }

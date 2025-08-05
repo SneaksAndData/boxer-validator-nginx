@@ -20,6 +20,7 @@ pub struct KubernetesBackend {
     resource_data_repository: Arc<ResourceRepository>,
 
     policy_repository: Arc<PolicyReadOnlyRepository>,
+    policy_data_repository: Arc<PolicyRepository>,
 
     // This field is required since we want to hold the reference to the backend until
     // the backend is dropped.
@@ -32,7 +33,9 @@ pub struct KubernetesBackend {
     #[allow(dead_code)]
     resource_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
     #[allow(dead_code)]
-    policy_repository_backend: Arc<ReadOnlyRepositoryBackend>,
+    policy_lookup_watcher: Arc<ReadOnlyRepositoryBackend>,
+    #[allow(dead_code)]
+    policy_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
 }
 
 impl SchemaRepositorySource for KubernetesBackend {
