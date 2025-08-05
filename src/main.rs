@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
     ));
     let action_repository = current_backend.get_readonly_repository();
     let resource_repository = current_backend.get_resource_repository();
-    let policy_repository = current_backend.get_policy_repository();
+    let policy_repository = current_backend.get_policy_readonly_repository();
     let cedar_validation_service = Arc::new(CedarValidationService::new(
         schema_provider,
         action_repository,

@@ -1,62 +1,25 @@
 pub mod models;
 
-#[cfg(test)]
-mod tests;
+pub mod read_only;
+mod read_write;
 
-use crate::services::repositories::policy_repository::models::PolicyResource;
-use async_trait::async_trait;
+use crate::services::repositories::policy_repository::models::PolicyDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
-use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
+use boxer_core::services::base::upsert_repository::{CanDelete, ReadOnlyRepository, UpsertRepository};
 use cedar_policy::PolicySet;
-use kube::runtime::watcher;
-use log::{debug, warn};
-use std::str::FromStr;
-use tokio::sync::RwLock;
 
-pub struct PolicyRepositoryData {
-    policy_set: RwLock<PolicySet>,
+pub trait PolicyReadOnlyRepositoryInterface:
+    ReadOnlyRepository<(), PolicySet, ReadError = anyhow::Error> + ResourceUpdateHandler<PolicyDocument>
+{
 }
 
-impl PolicyRepositoryData {
-    pub(crate) fn new() -> PolicyRepositoryData {
-        PolicyRepositoryData {
-            policy_set: RwLock::new(PolicySet::default()),
-        }
-    }
+pub trait PolicyRepositoryInterface:
+    ReadOnlyRepository<String, PolicySet, ReadError = anyhow::Error>
+    + UpsertRepository<String, PolicySet, Error = anyhow::Error>
+    + CanDelete<String, PolicySet, DeleteError = anyhow::Error>
+{
 }
 
-impl PolicyRepositoryData {
-    async fn set_policies(&self, policy_set: PolicySet) -> () {
-        let mut guard = self.policy_set.write().await;
-        *(guard) = policy_set.clone();
-    }
-}
+pub type PolicyReadOnlyRepository = dyn PolicyReadOnlyRepositoryInterface + Send + Sync;
 
-pub type PolicyRepository = dyn ReadOnlyRepository<(), PolicySet, ReadError = anyhow::Error>;
-
-#[async_trait]
-impl ReadOnlyRepository<(), PolicySet> for PolicyRepositoryData {
-    type ReadError = anyhow::Error;
-
-    async fn get(&self, _key: ()) -> Result<PolicySet, Self::ReadError> {
-        let guard = self.policy_set.read().await;
-        Ok((*guard).clone())
-    }
-}
-
-#[async_trait]
-impl ResourceUpdateHandler<PolicyResource> for PolicyRepositoryData {
-    async fn handle_update(&self, event: Result<PolicyResource, watcher::Error>) -> () {
-        match event {
-            Err(err) => warn!("Error while fetching policy: {:?}", err),
-            Ok(event) => {
-                debug!("Received policy update: {:?}", event);
-                let policies = PolicySet::from_str(&event.data.policies);
-                match policies {
-                    Err(err) => warn!("Failed to parse policy set: {:?}", err),
-                    Ok(policies) => self.set_policies(policies).await,
-                }
-            }
-        }
-    }
-}
+pub type PolicyRepository = dyn PolicyRepositoryInterface + Send + Sync;

@@ -1,10 +1,9 @@
 use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::KubernetesBackendSettings;
-use crate::services::repositories::action_repository;
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
-use crate::services::repositories::policy_repository::PolicyRepositoryData;
 use crate::services::repositories::resource_repository::ResourceRepository;
+use crate::services::repositories::{action_repository, policy_repository};
 use anyhow::bail;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
@@ -97,7 +96,7 @@ impl BackendConfiguration for BackendBuilder {
             claimant: instance_name,
             kubeconfig,
         };
-        let policy_data = Arc::new(PolicyRepositoryData::new());
+        let policy_data = policy_repository::read_only::new();
         let policy_repository_backend =
             ReadOnlyRepositoryBackend::start(repository_config, policy_data.clone()).await?;
 
