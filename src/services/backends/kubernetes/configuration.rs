@@ -84,7 +84,13 @@ impl BackendConfiguration for BackendBuilder {
             claimant: instance_name.clone(),
             kubeconfig: kubeconfig.clone(),
         };
-        let resource_repository = ReadOnlyRepositoryBackend::start(repository_config, action_lookup.clone()).await?;
+
+        let resource_lookup = resource_repository::read_only::new();
+        let resource_lookup_watcher =
+            ReadOnlyRepositoryBackend::start(repository_config.clone(), resource_lookup.clone()).await?;
+        let resource_repository = resource_repository::read_write::new(repository_config.clone()).await;
+        let resource_repository_watcher =
+            ReadOnlyRepositoryBackend::start(repository_config, resource_lookup.clone()).await?;
 
         let repository_config = KubernetesResourceManagerConfig {
             namespace: settings.namespace.clone(),
@@ -102,15 +108,18 @@ impl BackendConfiguration for BackendBuilder {
 
         Ok(Arc::new(KubernetesBackend {
             schema_repository: Arc::new(schema_repository),
-            action_readonly_repository: action_lookup,
-            resource_repository: Arc::new(resource_repository::read_only::new()),
             policy_repository: policy_data,
 
+            action_readonly_repository: action_lookup,
             action_lookup_watcher: Arc::new(action_lookup_watcher),
             action_repository_watcher: Arc::new(action_repository_watcher),
             action_data_repository: action_repository,
 
-            resource_repository_backend: Arc::new(resource_repository),
+            resource_read_only_repository: resource_lookup,
+            resource_lookup_watcher: Arc::new(resource_lookup_watcher),
+            resource_repository_watcher: Arc::new(resource_repository_watcher),
+            resource_data_repository: resource_repository,
+
             policy_repository_backend: Arc::new(policy_repository_backend),
         }))
     }

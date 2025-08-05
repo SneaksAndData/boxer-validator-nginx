@@ -5,7 +5,6 @@ use utoipa::ToSchema;
 #[schema(rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct ResourceRouteRegistration {
-    pub method: String,
     pub route_template: String,
     pub action_uid: String,
 }

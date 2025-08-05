@@ -1,9 +1,11 @@
+use crate::http::controllers::resource_set::models::{ResourceRouteRegistration, ResourceSetRegistration};
 use crate::services::repositories::models::PathSegment;
 use crate::services::repositories::models::PathSegment::{Parameter, Static};
 use cedar_policy::EntityUid;
 use futures::Stream;
 use futures::StreamExt;
 use futures_util::stream;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -61,5 +63,50 @@ impl ResourceDiscoveryDocumentSpec {
             key.extend(segments);
             Ok((key, action_uid))
         })
+    }
+}
+impl Default for ResourceDiscoveryDocument {
+    fn default() -> Self {
+        ResourceDiscoveryDocument {
+            metadata: ObjectMeta::default(),
+            spec: ResourceDiscoveryDocumentSpec::default(),
+        }
+    }
+}
+
+impl From<ResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
+    fn from(value: ResourceSetRegistration) -> Self {
+        let mut routes = Vec::<ResourceRoute>::new();
+
+        for route in value.routes {
+            let action_route = ResourceRoute {
+                route_template: route.route_template,
+                resource_uid: route.action_uid.to_string(),
+            };
+            routes.push(action_route)
+        }
+        ResourceDiscoveryDocumentSpec {
+            active: true,
+            hostname: value.hostname,
+            routes,
+        }
+    }
+}
+
+impl Into<ResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
+    fn into(self) -> ResourceSetRegistration {
+        let routes: Vec<ResourceRouteRegistration> = self
+            .routes
+            .into_iter()
+            .map(|route| ResourceRouteRegistration {
+                route_template: route.route_template,
+                action_uid: route.resource_uid,
+            })
+            .collect();
+
+        ResourceSetRegistration {
+            hostname: self.hostname,
+            routes,
+        }
     }
 }

@@ -8,7 +8,6 @@ use cedar_policy::EntityUid;
 use futures::StreamExt;
 use kube::runtime::watcher::Error;
 use log::{debug, info, warn};
-use serde::Serialize;
 use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};

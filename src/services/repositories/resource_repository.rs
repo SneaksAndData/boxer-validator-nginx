@@ -1,6 +1,8 @@
 pub mod models;
 pub mod read_only;
 
+pub mod read_write;
+
 use crate::http::controllers::resource_set::models::ResourceSetRegistration;
 use crate::services::repositories::common::TrieRepositoryData;
 use crate::services::repositories::models::PathSegment;
