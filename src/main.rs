@@ -3,8 +3,8 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::controllers::token_review;
 use crate::http::controllers::{action_set, schema};
+use crate::http::controllers::{resource_set, token_review};
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::openapi::ApiDoc;
 use crate::services::backends;
@@ -44,7 +44,7 @@ async fn main() -> Result<()> {
         cm.backend.kubernetes.schema_repository.name,
     ));
     let action_repository = current_backend.get_readonly_repository();
-    let resource_repository = current_backend.get_resource_repository();
+    let resource_repository = current_backend.get_resource_read_only_repository();
     let policy_repository = current_backend.get_policy_readonly_repository();
     let cedar_validation_service = Arc::new(CedarValidationService::new(
         schema_provider,
