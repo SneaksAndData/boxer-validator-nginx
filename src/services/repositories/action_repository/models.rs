@@ -39,11 +39,6 @@ impl TryInto<Vec<RequestSegment>> for ActionRoute {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ActionDiscoveryDocumentData {
-    pub(crate) actions: String,
-}
-
 #[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
 #[kube(
     group = "auth.sneaksanddata.com",

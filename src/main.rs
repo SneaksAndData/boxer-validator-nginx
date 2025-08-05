@@ -3,8 +3,8 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::controllers::token_review;
 use crate::http::controllers::{action_set, schema};
+use crate::http::controllers::{resource_set, token_review};
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::openapi::ApiDoc;
 use crate::services::backends;
@@ -44,7 +44,7 @@ async fn main() -> Result<()> {
         cm.backend.kubernetes.schema_repository.name,
     ));
     let action_repository = current_backend.get_readonly_repository();
-    let resource_repository = current_backend.get_resource_repository();
+    let resource_repository = current_backend.get_resource_read_only_repository();
     let policy_repository = current_backend.get_policy_repository();
     let cedar_validation_service = Arc::new(CedarValidationService::new(
         schema_provider,
@@ -54,6 +54,7 @@ async fn main() -> Result<()> {
     ));
 
     let action_repository = current_backend.get_action_data_repository();
+    let resource_repository = current_backend.get_resource_repository();
 
     let debug_mode = !std::env::var("BOXER_ISSUER_DEBUG").is_ok();
 
@@ -63,11 +64,13 @@ async fn main() -> Result<()> {
             .app_data(web::Data::new(cedar_validation_service.clone()))
             .app_data(web::Data::new(schema_repository.clone()))
             .app_data(web::Data::new(action_repository.clone()))
+            .app_data(web::Data::new(resource_repository.clone()))
             // The last middleware in the chain should always be InternalTokenMiddleware
             // to ensure that the token is valid in the beginning of the request processing
             .wrap(Condition::new(debug_mode, InternalTokenMiddlewareFactory::new()))
             .service(schema::crud())
             .service(action_set::crud())
+            .service(resource_set::crud())
             .service(token_review::get)
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })

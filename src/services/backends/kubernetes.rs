@@ -6,7 +6,7 @@ use crate::services::base::resource_repository_source::ResourceRepositorySource;
 use crate::services::repositories::action_repository::{ActionReadOnlyRepository, ActionRepository};
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
 use crate::services::repositories::policy_repository::PolicyRepository;
-use crate::services::repositories::resource_repository::ResourceRepository;
+use crate::services::repositories::resource_repository::{ResourceReadOnlyRepository, ResourceRepository};
 use boxer_core::services::backends::{Backend, SchemaRepositorySource};
 use boxer_core::services::base::types::SchemaRepository;
 use std::sync::Arc;
@@ -16,7 +16,9 @@ pub struct KubernetesBackend {
     action_readonly_repository: Arc<ActionReadOnlyRepository>,
     action_data_repository: Arc<ActionRepository>,
 
-    resource_repository: Arc<ResourceRepository>,
+    resource_read_only_repository: Arc<ResourceReadOnlyRepository>,
+    resource_data_repository: Arc<ResourceRepository>,
+
     policy_repository: Arc<PolicyRepository>,
 
     // This field is required since we want to hold the reference to the backend until
@@ -26,7 +28,9 @@ pub struct KubernetesBackend {
     #[allow(dead_code)]
     action_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
     #[allow(dead_code)]
-    resource_repository_backend: Arc<ReadOnlyRepositoryBackend>,
+    resource_lookup_watcher: Arc<ReadOnlyRepositoryBackend>,
+    #[allow(dead_code)]
+    resource_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
     #[allow(dead_code)]
     policy_repository_backend: Arc<ReadOnlyRepositoryBackend>,
 }
@@ -49,7 +53,11 @@ impl ActionRepositorySource for KubernetesBackend {
 
 impl ResourceRepositorySource for KubernetesBackend {
     fn get_resource_repository(&self) -> Arc<ResourceRepository> {
-        self.resource_repository.clone()
+        self.resource_data_repository.clone()
+    }
+
+    fn get_resource_read_only_repository(&self) -> Arc<ResourceReadOnlyRepository> {
+        self.resource_read_only_repository.clone()
     }
 }
 

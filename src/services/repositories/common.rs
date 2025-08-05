@@ -1,17 +1,14 @@
+use super::resource_repository::models::ResourceDiscoveryDocument;
+use crate::services::repositories::models::PathSegment;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
 use cedar_policy::EntityUid;
-use futures::Stream;
 use futures::StreamExt;
-use futures_util::stream;
-use kube::runtime::watcher;
-use kube::Resource;
+use kube::runtime::watcher::Error;
 use log::{debug, info, warn};
-use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
 use trie_rs::map::{Trie, TrieBuilder};
@@ -55,6 +52,30 @@ where
                 maybe_trie: None,
             }),
         }
+    }
+}
+
+impl TrieRepositoryData<PathSegment> {
+    pub async fn handle_async(&self, event: ResourceDiscoveryDocument) {
+        event
+            .spec
+            .stream()
+            .for_each(move |result| async move {
+                match result {
+                    Ok((segments, action_uid)) => {
+                        if let Err(e) = self.upsert(segments.clone(), action_uid.clone()).await {
+                            warn!("Failed to upsert action: {}", e);
+                        } else {
+                            debug!(
+                                "Successfully upserted action with key {:?} and UID: {}",
+                                segments, action_uid
+                            );
+                        }
+                    }
+                    Err(e) => warn!("Error processing action route: {}", e),
+                }
+            })
+            .await
     }
 }
 
@@ -111,72 +132,19 @@ where
     }
 }
 
-#[allow(dead_code)]
-trait CollectionResource<'de, In, Out>: Resource + Serialize + Deserialize<'de> + Clone
-where
-    In: TryInto<EntityUid, Error = anyhow::Error>
-        + TryInto<Vec<Out>, Error = anyhow::Error>
-        + Clone
-        + Send
-        + Sync
-        + Debug,
-{
-    fn deserialize(&self) -> Result<Vec<In>, anyhow::Error>;
-
-    fn stream(self) -> impl Stream<Item = Result<(Vec<Out>, EntityUid), anyhow::Error>> + Send {
-        let items = self.deserialize().unwrap();
-        stream::iter(items).map(move |o| {
-            let action_uid: EntityUid = o.clone().try_into()?;
-            let mut key: Vec<Out> = vec![];
-            let segments: Vec<Out> = o.try_into()?;
-            key.extend(segments);
-            Ok((key, action_uid))
-        })
-    }
-}
-
-#[allow(dead_code)]
-trait CollectionResourceUpdateHandler<Key, In, R>: ResourceUpdateHandler<R>
-where
-    In: TryInto<EntityUid, Error = anyhow::Error>
-        + TryInto<Vec<Key>, Error = anyhow::Error>
-        + Clone
-        + Send
-        + Sync
-        + Debug,
-    R: CollectionResource<'static, In, Key> + Send + Sync + Debug + 'static,
-    Key: Ord + Send + Sync + Debug + Clone + 'static,
-    Self: TrieRepository<Key> + Send + Sync + Debug,
-{
-    fn handle_update(&self, event: Result<R, watcher::Error>) -> impl Future<Output = ()> + Send {
-        async {
-            match event {
-                Ok(resource) => {
-                    debug!("Received update for resource: {:?}", resource);
-                    self.refresh_trie().await;
-                    self.handle_async(resource).await;
-                }
-                Err(e) => {
-                    warn!("Watcher error: {}", e);
-                }
-            }
+#[async_trait]
+impl ResourceUpdateHandler<ResourceDiscoveryDocument> for TrieRepositoryData<PathSegment> {
+    async fn handle_update(&self, event: Result<ResourceDiscoveryDocument, Error>) -> () {
+        if event.is_err() {
+            warn!("Failed to handle update: {:?}", event);
         }
-    }
-    fn handle_async(&self, event: R) -> impl Future<Output = ()> + Send {
-        event.stream().for_each(move |result| async {
-            match result {
-                Ok((segments, action_uid)) => match self.upsert(segments, action_uid.clone()).await {
-                    Ok(_) => {
-                        debug!("Upserted action: {:?}", action_uid);
-                    }
-                    Err(e) => {
-                        warn!("Failed to upsert action: {}", e);
-                    }
-                },
-                Err(err) => {
-                    warn!("Failed to process action: {}", err);
-                }
-            }
-        })
+        {
+            info!("Updating action discovery trie");
+            let mut guard = self.rw_lock.write().await;
+            guard.builder = Box::new(TrieBuilder::new());
+            guard.maybe_trie = None;
+        }
+        self.handle_async(event.unwrap()).await;
+        info!("Finished updating action discovery trie");
     }
 }
