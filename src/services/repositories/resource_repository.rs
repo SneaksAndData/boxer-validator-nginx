@@ -1,22 +1,29 @@
-mod models;
+pub mod models;
+pub mod read_only;
 
+use crate::http::controllers::resource_set::models::ResourceSetRegistration;
 use crate::services::repositories::common::TrieRepositoryData;
 use crate::services::repositories::models::PathSegment;
-use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
+use crate::services::repositories::resource_repository::models::ResourceDiscoveryDocument;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
+use boxer_core::services::base::upsert_repository::{CanDelete, ReadOnlyRepository, UpsertRepository};
 use cedar_policy::EntityUid;
 
-#[allow(dead_code)]
-pub trait ResourceUpsertRepository:
+pub trait ResourceReadOnlyRepositoryInterface:
     ReadOnlyRepository<Vec<PathSegment>, EntityUid, ReadError = anyhow::Error>
-    + UpsertRepository<Vec<PathSegment>, EntityUid, Error = anyhow::Error>
+    + ResourceUpdateHandler<ResourceDiscoveryDocument>
 {
 }
 
-#[allow(dead_code)]
-type TrieData = super::common::TrieData<PathSegment>;
+pub trait ResourceRepositoryInterface:
+    ReadOnlyRepository<String, ResourceSetRegistration, ReadError = anyhow::Error>
+    + UpsertRepository<String, ResourceSetRegistration, Error = anyhow::Error>
+    + CanDelete<String, ResourceSetRegistration, DeleteError = anyhow::Error>
+{
+}
 
-pub type ResourceRepository = TrieRepositoryData<PathSegment>;
+impl ResourceReadOnlyRepositoryInterface for TrieRepositoryData<PathSegment> {}
 
-impl ResourceUpsertRepository for TrieRepositoryData<PathSegment> {}
+pub type ResourceReadOnlyRepository = dyn ResourceReadOnlyRepositoryInterface;
 
-pub type ResourceReadOnlyRepository = dyn ReadOnlyRepository<Vec<PathSegment>, EntityUid, ReadError = anyhow::Error>;
+pub type ResourceRepository = dyn ResourceRepositoryInterface + Send + Sync;

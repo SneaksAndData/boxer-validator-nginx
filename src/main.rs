@@ -3,8 +3,8 @@ mod http;
 mod models;
 mod services;
 
-use crate::http::controllers::token_review;
 use crate::http::controllers::{action_set, schema};
+use crate::http::controllers::{resource_set, token_review};
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::openapi::ApiDoc;
 use crate::services::backends;
@@ -68,6 +68,7 @@ async fn main() -> Result<()> {
             .wrap(Condition::new(debug_mode, InternalTokenMiddlewareFactory::new()))
             .service(schema::crud())
             .service(action_set::crud())
+            .service(resource_set::crud())
             .service(token_review::get)
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })

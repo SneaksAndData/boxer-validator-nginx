@@ -6,7 +6,7 @@ use crate::services::base::resource_repository_source::ResourceRepositorySource;
 use crate::services::repositories::action_repository::{ActionReadOnlyRepository, ActionRepository};
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
 use crate::services::repositories::policy_repository::PolicyRepository;
-use crate::services::repositories::resource_repository::ResourceRepository;
+use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use boxer_core::services::backends::{Backend, SchemaRepositorySource};
 use boxer_core::services::base::types::SchemaRepository;
 use std::sync::Arc;
@@ -16,7 +16,7 @@ pub struct KubernetesBackend {
     action_readonly_repository: Arc<ActionReadOnlyRepository>,
     action_data_repository: Arc<ActionRepository>,
 
-    resource_repository: Arc<ResourceRepository>,
+    resource_repository: Arc<ResourceReadOnlyRepository>,
     policy_repository: Arc<PolicyRepository>,
 
     // This field is required since we want to hold the reference to the backend until
@@ -48,7 +48,7 @@ impl ActionRepositorySource for KubernetesBackend {
 }
 
 impl ResourceRepositorySource for KubernetesBackend {
-    fn get_resource_repository(&self) -> Arc<ResourceRepository> {
+    fn get_resource_repository(&self) -> Arc<ResourceReadOnlyRepository> {
         self.resource_repository.clone()
     }
 }
