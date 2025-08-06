@@ -3,7 +3,7 @@ use crate::models::request_context::RequestContext;
 use crate::services::base::schema_provider::SchemaProvider;
 use crate::services::base::validation_service::ValidationService;
 use crate::services::repositories::action_repository::ActionReadOnlyRepository;
-use crate::services::repositories::policy_repository::PolicyRepository;
+use crate::services::repositories::policy_repository::PolicyReadOnlyRepository;
 use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use async_trait::async_trait;
 use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
@@ -16,7 +16,7 @@ pub struct CedarValidationService {
     schema_provider: Arc<dyn SchemaProvider>,
     action_repository: Arc<ActionReadOnlyRepository>,
     resource_repository: Arc<ResourceReadOnlyRepository>,
-    policy_repository: Arc<PolicyRepository>,
+    policy_repository: Arc<PolicyReadOnlyRepository>,
 }
 
 impl CedarValidationService {
@@ -24,7 +24,7 @@ impl CedarValidationService {
         schema_provider: Arc<dyn SchemaProvider>,
         action_repository: Arc<ActionReadOnlyRepository>,
         resource_repository: Arc<ResourceReadOnlyRepository>,
-        policy_repository: Arc<PolicyRepository>,
+        policy_repository: Arc<PolicyReadOnlyRepository>,
     ) -> Self {
         CedarValidationService {
             authorizer: Authorizer::new(),

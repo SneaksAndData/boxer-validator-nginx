@@ -5,7 +5,7 @@ use crate::services::base::policy_repository_source::PolicyRepositorySource;
 use crate::services::base::resource_repository_source::ResourceRepositorySource;
 use crate::services::repositories::action_repository::{ActionReadOnlyRepository, ActionRepository};
 use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
-use crate::services::repositories::policy_repository::PolicyRepository;
+use crate::services::repositories::policy_repository::{PolicyReadOnlyRepository, PolicyRepository};
 use crate::services::repositories::resource_repository::{ResourceReadOnlyRepository, ResourceRepository};
 use boxer_core::services::backends::{Backend, SchemaRepositorySource};
 use boxer_core::services::base::types::SchemaRepository;
@@ -19,7 +19,8 @@ pub struct KubernetesBackend {
     resource_read_only_repository: Arc<ResourceReadOnlyRepository>,
     resource_data_repository: Arc<ResourceRepository>,
 
-    policy_repository: Arc<PolicyRepository>,
+    policy_repository: Arc<PolicyReadOnlyRepository>,
+    policy_data_repository: Arc<PolicyRepository>,
 
     // This field is required since we want to hold the reference to the backend until
     // the backend is dropped.
@@ -32,7 +33,9 @@ pub struct KubernetesBackend {
     #[allow(dead_code)]
     resource_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
     #[allow(dead_code)]
-    policy_repository_backend: Arc<ReadOnlyRepositoryBackend>,
+    policy_lookup_watcher: Arc<ReadOnlyRepositoryBackend>,
+    #[allow(dead_code)]
+    policy_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
 }
 
 impl SchemaRepositorySource for KubernetesBackend {
@@ -62,8 +65,12 @@ impl ResourceRepositorySource for KubernetesBackend {
 }
 
 impl PolicyRepositorySource for KubernetesBackend {
-    fn get_policy_repository(&self) -> Arc<PolicyRepository> {
+    fn get_policy_readonly_repository(&self) -> Arc<PolicyReadOnlyRepository> {
         self.policy_repository.clone()
+    }
+
+    fn get_policy_data_repository(&self) -> Arc<PolicyRepository> {
+        self.policy_data_repository.clone()
     }
 }
 
