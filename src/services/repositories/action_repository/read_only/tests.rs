@@ -1,10 +1,10 @@
 use super::{ActionLookupTrie, TrieData};
 use crate::models::request_context::RequestContext;
 use crate::services::repositories::action_repository;
-use crate::services::repositories::models::HTTPMethod::Get;
-use crate::services::repositories::models::PathSegment::{Parameter, Static};
-use crate::services::repositories::models::RequestSegment;
-use crate::services::repositories::models::RequestSegment::{Hostname, Path, Verb};
+use crate::services::repositories::models::http_method::HTTPMethod::Get;
+use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
+use crate::services::repositories::models::request_segment::RequestSegment;
+use crate::services::repositories::models::request_segment::RequestSegment::{Hostname, Path, Verb};
 use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
 use cedar_policy::EntityUid;
 use std::str::FromStr;

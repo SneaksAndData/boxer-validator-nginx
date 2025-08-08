@@ -1,4 +1,3 @@
-use boxer_core::services::backends::SchemaRepositorySource;
 mod http;
 mod models;
 mod services;
@@ -8,16 +7,18 @@ use crate::http::controllers::{resource_set, token_review};
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::openapi::ApiDoc;
 use crate::services::backends;
-use crate::services::base::actions_repository_source::ActionRepositorySource;
-use crate::services::base::policy_repository_source::PolicyRepositorySource;
-use crate::services::base::resource_repository_source::ResourceRepositorySource;
 use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
+use crate::services::repositories::action_repository::read_write::ActionDataRepository;
+use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
+use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::schema_provider::KubernetesSchemaProvider;
 use actix_web::middleware::Condition;
 use actix_web::{web, App, HttpServer};
 use anyhow::Result;
+use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::backends::BackendConfiguration;
+use boxer_core::services::service_provider::ServiceProvider;
 use log::info;
 use std::sync::Arc;
 use utoipa::OpenApi;
@@ -40,12 +41,12 @@ async fn main() -> Result<()> {
         .await?;
 
     let schema_provider = Arc::new(KubernetesSchemaProvider::new(
-        current_backend.get_schemas_repository(),
+        current_backend.get(),
         cm.backend.kubernetes.schema_repository.name,
     ));
-    let action_repository = current_backend.get_readonly_repository();
-    let resource_repository = current_backend.get_resource_read_only_repository();
-    let policy_repository = current_backend.get_policy_readonly_repository();
+    let action_repository = current_backend.get();
+    let resource_repository = current_backend.get();
+    let policy_repository = current_backend.get();
     let cedar_validation_service = Arc::new(CedarValidationService::new(
         schema_provider,
         action_repository,
@@ -53,13 +54,13 @@ async fn main() -> Result<()> {
         policy_repository,
     ));
 
-    let action_repository = current_backend.get_action_data_repository();
-    let resource_repository = current_backend.get_resource_repository();
-    let policy_repository = current_backend.get_policy_data_repository();
+    let action_repository: Arc<ActionDataRepository> = current_backend.get();
+    let resource_repository: Arc<ResourceDiscoveryDocumentRepository> = current_backend.get();
+    let policy_repository: Arc<PolicyDataRepository> = current_backend.get();
 
     let debug_mode = !std::env::var("BOXER_ISSUER_DEBUG").is_ok();
 
-    let schema_repository = current_backend.get_schemas_repository();
+    let schema_repository: Arc<SchemaRepository> = current_backend.get();
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(cedar_validation_service.clone()))
