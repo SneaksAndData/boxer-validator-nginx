@@ -3,6 +3,7 @@ pub mod models;
 pub mod read_only;
 pub mod read_write;
 
+use crate::http::controllers::policy_set::models::PolicySetRegistration;
 use crate::services::repositories::policy_repository::models::PolicyDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::{CanDelete, ReadOnlyRepository, UpsertRepository};
@@ -14,9 +15,9 @@ pub trait PolicyReadOnlyRepositoryInterface:
 }
 
 pub trait PolicyRepositoryInterface:
-    ReadOnlyRepository<String, PolicySet, ReadError = anyhow::Error>
-    + UpsertRepository<String, PolicySet, Error = anyhow::Error>
-    + CanDelete<String, PolicySet, DeleteError = anyhow::Error>
+    ReadOnlyRepository<String, PolicySetRegistration, ReadError = anyhow::Error>
+    + UpsertRepository<String, PolicySetRegistration, Error = anyhow::Error>
+    + CanDelete<String, PolicySetRegistration, DeleteError = anyhow::Error>
 {
 }
 

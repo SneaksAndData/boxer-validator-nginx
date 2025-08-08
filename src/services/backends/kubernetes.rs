@@ -14,7 +14,7 @@ use std::sync::Arc;
 pub struct KubernetesBackend {
     schema_repository: Arc<SchemaRepository>,
     action_readonly_repository: Arc<ActionReadOnlyRepository>,
-    action_data_repository: Arc<ActionRepository>,
+    action_data_repository: Arc<ActionReadOnlyRepository>,
 
     resource_read_only_repository: Arc<ResourceReadOnlyRepository>,
     resource_data_repository: Arc<ResourceRepository>,

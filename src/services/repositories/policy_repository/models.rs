@@ -1,3 +1,4 @@
+use crate::http::controllers::policy_set::models::PolicySetRegistration;
 use cedar_policy::PolicySet;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::CustomResource;
@@ -35,17 +36,25 @@ impl Default for PolicyDocument {
     }
 }
 
-impl From<PolicySet> for PolicyDocumentSpec {
-    fn from(value: PolicySet) -> Self {
+impl From<PolicySetRegistration> for PolicyDocumentSpec {
+    fn from(value: PolicySetRegistration) -> Self {
         PolicyDocumentSpec {
             active: true,
-            policies: value.to_string(),
+            policies: value.policy.to_string(),
         }
     }
 }
 
-impl Into<PolicySet> for PolicyDocumentSpec {
-    fn into(self) -> PolicySet {
-        PolicySet::from_str(&self.policies).unwrap_or_else(|_| PolicySet::default())
+impl Into<PolicySetRegistration> for PolicyDocumentSpec {
+    fn into(self) -> PolicySetRegistration {
+        PolicySetRegistration { policy: self.policies }
+    }
+}
+
+impl Default for PolicySetRegistration {
+    fn default() -> Self {
+        PolicySetRegistration {
+            policy: Default::default(),
+        }
     }
 }

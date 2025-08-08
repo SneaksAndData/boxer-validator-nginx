@@ -80,24 +80,24 @@ impl Default for ActionDiscoveryDocument {
     }
 }
 
-impl TryFrom<ActionSetRegistration> for ActionDiscoveryDocumentSpec {
+impl TryFrom<&ActionSetRegistration> for ActionDiscoveryDocumentSpec {
     type Error = anyhow::Error;
 
-    fn try_from(value: ActionSetRegistration) -> Result<Self, Self::Error> {
+    fn try_from(value: &ActionSetRegistration) -> Result<Self, Self::Error> {
         let mut routes = Vec::<ActionRoute>::new();
 
-        for route in value.routes {
+        for route in &value.routes {
             let method = HTTPMethod::from_str(&route.method)?;
             let action_route = ActionRoute {
                 method,
-                route_template: route.route_template,
+                route_template: route.route_template.clone(),
                 action_uid: route.action_uid.to_string(),
             };
             routes.push(action_route)
         }
         Ok(ActionDiscoveryDocumentSpec {
             active: true,
-            hostname: value.hostname,
+            hostname: value.hostname.clone(),
             routes,
         })
     }
