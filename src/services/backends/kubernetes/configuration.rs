@@ -1,8 +1,11 @@
 use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::backends::BackendBuilder;
-use crate::services::configuration::models::KubernetesBackendSettings;
-use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
-use crate::services::repositories::{action_repository, policy_repository, resource_repository};
+use crate::services::configuration::models::{KubernetesBackendSettings, RepositorySettings};
+use crate::services::repositories::action_repository::read_write::ActionDataRepository;
+use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
+use crate::services::repositories::lookup_trie::TrieRepositoryData;
+use crate::services::repositories::policy_repository;
+use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use anyhow::bail;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
@@ -10,6 +13,7 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::Kub
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
 use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
 use boxer_core::services::backends::BackendConfiguration;
+use kube::Config;
 use std::sync::Arc;
 
 #[async_trait]
@@ -22,7 +26,73 @@ impl BackendConfiguration for BackendBuilder {
         settings: &Self::BackendSettings,
         instance_name: String,
     ) -> anyhow::Result<Arc<Self::InitializedBackend>> {
-        let kubeconfig = match settings {
+        let kubeconfig = Self::get_kubeconfig(settings).await?;
+
+        let schema_repository = Self::create_repository(
+            &settings.namespace,
+            kubeconfig.clone(),
+            instance_name.clone(),
+            &settings.schema_repository,
+        )
+        .await?;
+
+        let action_lookup_watcher = Self::create_lookup_trie(
+            &settings.namespace,
+            kubeconfig.clone(),
+            instance_name.clone(),
+            &settings.actions_repository,
+        )
+        .await?;
+
+        let action_repository: Arc<ActionDataRepository> = Self::create_repository(
+            &settings.namespace,
+            kubeconfig.clone(),
+            instance_name.clone(),
+            &settings.actions_repository,
+        )
+        .await?;
+
+        let resource_lookup_watcher = Self::create_lookup_trie(
+            &settings.namespace,
+            kubeconfig.clone(),
+            instance_name.clone(),
+            &settings.resource_repository,
+        )
+        .await?;
+
+        let resource_repository: Arc<ResourceDiscoveryDocumentRepository> = Self::create_repository(
+            &settings.namespace,
+            kubeconfig.clone(),
+            instance_name.clone(),
+            &settings.resource_repository,
+        )
+        .await?;
+
+        let policy_lookup = Self::create_readonly_repository(
+            &settings.namespace,
+            kubeconfig,
+            instance_name,
+            &settings.policy_repository,
+        )
+        .await?;
+
+        let policy_repository = Self::create_repository(
+            &settings.namespace,
+            kubeconfig,
+            instance_name,
+            &settings.policy_repository,
+        )
+        .await?;
+
+        Ok(Arc::new(KubernetesBackend {
+            schema_repository: Arc::new(schema_repository),
+        }))
+    }
+}
+
+impl BackendBuilder {
+    async fn get_kubeconfig(settings: &KubernetesBackendSettings) -> anyhow::Result<Config> {
+        match settings {
             KubernetesBackendSettings { in_cluster: true, .. } => from_cluster().load()?,
 
             KubernetesBackendSettings {
@@ -40,80 +110,62 @@ impl BackendConfiguration for BackendBuilder {
             } => {
                 bail!("Kubernetes backend configuration is missing")
             }
-        };
+        }
+    }
 
-        let repository_config = KubernetesResourceManagerConfig {
-            namespace: settings.namespace.clone(),
-            label_selector_key: settings.schema_repository.label_selector_key.clone(),
-            label_selector_value: settings.schema_repository.label_selector_value.clone(),
+    pub async fn create_repository<R>(
+        namespace: &str,
+        kubeconfig: Config,
+        instance_name: String,
+        settings: &RepositorySettings,
+    ) -> anyhow::Result<Arc<KubernetesRepository<R>>> {
+        let config = KubernetesResourceManagerConfig {
+            namespace: namespace.to_string(),
             kubeconfig: kubeconfig.clone(),
             field_manager: instance_name.clone(),
+            listener_config: (&settings).into(),
         };
+        KubernetesRepository::<R>::start(config)
+            .await
+            .map(Arc::new)
+            .map_err(|e| e.into())
+    }
 
-        let schema_repository = KubernetesRepository::start(repository_config).await?;
-
-        let repository_config = KubernetesResourceManagerConfig {
-            namespace: settings.namespace.clone(),
-            label_selector_key: settings.actions_repository.label_selector_key.clone(),
-            label_selector_value: settings.actions_repository.label_selector_value.clone(),
+    pub async fn create_lookup_trie<K>(
+        namespace: &str,
+        kubeconfig: Config,
+        instance_name: String,
+        settings: &RepositorySettings,
+    ) -> anyhow::Result<ReadOnlyRepositoryBackend>
+    where
+        K: Ord,
+    {
+        let config = KubernetesResourceManagerConfig {
+            namespace: namespace.to_string(),
             kubeconfig: kubeconfig.clone(),
             field_manager: instance_name.clone(),
+            listener_config: (&settings).into(),
         };
-        let action_lookup = action_repository::read_only::new();
-        let action_lookup_watcher =
-            ReadOnlyRepositoryBackend::start(repository_config.clone(), action_lookup.clone()).await?;
+        let lookup_trie = Arc::new(TrieRepositoryData::new());
+        ReadOnlyRepositoryBackend::start(config, lookup_trie).await
+    }
 
-        let action_repository = action_repository::read_write::new(repository_config.clone()).await?;
-        let action_repository_watcher =
-            ReadOnlyRepositoryBackend::start(repository_config, action_lookup.clone()).await?;
-
-        let repository_config = KubernetesResourceManagerConfig {
-            namespace: settings.namespace.clone(),
-            label_selector_key: settings.resource_repository.label_selector_key.clone(),
-            label_selector_value: settings.resource_repository.label_selector_value.clone(),
+    pub async fn create_readonly_repository<K>(
+        namespace: &str,
+        kubeconfig: Config,
+        instance_name: String,
+        settings: &RepositorySettings,
+    ) -> anyhow::Result<ReadOnlyRepositoryBackend>
+    where
+        K: Ord,
+    {
+        let config = KubernetesResourceManagerConfig {
+            namespace: namespace.to_string(),
             kubeconfig: kubeconfig.clone(),
             field_manager: instance_name.clone(),
+            listener_config: (&settings).into(),
         };
-
-        let resource_lookup = resource_repository::read_only::new();
-        let resource_lookup_watcher =
-            ReadOnlyRepositoryBackend::start(repository_config.clone(), resource_lookup.clone()).await?;
-        let resource_repository = resource_repository::read_write::new(repository_config.clone()).await;
-        let resource_repository_watcher =
-            ReadOnlyRepositoryBackend::start(repository_config, resource_lookup.clone()).await?;
-
-        let repository_config = KubernetesResourceManagerConfig {
-            namespace: settings.namespace.clone(),
-            label_selector_key: settings.policy_repository.label_selector_key.clone(),
-            label_selector_value: settings.policy_repository.label_selector_value.clone(),
-            kubeconfig,
-            field_manager: instance_name.clone(),
-        };
-        let policy_lookup = policy_repository::read_only::new();
-        let policy_lookup_watcher =
-            ReadOnlyRepositoryBackend::start(repository_config.clone(), policy_lookup.clone()).await?;
-        let policy_repository = policy_repository::read_write::new(repository_config.clone()).await;
-        let policy_repository_watcher =
-            ReadOnlyRepositoryBackend::start(repository_config, policy_lookup.clone()).await?;
-
-        Ok(Arc::new(KubernetesBackend {
-            schema_repository: Arc::new(schema_repository),
-
-            policy_repository: policy_lookup,
-            policy_data_repository: policy_repository,
-
-            action_readonly_repository: action_lookup,
-            action_lookup_watcher: Arc::new(action_lookup_watcher),
-            action_repository_watcher: Arc::new(action_repository_watcher),
-            action_data_repository: action_repository,
-
-            resource_read_only_repository: resource_lookup,
-            resource_lookup_watcher: Arc::new(resource_lookup_watcher),
-            resource_repository_watcher: Arc::new(resource_repository_watcher),
-            resource_data_repository: resource_repository,
-
-            policy_lookup_watcher: Arc::new(policy_lookup_watcher),
-            policy_repository_watcher: Arc::new(policy_repository_watcher),
-        }))
+        let lookup_trie = policy_repository::read_only::new();
+        ReadOnlyRepositoryBackend::start(config, lookup_trie).await
     }
 }

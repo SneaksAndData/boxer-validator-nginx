@@ -1,3 +1,4 @@
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::ListenerConfig;
 use duration_string::DurationString;
 use serde::Deserialize;
 
@@ -5,6 +6,17 @@ use serde::Deserialize;
 pub struct RepositorySettings {
     pub label_selector_key: String,
     pub label_selector_value: String,
+    pub operation_timeout: DurationString,
+}
+
+impl Into<ListenerConfig> for &RepositorySettings {
+    fn into(self) -> ListenerConfig {
+        ListenerConfig {
+            label_selector_key: self.label_selector_key.clone(),
+            label_selector_value: self.label_selector_value.clone(),
+            operation_timeout: self.operation_timeout.into(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -12,6 +24,7 @@ pub struct SchemaRepositorySettings {
     pub label_selector_key: String,
     pub label_selector_value: String,
     pub name: String,
+    pub operation_timeout: DurationString,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,7 +38,7 @@ pub struct KubernetesBackendSettings {
     pub lease_duration: DurationString,
     pub lease_renew_duration: DurationString,
 
-    pub schema_repository: SchemaRepositorySettings,
+    pub schema_repository: RepositorySettings,
     pub actions_repository: RepositorySettings,
     pub resource_repository: RepositorySettings,
     pub policy_repository: RepositorySettings,

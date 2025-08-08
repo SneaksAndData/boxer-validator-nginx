@@ -1,10 +1,10 @@
-pub mod models;
+pub mod policy_document;
 
 pub mod read_only;
 pub mod read_write;
 
 use crate::http::controllers::policy_set::models::PolicySetRegistration;
-use crate::services::repositories::policy_repository::models::PolicyDocument;
+use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::{CanDelete, ReadOnlyRepository, UpsertRepository};
 use cedar_policy::PolicySet;

@@ -1,5 +1,5 @@
-use crate::services::repositories::common::TrieRepositoryData;
-use crate::services::repositories::models::PathSegment;
+use crate::services::repositories::lookup_trie::TrieRepositoryData;
+use crate::services::repositories::models::path_segment::PathSegment;
 use std::sync::Arc;
 
 pub fn new() -> Arc<TrieRepositoryData<PathSegment>> {

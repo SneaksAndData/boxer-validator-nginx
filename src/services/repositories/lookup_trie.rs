@@ -1,5 +1,5 @@
-use super::resource_repository::models::ResourceDiscoveryDocument;
-use crate::services::repositories::models::PathSegment;
+use super::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
+use crate::services::repositories::models::path_segment::PathSegment;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
@@ -12,6 +12,8 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
 use trie_rs::map::{Trie, TrieBuilder};
+
+pub mod backend;
 
 #[async_trait]
 pub trait TrieRepository<Key>:

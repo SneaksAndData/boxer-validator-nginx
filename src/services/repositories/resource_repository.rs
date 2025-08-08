@@ -1,12 +1,12 @@
-pub mod models;
 pub mod read_only;
+pub mod resource_discovery_document;
 
 pub mod read_write;
 
 use crate::http::controllers::resource_set::models::ResourceSetRegistration;
-use crate::services::repositories::common::TrieRepositoryData;
-use crate::services::repositories::models::PathSegment;
-use crate::services::repositories::resource_repository::models::ResourceDiscoveryDocument;
+use crate::services::repositories::lookup_trie::TrieRepositoryData;
+use crate::services::repositories::models::path_segment::PathSegment;
+use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::{CanDelete, ReadOnlyRepository, UpsertRepository};
 use cedar_policy::EntityUid;

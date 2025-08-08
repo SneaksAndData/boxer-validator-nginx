@@ -1,7 +1,10 @@
 use crate::http::controllers::action_set::models::{ActionRouteRegistration, ActionSetRegistration};
-use crate::services::repositories::models::PathSegment::{Parameter, Static};
-use crate::services::repositories::models::RequestSegment::{Path, Verb};
-use crate::services::repositories::models::{HTTPMethod, RequestSegment};
+use crate::services::repositories::models::http_method::HTTPMethod;
+use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
+use crate::services::repositories::models::request_segment::RequestSegment;
+use crate::services::repositories::models::request_segment::RequestSegment::{Path, Verb};
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
+use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use cedar_policy::EntityUid;
 use futures::Stream;
 use futures::StreamExt;
@@ -10,6 +13,7 @@ use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
@@ -119,5 +123,28 @@ impl Into<ActionSetRegistration> for ActionDiscoveryDocumentSpec {
             hostname: self.hostname,
             routes,
         }
+    }
+}
+
+impl SoftDeleteResource for ActionDiscoveryDocument {
+    fn is_deleted(&self) -> bool {
+        !self.spec.active
+    }
+
+    fn set_deleted(&mut self) {
+        self.spec.active = false;
+    }
+
+    fn clear_managed_fields(&mut self) {
+        self.metadata.managed_fields = None;
+    }
+}
+
+impl UpdateLabels for ActionDiscoveryDocument {
+    fn update_labels(mut self, custom_labels: &mut BTreeMap<String, String>) -> Self {
+        let mut labels = self.metadata.labels.unwrap_or_default();
+        labels.append(custom_labels);
+        self.metadata.labels = Some(labels);
+        self
     }
 }

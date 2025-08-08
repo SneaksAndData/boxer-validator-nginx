@@ -1,4 +1,5 @@
 use super::models::PolicyDocument;
+use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
 use crate::services::repositories::policy_repository::PolicyReadOnlyRepositoryInterface;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;

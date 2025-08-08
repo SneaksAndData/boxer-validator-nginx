@@ -1,7 +1,9 @@
-use crate::services::repositories::models::HTTPMethod::Get;
-use crate::services::repositories::models::PathSegment::{Parameter, Static};
-use crate::services::repositories::models::RequestSegment::{Hostname, Path, Verb};
-use crate::services::repositories::models::{PathSegment, RequestSegment};
+use super::http_method::HTTPMethod::Get;
+use super::path_segment::PathSegment;
+use super::path_segment::PathSegment::{Parameter, Static};
+use super::request_segment::RequestSegment;
+use super::request_segment::RequestSegment::{Hostname, Path, Verb};
+
 use rstest::rstest;
 use std::cmp::Ordering;
 

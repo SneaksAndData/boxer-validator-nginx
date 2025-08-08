@@ -2,7 +2,7 @@ use crate::http::errors::*;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use boxer_core::services::base::types::SchemaRepository;
+use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use cedar_policy::SchemaFragment;
 use log::error;
 use serde_json::Value;

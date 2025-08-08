@@ -594,7 +594,6 @@ dependencies = [
  "futures",
  "k8s-openapi",
  "kube",
- "kubert",
  "log",
  "maplit",
  "schemars 0.8.22",
@@ -2099,26 +2098,6 @@ dependencies = [
  "thiserror 2.0.12",
  "tokio",
  "tokio-util",
- "tracing",
-]
-
-[[package]]
-name = "kubert"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a92cbeb0adfdf2706c4f85f0d63e01b6535d44e150f5963289cd4b8bc0115fe5"
-dependencies = [
- "backon",
- "chrono",
- "futures-util",
- "hyper",
- "k8s-openapi",
- "kube-client",
- "kube-core",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
- "tokio",
  "tracing",
 ]
 
