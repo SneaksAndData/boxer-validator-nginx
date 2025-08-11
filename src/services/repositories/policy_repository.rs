@@ -22,5 +22,3 @@ pub trait PolicyRepositoryInterface:
 }
 
 pub type PolicyReadOnlyRepository = dyn PolicyReadOnlyRepositoryInterface + Send + Sync;
-
-pub type PolicyRepository = dyn PolicyRepositoryInterface + Send + Sync;

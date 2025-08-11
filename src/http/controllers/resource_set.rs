@@ -1,12 +1,10 @@
 pub mod models;
 
 use crate::http::controllers::resource_set::models::ResourceSetRegistration;
-use crate::http::errors::*;
-use crate::services::repositories::resource_repository::ResourceRepository;
+use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
-use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use log::error;
+use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
 use std::sync::Arc;
 
 #[utoipa::path(context_path = "/resource_set/", responses((status = OK)), request_body = ResourceSetRegistration)]
@@ -14,25 +12,28 @@ use std::sync::Arc;
 async fn post_resource_set(
     id: Path<String>,
     request: Json<ResourceSetRegistration>,
-    data: Data<Arc<ResourceRepository>>,
+    data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
 ) -> Result<impl Responder> {
-    data.upsert(id.to_string(), request.into_inner()).await.map_err(|e| {
-        error!("Failed ot insert resource_set: {:?}", e);
-        e
-    })?;
+    data.upsert(id.to_string(), request.into_inner()).await?;
     Ok(HttpResponse::Ok().finish())
 }
 
 #[utoipa::path(context_path = "/resource_set/", responses((status = OK, body = ResourceSetRegistration)))]
 #[get("{id}")]
-async fn get_resource_set(id: Path<String>, data: Data<Arc<ResourceRepository>>) -> Result<impl Responder> {
+async fn get_resource_set(
+    id: Path<String>,
+    data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
+) -> Result<impl Responder> {
     let resource_set = data.get(id.to_string()).await?;
     Ok(Json(resource_set))
 }
 
 #[utoipa::path(context_path = "/resource_set/", responses((status = OK)))]
 #[delete("{id}")]
-async fn delete_resource_set(id: Path<String>, data: Data<Arc<ResourceRepository>>) -> Result<impl Responder> {
+async fn delete_resource_set(
+    id: Path<String>,
+    data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
+) -> Result<impl Responder> {
     data.delete(id.to_string()).await?;
     Ok(HttpResponse::Ok().finish())
 }

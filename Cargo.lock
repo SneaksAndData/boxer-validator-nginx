@@ -586,7 +586,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=fix-after-update#6ba1db8fee98d4a626df2440fbd5526abf243ce1"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.1#60816eb2f2b100f0044fed8602a66f78604839af"
 dependencies = [
  "anyhow",
  "assert_matches",
