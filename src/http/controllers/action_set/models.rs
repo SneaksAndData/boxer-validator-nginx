@@ -28,7 +28,7 @@ pub struct ActionSetRegistration {
 impl TryFromResource<ActionDiscoveryDocument> for ActionSetRegistration {
     type Error = Status;
 
-    fn try_into_resource(resource: Arc<ActionDiscoveryDocument>) -> std::result::Result<Self, Self::Error> {
+    fn try_into_resource(resource: Arc<ActionDiscoveryDocument>) -> Result<Self, Self::Error> {
         let spec = resource.spec.clone();
         spec.try_into()
             .map_err(|e| Status::ConversionError(anyhow::Error::from(e)))
@@ -36,9 +36,9 @@ impl TryFromResource<ActionDiscoveryDocument> for ActionSetRegistration {
 }
 
 impl ToResource<ActionDiscoveryDocument> for ActionSetRegistration {
-    fn to_resource(&self, object_meta: &ObjectMeta) -> std::result::Result<ActionDiscoveryDocument, Status> {
-        let spec = ActionDiscoveryDocumentSpec::try_from(self.clone())
-            .map_err(|e| Status::ConversionError(anyhow::Error::from(e)))?;
+    fn to_resource(&self, object_meta: &ObjectMeta) -> Result<ActionDiscoveryDocument, Status> {
+        let spec =
+            ActionDiscoveryDocumentSpec::try_from(self).map_err(|e| Status::ConversionError(anyhow::Error::from(e)))?;
         Ok(ActionDiscoveryDocument {
             metadata: object_meta.clone(),
             spec,

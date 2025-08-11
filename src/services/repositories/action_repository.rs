@@ -1,5 +1,4 @@
 pub mod action_discovery_document;
-pub mod read_only;
 pub mod read_write;
 
 use crate::http::controllers::action_set::models::ActionSetRegistration;

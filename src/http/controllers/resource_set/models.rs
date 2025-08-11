@@ -36,7 +36,7 @@ impl TryFromResource<ResourceDiscoveryDocument> for ResourceSetRegistration {
 
 impl ToResource<ResourceDiscoveryDocument> for ResourceSetRegistration {
     fn to_resource(&self, object_meta: &ObjectMeta) -> Result<ResourceDiscoveryDocument, Status> {
-        let spec = ResourceDiscoveryDocumentSpec::try_from(self.clone())
+        let spec = ResourceDiscoveryDocumentSpec::try_from(self)
             .map_err(|e| Status::ConversionError(anyhow::Error::from(e)))?;
         Ok(ResourceDiscoveryDocument {
             metadata: object_meta.clone(),

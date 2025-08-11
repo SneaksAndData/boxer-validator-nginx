@@ -1,4 +1,3 @@
-pub mod read_only;
 pub mod resource_discovery_document;
 
 pub mod read_write;

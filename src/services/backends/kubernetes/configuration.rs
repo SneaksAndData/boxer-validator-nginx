@@ -13,7 +13,7 @@ use anyhow::bail;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
-    KubernetesResourceManagerConfig, UpdateLabels,
+    KubernetesResourceManagerConfig, ListenerConfig, UpdateLabels,
 };
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
 use boxer_core::services::backends::kubernetes::repositories::{KubernetesRepository, SoftDeleteResource};
@@ -40,7 +40,7 @@ impl BackendConfiguration for BackendBuilder {
             &settings.namespace,
             kubeconfig.clone(),
             instance_name.clone(),
-            &settings.schema_repository,
+            (&settings.schema_repository).into(),
         )
         .await?;
 
@@ -48,7 +48,7 @@ impl BackendConfiguration for BackendBuilder {
             &settings.namespace,
             kubeconfig.clone(),
             instance_name.clone(),
-            &settings.actions_repository,
+            (&settings.actions_repository).into(),
         )
         .await?;
 
@@ -56,7 +56,7 @@ impl BackendConfiguration for BackendBuilder {
             &settings.namespace,
             kubeconfig.clone(),
             instance_name.clone(),
-            &settings.actions_repository,
+            (&settings.actions_repository).into(),
         )
         .await?;
 
@@ -64,7 +64,7 @@ impl BackendConfiguration for BackendBuilder {
             &settings.namespace,
             kubeconfig.clone(),
             instance_name.clone(),
-            &settings.resource_repository,
+            (&settings.resource_repository).into(),
         )
         .await?;
 
@@ -72,7 +72,7 @@ impl BackendConfiguration for BackendBuilder {
             &settings.namespace,
             kubeconfig.clone(),
             instance_name.clone(),
-            &settings.resource_repository,
+            (&settings.resource_repository).into(),
         )
         .await?;
 
@@ -80,7 +80,7 @@ impl BackendConfiguration for BackendBuilder {
             &settings.namespace,
             kubeconfig.clone(),
             instance_name.clone(),
-            &settings.policy_repository,
+            (&settings.policy_repository).into(),
         )
         .await?;
 
@@ -88,7 +88,7 @@ impl BackendConfiguration for BackendBuilder {
             &settings.namespace,
             kubeconfig.clone(),
             instance_name.clone(),
-            &settings.policy_repository,
+            (&settings.policy_repository).into(),
         )
         .await?;
 
@@ -131,7 +131,7 @@ impl BackendBuilder {
         namespace: &str,
         kubeconfig: Config,
         instance_name: String,
-        settings: &RepositorySettings,
+        settings: ListenerConfig,
     ) -> anyhow::Result<Arc<KubernetesRepository<R>>>
     where
         R: kube::Resource<Scope = NamespaceResourceScope>
@@ -147,7 +147,7 @@ impl BackendBuilder {
             namespace: namespace.to_string(),
             kubeconfig: kubeconfig.clone(),
             field_manager: instance_name.clone(),
-            listener_config: settings.into(),
+            listener_config: settings,
         };
         KubernetesRepository::<R>::start(config)
             .await

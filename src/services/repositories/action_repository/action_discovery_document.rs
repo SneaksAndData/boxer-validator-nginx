@@ -1,11 +1,9 @@
 use crate::http::controllers::action_set::models::{ActionRouteRegistration, ActionSetRegistration};
 use crate::services::repositories::lookup_trie::EntityCollectionResource;
 use crate::services::repositories::models::http_method::HTTPMethod;
-use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
 use crate::services::repositories::models::request_segment::RequestSegment;
 use crate::services::repositories::models::request_segment::RequestSegment::{Path, Verb};
-use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
 use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use cedar_policy::EntityUid;

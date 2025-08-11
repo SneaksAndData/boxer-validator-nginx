@@ -68,6 +68,12 @@ impl ServiceProvider<Arc<PolicyReadOnlyRepository>> for KubernetesBackend {
     }
 }
 
+impl ServiceProvider<Arc<PolicyDataRepository>> for KubernetesBackend {
+    fn get(&self) -> Arc<PolicyDataRepository> {
+        self.policy_repository.clone()
+    }
+}
+
 impl Backend for KubernetesBackend {
     // This is marker trait, so no methods are required here
 }

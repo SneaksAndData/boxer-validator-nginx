@@ -1,10 +1,8 @@
 use crate::http::controllers::policy_set::models::PolicySetRegistration;
 use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
 use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
-use std::sync::Arc;
 
 pub type PolicyDataRepository = dyn UpsertRepositoryWithDelete<
     String,
@@ -15,8 +13,3 @@ pub type PolicyDataRepository = dyn UpsertRepositoryWithDelete<
 >;
 
 impl UpsertRepositoryWithDelete<String, PolicySetRegistration> for KubernetesRepository<PolicyDocument> {}
-
-pub async fn new(config: KubernetesResourceManagerConfig) -> anyhow::Result<Arc<PolicyDataRepository>> {
-    let repository = KubernetesRepository::start(config.clone()).await?;
-    Ok(Arc::new(repository))
-}

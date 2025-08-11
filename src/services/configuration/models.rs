@@ -8,7 +8,6 @@ pub struct RepositorySettings {
     pub label_selector_value: String,
     pub operation_timeout: DurationString,
 }
-
 impl Into<ListenerConfig> for &RepositorySettings {
     fn into(self) -> ListenerConfig {
         ListenerConfig {
@@ -27,6 +26,16 @@ pub struct SchemaRepositorySettings {
     pub operation_timeout: DurationString,
 }
 
+impl Into<ListenerConfig> for &SchemaRepositorySettings {
+    fn into(self) -> ListenerConfig {
+        ListenerConfig {
+            label_selector_key: self.label_selector_key.clone(),
+            label_selector_value: self.label_selector_value.clone(),
+            operation_timeout: self.operation_timeout.into(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct KubernetesBackendSettings {
     pub kubeconfig: Option<String>,
@@ -34,11 +43,7 @@ pub struct KubernetesBackendSettings {
     pub in_cluster: bool,
     pub namespace: String,
 
-    pub lease_name: String,
-    pub lease_duration: DurationString,
-    pub lease_renew_duration: DurationString,
-
-    pub schema_repository: RepositorySettings,
+    pub schema_repository: SchemaRepositorySettings,
     pub actions_repository: RepositorySettings,
     pub resource_repository: RepositorySettings,
     pub policy_repository: RepositorySettings,

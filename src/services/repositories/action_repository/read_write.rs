@@ -1,11 +1,8 @@
 use crate::http::controllers::action_set::models::ActionSetRegistration;
 use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
-use anyhow::Result;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
 use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
-use std::sync::Arc;
 
 pub type ActionDataRepository = dyn UpsertRepositoryWithDelete<
     String,
@@ -16,8 +13,3 @@ pub type ActionDataRepository = dyn UpsertRepositoryWithDelete<
 >;
 
 impl UpsertRepositoryWithDelete<String, ActionSetRegistration> for KubernetesRepository<ActionDiscoveryDocument> {}
-
-pub async fn new(config: KubernetesResourceManagerConfig) -> Result<Arc<ActionDataRepository>> {
-    let repository = KubernetesRepository::start(config.clone()).await?;
-    Ok(Arc::new(repository))
-}

@@ -37,7 +37,10 @@ async fn get_schema(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Resu
 #[utoipa::path(context_path = "/schema/", responses((status = OK)))]
 #[delete("{id}")]
 async fn delete_schema(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<impl Responder> {
-    data.delete(id.to_string()).await?;
+    data.delete(id.to_string()).await.map_err(|e| {
+        error!("Failed ot insert schema: {:?}", e);
+        anyhow::Error::new(e)
+    })?;
     Ok(HttpResponse::Ok().finish())
 }
 
