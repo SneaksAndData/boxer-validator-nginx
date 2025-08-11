@@ -1,76 +1,76 @@
 mod configuration;
 
-use crate::services::base::actions_repository_source::ActionRepositorySource;
-use crate::services::base::policy_repository_source::PolicyRepositorySource;
-use crate::services::base::resource_repository_source::ResourceRepositorySource;
-use crate::services::repositories::action_repository::{ActionReadOnlyRepository, ActionRepository};
-use crate::services::repositories::backend::ReadOnlyRepositoryBackend;
-use crate::services::repositories::policy_repository::{PolicyReadOnlyRepository, PolicyRepository};
-use crate::services::repositories::resource_repository::{ResourceReadOnlyRepository, ResourceRepository};
-use boxer_core::services::backends::{Backend, SchemaRepositorySource};
-use boxer_core::services::base::types::SchemaRepository;
+use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
+use crate::services::repositories::action_repository::read_write::ActionDataRepository;
+use crate::services::repositories::action_repository::ActionReadOnlyRepository;
+use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
+use crate::services::repositories::lookup_trie::TrieRepositoryData;
+use crate::services::repositories::models::path_segment::PathSegment;
+use crate::services::repositories::models::request_segment::RequestSegment;
+use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
+use crate::services::repositories::policy_repository::read_only::PolicyRepositoryData;
+use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
+use crate::services::repositories::policy_repository::PolicyReadOnlyRepository;
+use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
+use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
+use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
+use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
+use boxer_core::services::backends::Backend;
+use boxer_core::services::service_provider::ServiceProvider;
 use std::sync::Arc;
 
 pub struct KubernetesBackend {
     schema_repository: Arc<SchemaRepository>,
-    action_readonly_repository: Arc<ActionReadOnlyRepository>,
-    action_data_repository: Arc<ActionRepository>,
+    action_repository: Arc<ActionDataRepository>,
+    resource_repository: Arc<ResourceDiscoveryDocumentRepository>,
+    policy_repository: Arc<PolicyDataRepository>,
 
-    resource_read_only_repository: Arc<ResourceReadOnlyRepository>,
-    resource_data_repository: Arc<ResourceRepository>,
-
-    policy_repository: Arc<PolicyReadOnlyRepository>,
-    policy_data_repository: Arc<PolicyRepository>,
-
-    // This field is required since we want to hold the reference to the backend until
-    // the backend is dropped.
-    #[allow(dead_code)]
-    action_lookup_watcher: Arc<ReadOnlyRepositoryBackend>,
-    #[allow(dead_code)]
-    action_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
-    #[allow(dead_code)]
-    resource_lookup_watcher: Arc<ReadOnlyRepositoryBackend>,
-    #[allow(dead_code)]
-    resource_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
-    #[allow(dead_code)]
-    policy_lookup_watcher: Arc<ReadOnlyRepositoryBackend>,
-    #[allow(dead_code)]
-    policy_repository_watcher: Arc<ReadOnlyRepositoryBackend>,
+    action_lookup_table_listener:
+        Arc<ReadOnlyRepositoryBackend<TrieRepositoryData<RequestSegment>, ActionDiscoveryDocument>>,
+    resource_lookup_table_listener:
+        Arc<ReadOnlyRepositoryBackend<TrieRepositoryData<PathSegment>, ResourceDiscoveryDocument>>,
+    policy_lookup_watcher: Arc<ReadOnlyRepositoryBackend<PolicyRepositoryData, PolicyDocument>>,
 }
 
-impl SchemaRepositorySource for KubernetesBackend {
-    fn get_schemas_repository(&self) -> Arc<SchemaRepository> {
+impl ServiceProvider<Arc<SchemaRepository>> for KubernetesBackend {
+    fn get(&self) -> Arc<SchemaRepository> {
         self.schema_repository.clone()
     }
 }
 
-impl ActionRepositorySource for KubernetesBackend {
-    fn get_readonly_repository(&self) -> Arc<ActionReadOnlyRepository> {
-        self.action_readonly_repository.clone()
-    }
-
-    fn get_action_data_repository(&self) -> Arc<ActionRepository> {
-        self.action_data_repository.clone()
+impl ServiceProvider<Arc<ActionReadOnlyRepository>> for KubernetesBackend {
+    fn get(&self) -> Arc<ActionReadOnlyRepository> {
+        self.action_lookup_table_listener.get_update_handler().clone()
     }
 }
 
-impl ResourceRepositorySource for KubernetesBackend {
-    fn get_resource_repository(&self) -> Arc<ResourceRepository> {
-        self.resource_data_repository.clone()
-    }
-
-    fn get_resource_read_only_repository(&self) -> Arc<ResourceReadOnlyRepository> {
-        self.resource_read_only_repository.clone()
+impl ServiceProvider<Arc<ActionDataRepository>> for KubernetesBackend {
+    fn get(&self) -> Arc<ActionDataRepository> {
+        self.action_repository.clone()
     }
 }
 
-impl PolicyRepositorySource for KubernetesBackend {
-    fn get_policy_readonly_repository(&self) -> Arc<PolicyReadOnlyRepository> {
+impl ServiceProvider<Arc<ResourceDiscoveryDocumentRepository>> for KubernetesBackend {
+    fn get(&self) -> Arc<ResourceDiscoveryDocumentRepository> {
+        self.resource_repository.clone()
+    }
+}
+
+impl ServiceProvider<Arc<ResourceReadOnlyRepository>> for KubernetesBackend {
+    fn get(&self) -> Arc<ResourceReadOnlyRepository> {
+        self.resource_lookup_table_listener.get_update_handler().clone()
+    }
+}
+
+impl ServiceProvider<Arc<PolicyReadOnlyRepository>> for KubernetesBackend {
+    fn get(&self) -> Arc<PolicyReadOnlyRepository> {
+        self.policy_lookup_watcher.get_update_handler().clone()
+    }
+}
+
+impl ServiceProvider<Arc<PolicyDataRepository>> for KubernetesBackend {
+    fn get(&self) -> Arc<PolicyDataRepository> {
         self.policy_repository.clone()
-    }
-
-    fn get_policy_data_repository(&self) -> Arc<PolicyRepository> {
-        self.policy_data_repository.clone()
     }
 }
 

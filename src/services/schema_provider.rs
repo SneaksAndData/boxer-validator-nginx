@@ -1,8 +1,8 @@
 use crate::models::boxer_claims::v1::boxer_claims::BoxerClaims;
 use crate::services::base::schema_provider::SchemaProvider;
-use anyhow::Result;
+use anyhow::{Error, Result};
 use async_trait::async_trait;
-use boxer_core::services::base::types::SchemaRepository;
+use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use cedar_policy::{Schema, SchemaFragment};
 use std::sync::Arc;
 
@@ -14,7 +14,11 @@ pub struct KubernetesSchemaProvider {
 #[async_trait]
 impl SchemaProvider for KubernetesSchemaProvider {
     async fn get_schema(&self, boxer_claims: &BoxerClaims) -> Result<Schema> {
-        let actions_schema = self.schema_repository.get(self.schema_name.clone()).await?;
+        let actions_schema = self
+            .schema_repository
+            .get(self.schema_name.clone())
+            .await
+            .map_err(Error::from)?;
         let principal_schema = SchemaFragment::from_json_str(&boxer_claims.schema)?;
         Schema::from_schema_fragments(vec![actions_schema, principal_schema]).map_err(anyhow::Error::from)
     }

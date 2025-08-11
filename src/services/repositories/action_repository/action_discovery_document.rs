@@ -1,7 +1,11 @@
 use crate::http::controllers::action_set::models::{ActionRouteRegistration, ActionSetRegistration};
-use crate::services::repositories::models::PathSegment::{Parameter, Static};
-use crate::services::repositories::models::RequestSegment::{Path, Verb};
-use crate::services::repositories::models::{HTTPMethod, RequestSegment};
+use crate::services::repositories::lookup_trie::EntityCollectionResource;
+use crate::services::repositories::models::http_method::HTTPMethod;
+use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
+use crate::services::repositories::models::request_segment::RequestSegment;
+use crate::services::repositories::models::request_segment::RequestSegment::{Path, Verb};
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
+use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use cedar_policy::EntityUid;
 use futures::Stream;
 use futures::StreamExt;
@@ -10,6 +14,7 @@ use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
@@ -55,17 +60,13 @@ pub struct ActionDiscoveryDocumentSpec {
     pub routes: Vec<ActionRoute>,
 }
 
-impl ActionDiscoveryDocumentSpec {
-    pub fn stream(self) -> impl Stream<Item = Result<(Vec<RequestSegment>, EntityUid), anyhow::Error>> {
-        let active = stream::repeat(self.active);
-        stream::iter(self.routes).zip(active).map(move |(route, active)| {
+impl EntityCollectionResource<RequestSegment> for ActionDiscoveryDocument {
+    fn stream(self) -> impl Stream<Item = Result<(Vec<RequestSegment>, EntityUid), anyhow::Error>> + Send + Sync {
+        stream::iter(self.spec.routes).map(move |route| {
             let action_uid: EntityUid = EntityUid::from_str(&route.action_uid).map_err(anyhow::Error::from)?;
-            let mut key: Vec<RequestSegment> = vec![RequestSegment::Hostname(self.hostname.clone())];
+            let mut key: Vec<RequestSegment> = vec![];
             let segments: Vec<RequestSegment> = route.try_into()?;
             key.extend(segments);
-            if !active {
-                return Err(anyhow::anyhow!("ActionDiscoveryDocument is not active"));
-            }
             Ok((key, action_uid))
         })
     }
@@ -80,24 +81,24 @@ impl Default for ActionDiscoveryDocument {
     }
 }
 
-impl TryFrom<ActionSetRegistration> for ActionDiscoveryDocumentSpec {
+impl TryFrom<&ActionSetRegistration> for ActionDiscoveryDocumentSpec {
     type Error = anyhow::Error;
 
-    fn try_from(value: ActionSetRegistration) -> Result<Self, Self::Error> {
+    fn try_from(value: &ActionSetRegistration) -> Result<Self, Self::Error> {
         let mut routes = Vec::<ActionRoute>::new();
 
-        for route in value.routes {
+        for route in &value.routes {
             let method = HTTPMethod::from_str(&route.method)?;
             let action_route = ActionRoute {
                 method,
-                route_template: route.route_template,
+                route_template: route.route_template.clone(),
                 action_uid: route.action_uid.to_string(),
             };
             routes.push(action_route)
         }
         Ok(ActionDiscoveryDocumentSpec {
             active: true,
-            hostname: value.hostname,
+            hostname: value.hostname.clone(),
             routes,
         })
     }
@@ -119,5 +120,28 @@ impl Into<ActionSetRegistration> for ActionDiscoveryDocumentSpec {
             hostname: self.hostname,
             routes,
         }
+    }
+}
+
+impl SoftDeleteResource for ActionDiscoveryDocument {
+    fn is_deleted(&self) -> bool {
+        !self.spec.active
+    }
+
+    fn set_deleted(&mut self) {
+        self.spec.active = false;
+    }
+
+    fn clear_managed_fields(&mut self) {
+        self.metadata.managed_fields = None;
+    }
+}
+
+impl UpdateLabels for ActionDiscoveryDocument {
+    fn update_labels(mut self, custom_labels: &mut BTreeMap<String, String>) -> Self {
+        let mut labels = self.metadata.labels.unwrap_or_default();
+        labels.append(custom_labels);
+        self.metadata.labels = Some(labels);
+        self
     }
 }
