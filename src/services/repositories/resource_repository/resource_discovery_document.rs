@@ -1,4 +1,5 @@
 use crate::http::controllers::resource_set::models::{ResourceRouteRegistration, ResourceSetRegistration};
+use crate::services::repositories::lookup_trie::EntityCollectionResource;
 use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
@@ -30,10 +31,9 @@ pub struct ResourceDiscoveryDocumentSpec {
     pub routes: Vec<ResourceRoute>,
 }
 
-impl ResourceDiscoveryDocumentSpec {
-    #[allow(dead_code)]
-    pub fn stream(self) -> impl Stream<Item = Result<(Vec<PathSegment>, EntityUid), anyhow::Error>> {
-        stream::iter(self.routes).map(move |route| {
+impl EntityCollectionResource<PathSegment> for ResourceDiscoveryDocument {
+    fn stream(self) -> impl Stream<Item = Result<(Vec<PathSegment>, EntityUid), anyhow::Error>> + Send + Sync {
+        stream::iter(self.spec.routes).map(move |route| {
             let action_uid: EntityUid = EntityUid::from_str(&route.resource_uid).map_err(anyhow::Error::from)?;
             let mut key: Vec<PathSegment> = vec![];
             let segments: Vec<PathSegment> = route.try_into()?;
@@ -42,6 +42,7 @@ impl ResourceDiscoveryDocumentSpec {
         })
     }
 }
+
 impl Default for ResourceDiscoveryDocument {
     fn default() -> Self {
         ResourceDiscoveryDocument {

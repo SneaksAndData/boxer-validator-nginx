@@ -3,17 +3,25 @@ use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::{KubernetesBackendSettings, RepositorySettings};
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
-use crate::services::repositories::lookup_trie::TrieRepositoryData;
+use crate::services::repositories::lookup_trie::{EntityCollectionResource, TrieRepositoryData};
+use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::policy_repository;
+use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
+use crate::services::repositories::policy_repository::read_only::PolicyRepositoryData;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use anyhow::bail;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
+    KubernetesResourceManagerConfig, UpdateLabels,
+};
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
-use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
+use boxer_core::services::backends::kubernetes::repositories::{KubernetesRepository, SoftDeleteResource};
 use boxer_core::services::backends::BackendConfiguration;
+use k8s_openapi::NamespaceResourceScope;
 use kube::Config;
+use std::fmt::Debug;
+use std::hash::Hash;
 use std::sync::Arc;
 
 #[async_trait]
@@ -36,7 +44,7 @@ impl BackendConfiguration for BackendBuilder {
         )
         .await?;
 
-        let action_lookup_watcher = Self::create_lookup_trie(
+        let action_lookup_table_listener = Self::create_lookup_trie(
             &settings.namespace,
             kubeconfig.clone(),
             instance_name.clone(),
@@ -52,7 +60,7 @@ impl BackendConfiguration for BackendBuilder {
         )
         .await?;
 
-        let resource_lookup_watcher = Self::create_lookup_trie(
+        let resource_lookup_table_listener = Self::create_lookup_trie(
             &settings.namespace,
             kubeconfig.clone(),
             instance_name.clone(),
@@ -68,24 +76,30 @@ impl BackendConfiguration for BackendBuilder {
         )
         .await?;
 
-        let policy_lookup = Self::create_readonly_repository(
+        let policy_lookup_watcher = Self::create_readonly_repository::<PathSegment>(
             &settings.namespace,
-            kubeconfig,
-            instance_name,
+            kubeconfig.clone(),
+            instance_name.clone(),
             &settings.policy_repository,
         )
         .await?;
 
         let policy_repository = Self::create_repository(
             &settings.namespace,
-            kubeconfig,
-            instance_name,
+            kubeconfig.clone(),
+            instance_name.clone(),
             &settings.policy_repository,
         )
         .await?;
 
         Ok(Arc::new(KubernetesBackend {
-            schema_repository: Arc::new(schema_repository),
+            schema_repository,
+            action_repository,
+            resource_repository,
+            policy_repository,
+            action_lookup_table_listener,
+            resource_lookup_table_listener,
+            policy_lookup_watcher,
         }))
     }
 }
@@ -93,15 +107,15 @@ impl BackendConfiguration for BackendBuilder {
 impl BackendBuilder {
     async fn get_kubeconfig(settings: &KubernetesBackendSettings) -> anyhow::Result<Config> {
         match settings {
-            KubernetesBackendSettings { in_cluster: true, .. } => from_cluster().load()?,
+            KubernetesBackendSettings { in_cluster: true, .. } => from_cluster().load(),
 
             KubernetesBackendSettings {
                 kubeconfig: Some(path), ..
-            } => from_file().load(&path).await?,
+            } => from_file().load(&path).await,
 
             KubernetesBackendSettings {
                 exec: Some(command), ..
-            } => from_command().load(&command).await?,
+            } => from_command().load(&command).await,
 
             KubernetesBackendSettings {
                 kubeconfig: None,
@@ -118,12 +132,22 @@ impl BackendBuilder {
         kubeconfig: Config,
         instance_name: String,
         settings: &RepositorySettings,
-    ) -> anyhow::Result<Arc<KubernetesRepository<R>>> {
+    ) -> anyhow::Result<Arc<KubernetesRepository<R>>>
+    where
+        R: kube::Resource<Scope = NamespaceResourceScope>
+            + SoftDeleteResource
+            + UpdateLabels
+            + Clone
+            + Send
+            + Sync
+            + 'static,
+        R::DynamicType: Hash + Eq + Clone + Default,
+    {
         let config = KubernetesResourceManagerConfig {
             namespace: namespace.to_string(),
             kubeconfig: kubeconfig.clone(),
             field_manager: instance_name.clone(),
-            listener_config: (&settings).into(),
+            listener_config: settings.into(),
         };
         KubernetesRepository::<R>::start(config)
             .await
@@ -131,23 +155,33 @@ impl BackendBuilder {
             .map_err(|e| e.into())
     }
 
-    pub async fn create_lookup_trie<K>(
+    pub async fn create_lookup_trie<R, K>(
         namespace: &str,
         kubeconfig: Config,
         instance_name: String,
         settings: &RepositorySettings,
-    ) -> anyhow::Result<ReadOnlyRepositoryBackend>
+    ) -> anyhow::Result<Arc<ReadOnlyRepositoryBackend<TrieRepositoryData<K>, R>>>
     where
-        K: Ord,
+        K: Debug + Ord + Clone + Send + Sync + 'static,
+        R: kube::Resource<Scope = NamespaceResourceScope>
+            + SoftDeleteResource
+            + EntityCollectionResource<K>
+            + UpdateLabels
+            + Clone
+            + Send
+            + Sync
+            + 'static,
+        R::DynamicType: Hash + Eq + Clone + Default,
     {
         let config = KubernetesResourceManagerConfig {
             namespace: namespace.to_string(),
             kubeconfig: kubeconfig.clone(),
             field_manager: instance_name.clone(),
-            listener_config: (&settings).into(),
+            listener_config: settings.into(),
         };
-        let lookup_trie = Arc::new(TrieRepositoryData::new());
-        ReadOnlyRepositoryBackend::start(config, lookup_trie).await
+        let lookup_trie = Arc::new(TrieRepositoryData::<K>::new());
+        let r = ReadOnlyRepositoryBackend::<TrieRepositoryData<K>, R>::start(config, lookup_trie).await?;
+        Ok(Arc::new(r))
     }
 
     pub async fn create_readonly_repository<K>(
@@ -155,7 +189,7 @@ impl BackendBuilder {
         kubeconfig: Config,
         instance_name: String,
         settings: &RepositorySettings,
-    ) -> anyhow::Result<ReadOnlyRepositoryBackend>
+    ) -> anyhow::Result<Arc<ReadOnlyRepositoryBackend<PolicyRepositoryData, PolicyDocument>>>
     where
         K: Ord,
     {
@@ -163,9 +197,10 @@ impl BackendBuilder {
             namespace: namespace.to_string(),
             kubeconfig: kubeconfig.clone(),
             field_manager: instance_name.clone(),
-            listener_config: (&settings).into(),
+            listener_config: settings.into(),
         };
         let lookup_trie = policy_repository::read_only::new();
-        ReadOnlyRepositoryBackend::start(config, lookup_trie).await
+        let r = ReadOnlyRepositoryBackend::start(config, lookup_trie).await?;
+        Ok(Arc::new(r))
     }
 }

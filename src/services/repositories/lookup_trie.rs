@@ -1,5 +1,3 @@
-use super::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
-use crate::services::repositories::models::path_segment::PathSegment;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
@@ -7,6 +5,7 @@ use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRe
 use cedar_policy::EntityUid;
 use futures::StreamExt;
 use kube::runtime::watcher::Error;
+use kube::Resource;
 use log::{debug, info, warn};
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -57,28 +56,10 @@ where
     }
 }
 
-impl TrieRepositoryData<PathSegment> {
-    pub async fn handle_async(&self, event: ResourceDiscoveryDocument) {
-        event
-            .spec
-            .stream()
-            .for_each(move |result| async move {
-                match result {
-                    Ok((segments, action_uid)) => {
-                        if let Err(e) = self.upsert(segments.clone(), action_uid.clone()).await {
-                            warn!("Failed to upsert action: {}", e);
-                        } else {
-                            debug!(
-                                "Successfully upserted action with key {:?} and UID: {}",
-                                segments, action_uid
-                            );
-                        }
-                    }
-                    Err(e) => warn!("Error processing action route: {}", e),
-                }
-            })
-            .await
-    }
+pub trait EntityCollectionResource<Key> {
+    fn stream(
+        self,
+    ) -> impl futures::Stream<Item = Result<(Vec<Key>, EntityUid), anyhow::Error>> + Send + Sync + 'static;
 }
 
 #[async_trait]
@@ -135,18 +116,41 @@ where
 }
 
 #[async_trait]
-impl ResourceUpdateHandler<ResourceDiscoveryDocument> for TrieRepositoryData<PathSegment> {
-    async fn handle_update(&self, event: Result<ResourceDiscoveryDocument, Error>) -> () {
-        if event.is_err() {
-            warn!("Failed to handle update: {:?}", event);
+impl<R, K> ResourceUpdateHandler<R> for TrieRepositoryData<K>
+where
+    R: EntityCollectionResource<K> + Debug + Resource + Send + Sync + 'static,
+    K: Ord + Send + Sync + Debug + Clone + 'static,
+{
+    async fn handle_update(&self, event: Result<R, Error>) -> () {
+        match event {
+            Err(e) => warn!("Failed to handle update: {:?}", e),
+            Ok(resource) => {
+                {
+                    info!("Received resource update: {:?}", resource);
+                    let mut guard = self.rw_lock.write().await;
+                    guard.builder = Box::new(TrieBuilder::new());
+                    guard.maybe_trie = None;
+                }
+                resource
+                    .stream()
+                    .for_each(move |result| async move {
+                        match result {
+                            Ok((segments, action_uid)) => {
+                                if let Err(e) = self.upsert(segments.clone(), action_uid.clone()).await {
+                                    warn!("Failed to upsert action: {}", e);
+                                } else {
+                                    debug!(
+                                        "Successfully upserted action with key {:?} and UID: {}",
+                                        segments, action_uid
+                                    );
+                                }
+                            }
+                            Err(e) => warn!("Error processing action route: {}", e),
+                        }
+                    })
+                    .await;
+                info!("Finished updating action discovery trie");
+            }
         }
-        {
-            info!("Updating action discovery trie");
-            let mut guard = self.rw_lock.write().await;
-            guard.builder = Box::new(TrieBuilder::new());
-            guard.maybe_trie = None;
-        }
-        self.handle_async(event.unwrap()).await;
-        info!("Finished updating action discovery trie");
     }
 }

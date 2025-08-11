@@ -1,9 +1,6 @@
-use super::ActionReadOnlyRepositoryInterface;
 use crate::services::repositories::lookup_trie::TrieRepositoryData;
 use crate::services::repositories::models::request_segment::RequestSegment;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
-use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
-use futures::stream::StreamExt;
+use boxer_core::services::base::upsert_repository::UpsertRepository;
 use std::sync::Arc;
 
 #[cfg(test)]

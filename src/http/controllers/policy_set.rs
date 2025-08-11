@@ -6,9 +6,7 @@ use crate::services::repositories::policy_repository::PolicyRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use cedar_policy::PolicySet;
 use log::error;
-use std::str::FromStr;
 use std::sync::Arc;
 
 #[utoipa::path(context_path = "/policy_set/", responses((status = OK)), request_body = PolicySetRegistration)]

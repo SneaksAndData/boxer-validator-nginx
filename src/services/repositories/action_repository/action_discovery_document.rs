@@ -1,8 +1,11 @@
 use crate::http::controllers::action_set::models::{ActionRouteRegistration, ActionSetRegistration};
+use crate::services::repositories::lookup_trie::EntityCollectionResource;
 use crate::services::repositories::models::http_method::HTTPMethod;
+use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
 use crate::services::repositories::models::request_segment::RequestSegment;
 use crate::services::repositories::models::request_segment::RequestSegment::{Path, Verb};
+use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
 use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use cedar_policy::EntityUid;
@@ -59,17 +62,13 @@ pub struct ActionDiscoveryDocumentSpec {
     pub routes: Vec<ActionRoute>,
 }
 
-impl ActionDiscoveryDocumentSpec {
-    pub fn stream(self) -> impl Stream<Item = Result<(Vec<RequestSegment>, EntityUid), anyhow::Error>> {
-        let active = stream::repeat(self.active);
-        stream::iter(self.routes).zip(active).map(move |(route, active)| {
+impl EntityCollectionResource<RequestSegment> for ActionDiscoveryDocument {
+    fn stream(self) -> impl Stream<Item = Result<(Vec<RequestSegment>, EntityUid), anyhow::Error>> + Send + Sync {
+        stream::iter(self.spec.routes).map(move |route| {
             let action_uid: EntityUid = EntityUid::from_str(&route.action_uid).map_err(anyhow::Error::from)?;
-            let mut key: Vec<RequestSegment> = vec![RequestSegment::Hostname(self.hostname.clone())];
+            let mut key: Vec<RequestSegment> = vec![];
             let segments: Vec<RequestSegment> = route.try_into()?;
             key.extend(segments);
-            if !active {
-                return Err(anyhow::anyhow!("ActionDiscoveryDocument is not active"));
-            }
             Ok((key, action_uid))
         })
     }

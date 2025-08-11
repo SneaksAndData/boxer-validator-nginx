@@ -18,7 +18,7 @@ async fn post_schema(
     let schema = SchemaFragment::from_json_value(schema_json.into_inner())?;
     data.upsert(id.to_string(), schema).await.map_err(|e| {
         error!("Failed ot insert schema: {:?}", e);
-        e
+        anyhow::Error::new(e)
     })?;
     Ok(HttpResponse::Ok().finish())
 }
@@ -26,7 +26,10 @@ async fn post_schema(
 #[utoipa::path(context_path = "/schema/", responses((status = OK, body = Value)))]
 #[get("{id}")]
 async fn get_schema(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Result<impl Responder> {
-    let schema = data.get(id.to_string()).await?;
+    let schema = data.get(id.to_string()).await.map_err(|e| {
+        error!("Failed ot insert schema: {:?}", e);
+        anyhow::Error::new(e)
+    })?;
     let result = schema.to_json_value()?;
     Ok(Json(result))
 }
