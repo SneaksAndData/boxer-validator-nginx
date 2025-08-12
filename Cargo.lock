@@ -586,13 +586,13 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.2#accb293099fb3c0384b8de5eae66d9ada8c8fdea"
 dependencies = [
  "actix-web",
  "anyhow",
  "assert_matches",
  "async-trait",
  "cedar-policy",
+ "duration-string",
  "futures",
  "k8s-openapi",
  "kube",

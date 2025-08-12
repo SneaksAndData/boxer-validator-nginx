@@ -3,7 +3,8 @@ use crate::services::repositories::lookup_trie::EntityCollectionResource;
 use crate::services::repositories::models::http_method::HTTPMethod;
 use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
 use crate::services::repositories::models::request_segment::RequestSegment;
-use crate::services::repositories::models::request_segment::RequestSegment::{Path, Verb};
+use crate::services::repositories::models::request_segment::RequestSegment::{Hostname, Path, Verb};
+use actix_web::guard::Host;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
 use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use cedar_policy::EntityUid;
@@ -16,6 +17,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::str::FromStr;
+use url::quirks::host;
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -62,13 +64,16 @@ pub struct ActionDiscoveryDocumentSpec {
 
 impl EntityCollectionResource<RequestSegment> for ActionDiscoveryDocument {
     fn stream(self) -> impl Stream<Item = Result<(Vec<RequestSegment>, EntityUid), anyhow::Error>> + Send + Sync {
-        stream::iter(self.spec.routes).map(move |route| {
-            let action_uid: EntityUid = EntityUid::from_str(&route.action_uid).map_err(anyhow::Error::from)?;
-            let mut key: Vec<RequestSegment> = vec![];
-            let segments: Vec<RequestSegment> = route.try_into()?;
-            key.extend(segments);
-            Ok((key, action_uid))
-        })
+        let hostname = self.spec.hostname.clone();
+        stream::iter(self.spec.routes)
+            .zip(stream::repeat(hostname))
+            .map(move |(route, hostname)| {
+                let action_uid: EntityUid = EntityUid::from_str(&route.action_uid).map_err(anyhow::Error::from)?;
+                let mut key: Vec<RequestSegment> = vec![Hostname(hostname)];
+                let segments: Vec<RequestSegment> = route.try_into()?;
+                key.extend(segments);
+                Ok((key, action_uid))
+            })
     }
 }
 
