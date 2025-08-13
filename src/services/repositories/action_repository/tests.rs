@@ -26,12 +26,13 @@ struct KubernetesActionRepositoryTest {
 impl AsyncTestContext for KubernetesActionRepositoryTest {
     async fn setup() -> Self {
         let parent = SpinLockKubernetesResourceManagerTestContext::setup().await;
-        let listener_config = parent.config.listener_config.clone();
+        let owner_mark = parent.config.owner_mark.clone();
+        let operation_timeout = parent.config.operation_timeout.clone();
         let config = KubernetesResourceManagerConfig {
             namespace: parent.config.namespace.clone(),
             kubeconfig: parent.config.kubeconfig.clone(),
-            field_manager: "unit-test".to_string(),
-            listener_config: listener_config.clone(),
+            owner_mark,
+            operation_timeout: operation_timeout.clone(),
         };
         let lookup_trie = Arc::new(TrieRepositoryData::<RequestSegment>::new());
         let lookup = ReadOnlyRepositoryBackend::start(config, lookup_trie.clone())
@@ -40,7 +41,7 @@ impl AsyncTestContext for KubernetesActionRepositoryTest {
 
         let repository = Arc::new(KubernetesRepository {
             resource_manager: parent.manager,
-            operation_timeout: parent.config.listener_config.operation_timeout,
+            operation_timeout: parent.config.operation_timeout,
         });
         Self {
             repository,
