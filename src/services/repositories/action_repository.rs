@@ -1,6 +1,9 @@
 pub mod action_discovery_document;
 pub mod read_write;
 
+#[cfg(test)]
+mod tests;
+
 use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
 use crate::services::repositories::lookup_trie::TrieRepositoryData;
 use crate::services::repositories::models::request_segment::RequestSegment;

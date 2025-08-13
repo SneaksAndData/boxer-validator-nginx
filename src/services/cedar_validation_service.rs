@@ -6,9 +6,8 @@ use crate::services::repositories::action_repository::ActionReadOnlyRepository;
 use crate::services::repositories::policy_repository::PolicyReadOnlyRepository;
 use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use async_trait::async_trait;
-use cedar_policy::{Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid, Request};
+use cedar_policy::{Authorizer, Context, Entities, Entity, EntityUid, Request};
 use log::{debug, info};
-use std::str::FromStr;
 use std::sync::Arc;
 
 pub struct CedarValidationService {
@@ -54,10 +53,16 @@ impl ValidationService for CedarValidationService {
         let actor: EntityUid = boxer_claims.try_into()?;
 
         let entities = Entities::empty();
-        let request = Request::new(actor, action, resource, Context::empty(), None)?;
+        let request = Request::new(actor.clone(), action.clone(), resource.clone(), Context::empty(), None)?;
         let answer = self.authorizer.is_authorized(&request, &policy_set, &entities);
 
-        info!("validation {:?}", answer.decision());
+        info!(
+            "validation {:?} for actor {:?} action {:?} on resource {:?}",
+            answer,
+            actor.to_string(),
+            action.to_string(),
+            resource.to_string()
+        );
         match answer.decision() {
             cedar_policy::Decision::Allow => Ok(()),
             cedar_policy::Decision::Deny => anyhow::bail!("Access denied"),
@@ -69,8 +74,7 @@ impl TryInto<EntityUid> for BoxerClaims {
     type Error = anyhow::Error;
 
     fn try_into(self) -> Result<EntityUid, Self::Error> {
-        let tp = EntityTypeName::from_str(&self.identity_provider)?;
-        let n = EntityId::from_str(&self.user_id)?;
-        Ok(EntityUid::from_type_name_and_id(tp, n))
+        let p = Entity::from_json_str(&self.principal, None)?;
+        Ok(p.uid())
     }
 }

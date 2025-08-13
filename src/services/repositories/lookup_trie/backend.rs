@@ -3,6 +3,7 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::Kub
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::{
     KubernetesResourceWatcher, ResourceUpdateHandler,
 };
+use boxer_core::services::service_provider::ServiceProvider;
 use futures::stream::StreamExt;
 use k8s_openapi::NamespaceResourceScope;
 use kube::runtime::{reflector, watcher, WatchStreamExt};
@@ -38,10 +39,6 @@ where
             update_handler,
             _marker: std::marker::PhantomData,
         }
-    }
-
-    pub fn get_update_handler(&self) -> Arc<H> {
-        self.update_handler.clone()
     }
 }
 
@@ -80,5 +77,16 @@ where
         self.handle.abort();
         debug!("KubernetesResourceManager stopped");
         Ok(())
+    }
+}
+
+impl<H, S> ServiceProvider<Arc<H>> for ReadOnlyRepositoryBackend<H, S>
+where
+    H: ResourceUpdateHandler<S> + Send + Sync + 'static,
+    S: Resource<Scope = NamespaceResourceScope> + Clone + Debug + Serialize + DeserializeOwned + Send + Sync,
+    S::DynamicType: Hash + Eq + Clone + Default,
+{
+    fn get(&self) -> Arc<H> {
+        self.update_handler.clone()
     }
 }

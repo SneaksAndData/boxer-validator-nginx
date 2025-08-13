@@ -8,9 +8,9 @@ use actix_web::{get, HttpResponse};
 use log::debug;
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/token/review", responses((status = OK)))]
-#[get("/token/review")]
-async fn get(
+#[utoipa::path(context_path = "", responses((status = OK)))]
+#[get("/review")]
+async fn token_review(
     boxer_claims: BoxerClaims,
     request_context: RequestContext,
     cedar_validation_service: Data<Arc<CedarValidationService>>,
