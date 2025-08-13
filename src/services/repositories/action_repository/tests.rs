@@ -3,11 +3,10 @@ use crate::http::controllers::action_set::models::{ActionRouteRegistration, Acti
 use crate::models::request_context::RequestContext;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
-    KubernetesResourceManagerConfig, ListenerConfig,
-};
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
 use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
+use boxer_core::services::service_provider::ServiceProvider;
 use boxer_core::testing::api_extensions::WaitForResource;
 use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::SpinLockKubernetesResourceManagerTestContext;
 use kube::Api;
@@ -21,8 +20,6 @@ struct KubernetesActionRepositoryTest {
     repository: Arc<ActionDataRepository>,
     api: Api<ActionDiscoveryDocument>,
     namespace: String,
-    listener_config: ListenerConfig,
-    lookup_trie: Arc<TrieRepositoryData<RequestSegment>>,
     lookup: ReadOnlyRepositoryBackend<TrieRepositoryData<RequestSegment>, ActionDiscoveryDocument>,
 }
 
@@ -49,9 +46,7 @@ impl AsyncTestContext for KubernetesActionRepositoryTest {
             repository,
             api: parent.api_context.api,
             namespace: parent.config.namespace.clone(),
-            listener_config,
             lookup,
-            lookup_trie,
         }
     }
 }
@@ -86,8 +81,9 @@ async fn test_create_schema(ctx: &mut KubernetesActionRepositoryTest) {
     );
     let key = request_context.try_into().unwrap();
 
-    let after = ctx.lookup_trie.get(key).await;
+    let lookup_trie = ctx.lookup.get();
+    let result = lookup_trie.get(key).await;
 
     // Assert
-    assert!(after.is_ok());
+    assert!(result.is_ok());
 }
