@@ -105,13 +105,13 @@ where
         Ok(())
     }
 
-    async fn exists(&self, key: Vec<Key>) -> bool {
+    async fn exists(&self, key: Vec<Key>) -> Result<bool, Self::Error> {
         let guard = self.rw_lock.read().await;
-        guard
+        Ok(guard
             .maybe_trie
             .clone()
             .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
-            .is_some()
+            .is_some())
     }
 }
 
