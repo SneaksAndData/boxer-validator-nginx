@@ -15,5 +15,6 @@ use utoipa::OpenApi;
     controllers::policy_set::get_policy_set,
     controllers::policy_set::post_policy_set,
     controllers::policy_set::delete_policy_set,
+    controllers::token_review::token_review,
 ))]
 pub struct ApiDoc;

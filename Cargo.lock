@@ -557,11 +557,9 @@ dependencies = [
  "base64 0.22.1",
  "boxer_core",
  "cedar-policy",
- "collection_macros",
  "config",
  "duration-string",
  "env_logger",
- "flate2",
  "futures",
  "futures-util",
  "jwt-authorizer",
@@ -572,7 +570,6 @@ dependencies = [
  "schemars 0.8.22",
  "serde",
  "serde_json",
- "serde_yml",
  "strum",
  "strum_macros",
  "test-context",
@@ -586,13 +583,14 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.2#accb293099fb3c0384b8de5eae66d9ada8c8fdea"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.4#ecc26f8c33f1f60b78c64a9505fe3741b897e9cd"
 dependencies = [
  "actix-web",
  "anyhow",
  "assert_matches",
  "async-trait",
  "cedar-policy",
+ "duration-string",
  "futures",
  "k8s-openapi",
  "kube",
@@ -751,12 +749,6 @@ dependencies = [
  "wasm-bindgen",
  "windows-link",
 ]
-
-[[package]]
-name = "collection_macros"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50b180e6a75e306052a61658f832b4fc565a6e5a204da05f0fe7f50a31fb827a"
 
 [[package]]
 name = "colorchoice"

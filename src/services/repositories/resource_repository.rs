@@ -2,6 +2,9 @@ pub mod resource_discovery_document;
 
 pub mod read_write;
 
+#[cfg(test)]
+mod tests;
+
 use crate::services::repositories::lookup_trie::TrieRepositoryData;
 use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;

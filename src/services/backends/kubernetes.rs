@@ -40,7 +40,7 @@ impl ServiceProvider<Arc<SchemaRepository>> for KubernetesBackend {
 
 impl ServiceProvider<Arc<ActionReadOnlyRepository>> for KubernetesBackend {
     fn get(&self) -> Arc<ActionReadOnlyRepository> {
-        self.action_lookup_table_listener.get_update_handler().clone()
+        self.action_lookup_table_listener.get().clone()
     }
 }
 
@@ -58,13 +58,13 @@ impl ServiceProvider<Arc<ResourceDiscoveryDocumentRepository>> for KubernetesBac
 
 impl ServiceProvider<Arc<ResourceReadOnlyRepository>> for KubernetesBackend {
     fn get(&self) -> Arc<ResourceReadOnlyRepository> {
-        self.resource_lookup_table_listener.get_update_handler().clone()
+        self.resource_lookup_table_listener.get().clone()
     }
 }
 
 impl ServiceProvider<Arc<PolicyReadOnlyRepository>> for KubernetesBackend {
     fn get(&self) -> Arc<PolicyReadOnlyRepository> {
-        self.policy_lookup_watcher.get_update_handler().clone()
+        self.policy_lookup_watcher.get().clone()
     }
 }
 

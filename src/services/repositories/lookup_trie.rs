@@ -1,3 +1,9 @@
+#[cfg(not(test))]
+use log::{debug, info, warn};
+
+#[cfg(test)]
+use std::{println as warn, println as debug, println as info};
+
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
@@ -6,7 +12,6 @@ use cedar_policy::EntityUid;
 use futures::StreamExt;
 use kube::runtime::watcher::Error;
 use kube::Resource;
-use log::{debug, info, warn};
 use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockWriteGuard};
