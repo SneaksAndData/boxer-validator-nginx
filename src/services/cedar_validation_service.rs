@@ -40,11 +40,14 @@ impl ValidationService for CedarValidationService {
     async fn validate(&self, boxer_claims: BoxerClaims, request_context: RequestContext) -> Result<(), anyhow::Error> {
         let schema = self.schema_provider.get_schema(&boxer_claims).await?;
         debug!("Cedar validation schemas: {:?}", schema);
+
         let action = self.action_repository.get(request_context.clone().try_into()?).await?;
+
         let resource = self
             .resource_repository
             .get(request_context.clone().try_into()?)
             .await?;
+
         let policy_set = self.policy_repository.get(()).await?;
 
         let actor: EntityUid = boxer_claims.try_into()?;

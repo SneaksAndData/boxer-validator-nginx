@@ -6,7 +6,6 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::{
 use boxer_core::services::service_provider::ServiceProvider;
 use futures::stream::StreamExt;
 use k8s_openapi::NamespaceResourceScope;
-use kube::runtime::watcher::Config;
 use kube::runtime::{reflector, watcher, WatchStreamExt};
 use kube::{Api, Client, Resource};
 use log::debug;
@@ -53,13 +52,7 @@ where
     async fn start(config: KubernetesResourceManagerConfig, update_handler: Arc<H>) -> anyhow::Result<Self> {
         let client = Client::try_from(config.kubeconfig)?;
         let api: Api<S> = Api::namespaced(client.clone(), config.namespace.as_str());
-        let watcher_config = Config {
-            label_selector: Some(format!(
-                "{}={}",
-                config.listener_config.label_selector_key, config.listener_config.label_selector_value
-            )),
-            ..Default::default()
-        };
+        let watcher_config = (&config.owner_mark).into();
         let stream = watcher(api, watcher_config);
         let (reader, writer) = reflector::store();
 
