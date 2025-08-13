@@ -4,7 +4,6 @@ use crate::services::repositories::models::http_method::HTTPMethod;
 use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
 use crate::services::repositories::models::request_segment::RequestSegment;
 use crate::services::repositories::models::request_segment::RequestSegment::{Hostname, Path, Verb};
-use actix_web::guard::Host;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
 use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use cedar_policy::EntityUid;
@@ -17,7 +16,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use url::quirks::host;
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[serde(rename_all = "camelCase")]

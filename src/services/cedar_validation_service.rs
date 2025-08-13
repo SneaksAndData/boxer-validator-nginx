@@ -6,9 +6,8 @@ use crate::services::repositories::action_repository::ActionReadOnlyRepository;
 use crate::services::repositories::policy_repository::PolicyReadOnlyRepository;
 use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use async_trait::async_trait;
-use cedar_policy::{Authorizer, Context, Entities, Entity, EntityId, EntityTypeName, EntityUid, Request};
+use cedar_policy::{Authorizer, Context, Entities, Entity, EntityUid, Request};
 use log::{debug, info};
-use std::str::FromStr;
 use std::sync::Arc;
 
 pub struct CedarValidationService {

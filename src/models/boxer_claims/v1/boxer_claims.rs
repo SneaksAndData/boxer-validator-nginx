@@ -8,8 +8,6 @@ const API_VERSION_KEY: &str = "boxer.sneaksanddata.com/api-version";
 
 // Constants related to a particular API version
 const PRINCIPAL_KEY: &str = "boxer.sneaksanddata.com/principal";
-const USER_ID_KEY: &str = "boxer.sneaksanddata.com/user-id";
-const IDENTITY_PROVIDER_KEY: &str = "boxer.sneaksanddata.com/identity-provider";
 const SCHEMA_KEY: &str = "boxer.sneaksanddata.com/schema";
 
 #[derive(Debug)]
