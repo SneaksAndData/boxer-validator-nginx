@@ -52,7 +52,7 @@ async fn main() -> Result<()> {
     let resource_repository: Arc<ResourceDiscoveryDocumentRepository> = current_backend.get();
     let policy_repository: Arc<PolicyDataRepository> = current_backend.get();
 
-    let production_mode = true; // !std::env::var("BOXER_ISSUER_DEBUG").is_ok();
+    let production_mode = !std::env::var("BOXER_ISSUER_DEBUG").is_ok();
 
     let schema_repository: Arc<SchemaRepository> = current_backend.get();
 
