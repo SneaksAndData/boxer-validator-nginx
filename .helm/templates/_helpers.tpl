@@ -1,4 +1,12 @@
 {{/*
+Expand the name of the service.
+*/}}
+{{- define "service.name" -}}
+{{- default "boxer" .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+
+{{/*
 Expand the name of the chart.
 */}}
 {{- define "app.name" -}}
