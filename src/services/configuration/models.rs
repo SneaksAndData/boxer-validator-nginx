@@ -1,5 +1,6 @@
 use duration_string::DurationString;
 use serde::Deserialize;
+use std::net::SocketAddr;
 
 #[derive(Debug, Deserialize)]
 pub struct SchemaRepositorySettings {
@@ -24,6 +25,7 @@ pub struct BackendSettings {
 
 #[derive(Debug, Deserialize)]
 pub struct AppSettings {
+    pub listen_address: SocketAddr,
     pub instance_name: String,
     pub backend: BackendSettings,
 }

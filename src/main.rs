@@ -26,15 +26,9 @@ use utoipa_swagger_ui::SwaggerUi;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    std::env::set_var("RUST_LOG", "debug");
-
     env_logger::init();
-    let addr = ("127.0.0.1", 8081);
-
     let cm = AppSettings::new()?;
-    info!("Instance name {}", cm.instance_name);
-
-    println!("listening on {}:{}", &addr.0, &addr.1);
+    info!("Configuration manager started");
 
     let current_backend = backends::new()
         .configure(&cm.backend.kubernetes, cm.instance_name.clone())
@@ -61,6 +55,8 @@ async fn main() -> Result<()> {
     let production_mode = true; // !std::env::var("BOXER_ISSUER_DEBUG").is_ok();
 
     let schema_repository: Arc<SchemaRepository> = current_backend.get();
+
+    info!("listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
@@ -82,7 +78,7 @@ async fn main() -> Result<()> {
             )
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
-    .bind(addr)?
+    .bind(cm.listen_address)?
     .run()
     .await
     .map_err(anyhow::Error::from)
