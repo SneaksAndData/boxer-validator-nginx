@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use strum_macros::Display;
 use url::Url;
 
-#[derive(Debug, Clone, Display)]
+#[derive(Debug, Clone, Display, Hash)]
 pub enum PathSegment {
     Static(String),
     Parameter,

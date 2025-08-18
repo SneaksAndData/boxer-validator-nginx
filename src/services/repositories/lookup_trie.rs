@@ -7,39 +7,22 @@ use std::{println as warn, println as debug, println as info};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
-use boxer_core::services::base::upsert_repository::{ReadOnlyRepository, UpsertRepository};
+use boxer_core::services::base::upsert_repository::{CanDelete, ReadOnlyRepository, UpsertRepository};
 use cedar_policy::EntityUid;
 use futures::StreamExt;
 use kube::runtime::watcher::Error;
 use kube::Resource;
+use std::collections::HashMap;
 use std::fmt::Debug;
+use std::hash::Hash;
 use std::sync::Arc;
-use tokio::sync::{RwLock, RwLockWriteGuard};
-use trie_rs::map::{Trie, TrieBuilder};
+use tokio::sync::RwLock;
+use trie_rs::map::Trie;
 
 pub mod backend;
 
-#[async_trait]
-pub trait TrieRepository<Key>:
-    ReadOnlyRepository<Vec<Key>, EntityUid, ReadError = anyhow::Error>
-    + UpsertRepository<Vec<Key>, EntityUid, Error = anyhow::Error>
-where
-    Key: Ord + 'static + Send + Sync + Debug + Clone,
-{
-    #[allow(dead_code)]
-    async fn write_lock(&self) -> RwLockWriteGuard<'_, TrieData<Key>>;
-
-    #[allow(dead_code)]
-    async fn refresh_trie(&self) -> () {
-        info!("Updating action discovery trie");
-        let mut guard = self.write_lock().await;
-        guard.builder = Box::new(TrieBuilder::new());
-        guard.maybe_trie = None;
-    }
-}
-
 pub struct TrieData<Key> {
-    builder: Box<TrieBuilder<Key, EntityUid>>,
+    items: HashMap<Vec<Key>, EntityUid>,
     maybe_trie: Option<Arc<Trie<Key, EntityUid>>>,
 }
 
@@ -54,7 +37,7 @@ where
     pub fn new() -> Self {
         TrieRepositoryData {
             rw_lock: RwLock::new(TrieData {
-                builder: Box::new(TrieBuilder::new()),
+                items: HashMap::new(),
                 maybe_trie: None,
             }),
         }
@@ -64,23 +47,13 @@ where
 pub trait EntityCollectionResource<Key> {
     fn stream(
         self,
-    ) -> impl futures::Stream<Item = Result<(Vec<Key>, EntityUid), anyhow::Error>> + Send + Sync + 'static;
-}
-
-#[async_trait]
-impl<Key> TrieRepository<Key> for TrieRepositoryData<Key>
-where
-    Key: Send + Sync + Debug + Ord + Clone + 'static,
-{
-    async fn write_lock(&self) -> RwLockWriteGuard<'_, TrieData<Key>> {
-        self.rw_lock.write().await
-    }
+    ) -> impl futures::Stream<Item = Result<(Vec<Key>, EntityUid, bool), anyhow::Error>> + Send + Sync + 'static;
 }
 
 #[async_trait]
 impl<Key> ReadOnlyRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key>
 where
-    Key: Ord + Send + Sync + Debug,
+    Key: Ord + Send + Sync + Debug + Hash,
 {
     type ReadError = anyhow::Error;
 
@@ -97,16 +70,14 @@ where
 #[async_trait]
 impl<Key> UpsertRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key>
 where
-    Key: Ord + Send + Sync + Debug + Clone,
+    Key: Ord + Send + Sync + Debug + Clone + Hash,
 {
     type Error = anyhow::Error;
 
     async fn upsert(&self, key: Vec<Key>, entity: EntityUid) -> Result<(), Self::Error> {
         let mut guard = self.rw_lock.write().await;
-        let mut builder = guard.builder.clone();
-        builder.push(key, entity.clone());
-        guard.builder = builder.clone();
-        guard.maybe_trie = Some(Arc::new(builder.build()));
+        guard.items.insert(key, entity);
+        guard.maybe_trie = Some(Arc::new(Trie::from_iter(guard.items.clone())));
         Ok(())
     }
 
@@ -121,27 +92,41 @@ where
 }
 
 #[async_trait]
+impl<Key> CanDelete<Vec<Key>, EntityUid> for TrieRepositoryData<Key>
+where
+    Key: Ord + Send + Sync + Debug + Clone + Hash,
+{
+    type DeleteError = anyhow::Error;
+
+    async fn delete(&self, key: Vec<Key>) -> Result<(), Self::DeleteError> {
+        let mut guard = self.rw_lock.write().await;
+        guard.items.remove(&key);
+        guard.maybe_trie = Some(Arc::new(Trie::from_iter(guard.items.clone())));
+        Ok(())
+    }
+}
+
+#[async_trait]
 impl<R, K> ResourceUpdateHandler<R> for TrieRepositoryData<K>
 where
     R: EntityCollectionResource<K> + Debug + Resource + Send + Sync + 'static,
-    K: Ord + Send + Sync + Debug + Clone + 'static,
+    K: Ord + Send + Sync + Debug + Clone + Hash + 'static,
 {
     async fn handle_update(&self, event: Result<R, Error>) -> () {
         match event {
             Err(e) => warn!("Failed to handle update: {:?}", e),
             Ok(resource) => {
-                {
-                    info!("Received resource update: {:?}", resource);
-                    let mut guard = self.rw_lock.write().await;
-                    guard.builder = Box::new(TrieBuilder::new());
-                    guard.maybe_trie = None;
-                }
                 resource
                     .stream()
-                    .for_each(move |result| async move {
+                    .for_each(|result| async move {
                         match result {
-                            Ok((segments, action_uid)) => {
-                                if let Err(e) = self.upsert(segments.clone(), action_uid.clone()).await {
+                            Ok((segments, action_uid, active)) => {
+                                let result = if active {
+                                    self.upsert(segments.clone(), action_uid.clone()).await
+                                } else {
+                                    self.delete(segments.clone()).await
+                                };
+                                if let Err(e) = result {
                                     warn!("Failed to upsert action: {}", e);
                                 } else {
                                     debug!(

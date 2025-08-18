@@ -61,16 +61,18 @@ pub struct ActionDiscoveryDocumentSpec {
 }
 
 impl EntityCollectionResource<RequestSegment> for ActionDiscoveryDocument {
-    fn stream(self) -> impl Stream<Item = Result<(Vec<RequestSegment>, EntityUid), anyhow::Error>> + Send + Sync {
+    fn stream(self) -> impl Stream<Item = Result<(Vec<RequestSegment>, EntityUid, bool), anyhow::Error>> + Send + Sync {
         let hostname = self.spec.hostname.clone();
+        let active = self.spec.active;
         stream::iter(self.spec.routes)
             .zip(stream::repeat(hostname))
-            .map(move |(route, hostname)| {
+            .zip(stream::repeat(active))
+            .map(move |((route, hostname), active)| {
                 let action_uid: EntityUid = EntityUid::from_str(&route.action_uid).map_err(anyhow::Error::from)?;
                 let mut key: Vec<RequestSegment> = vec![Hostname(hostname)];
                 let segments: Vec<RequestSegment> = route.try_into()?;
                 key.extend(segments);
-                Ok((key, action_uid))
+                Ok((key, action_uid, active))
             })
     }
 }

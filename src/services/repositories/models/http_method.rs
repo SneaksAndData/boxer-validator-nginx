@@ -2,7 +2,9 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumString};
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, EnumString, Serialize, Deserialize, JsonSchema, Display)]
+#[derive(
+    Debug, PartialEq, Eq, Ord, PartialOrd, Clone, EnumString, Serialize, Deserialize, JsonSchema, Display, Hash,
+)]
 #[strum(serialize_all = "UPPERCASE")]
 pub enum HTTPMethod {
     #[strum(ascii_case_insensitive)]

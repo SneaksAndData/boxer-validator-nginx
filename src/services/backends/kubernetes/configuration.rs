@@ -165,7 +165,7 @@ impl BackendBuilder {
         operation_timeout: Duration,
     ) -> anyhow::Result<Arc<ReadOnlyRepositoryBackend<TrieRepositoryData<K>, R>>>
     where
-        K: Debug + Ord + Clone + Send + Sync + 'static,
+        K: Debug + Ord + Clone + Send + Sync + Hash + 'static,
         R: kube::Resource<Scope = NamespaceResourceScope>
             + SoftDeleteResource
             + EntityCollectionResource<K>

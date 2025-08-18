@@ -56,25 +56,14 @@ impl AsyncTestContext for KubernetesActionRepositoryTest {
 #[tokio::test]
 async fn test_create_schema(ctx: &mut KubernetesActionRepositoryTest) {
     // Arrange
-    let name = "action-discovery-document";
-    let registration = ActionSetRegistration {
-        hostname: "www.example.com".to_string(),
-        routes: vec![ActionRouteRegistration {
-            method: "GET".to_string(),
-            route_template: "api/v1/resources".to_string(),
-            action_uid: "PhotoApp::Photo::\"vacationPhoto.jpg\"".to_string(),
-        }],
-    };
 
-    ctx.repository
-        .upsert(name.to_string(), registration)
-        .await
-        .expect("Failed to upsert schema");
-
-    // Act
-    ctx.api
-        .wait_for_creation(name.to_string(), ctx.namespace.clone(), DEFAULT_TEST_TIMEOUT)
-        .await;
+    insert_schema_document(
+        ctx,
+        "action-discovery-document",
+        "api/v1/resources",
+        "PhotoApp::Photo::\"vacationPhoto.jpg\"",
+    )
+    .await;
 
     let request_context = RequestContext::new(
         "https://www.example.com/api/v1/resources".to_string(),
@@ -87,4 +76,104 @@ async fn test_create_schema(ctx: &mut KubernetesActionRepositoryTest) {
 
     // Assert
     assert!(result.is_ok());
+}
+#[test_context(KubernetesActionRepositoryTest)]
+#[tokio::test]
+async fn test_multiple_actions(ctx: &mut KubernetesActionRepositoryTest) {
+    // Arrange
+    insert_schema_document(
+        ctx,
+        "action-discovery-document-first",
+        "api/v1/resources",
+        "PhotoApp::Photo::\"vacationPhoto.jpg\"",
+    )
+    .await;
+    insert_schema_document(
+        ctx,
+        "action-discovery-document-second",
+        "api/v2/resources",
+        "PhotoApp::Photo::\"vacationPhoto.jpg\"",
+    )
+    .await;
+    let lookup_trie = ctx.lookup.get();
+
+    // Act
+    let request_context = RequestContext::new(
+        "https://www.example.com/api/v1/resources".to_string(),
+        "GET".to_string(),
+    );
+    let key: Vec<RequestSegment> = request_context.try_into().unwrap();
+    let first_result = lookup_trie.get(key).await;
+
+    let request_context = RequestContext::new(
+        "https://www.example.com/api/v2/resources".to_string(),
+        "GET".to_string(),
+    );
+    let key = request_context.try_into().unwrap();
+
+    let second_result = lookup_trie.get(key).await;
+
+    // Assert
+    assert!(first_result.is_ok());
+    assert!(second_result.is_ok());
+}
+
+#[test_context(KubernetesActionRepositoryTest)]
+#[tokio::test]
+async fn test_remove(ctx: &mut KubernetesActionRepositoryTest) {
+    // Arrange
+    insert_schema_document(
+        ctx,
+        "action-discovery-document-first",
+        "api/v1/resources",
+        "PhotoApp::Photo::\"vacationPhoto.jpg\"",
+    )
+    .await;
+
+    insert_schema_document(
+        ctx,
+        "action-discovery-document-second",
+        "api/v2/resources",
+        "PhotoApp::Photo::\"vacationPhoto.jpg\"",
+    )
+    .await;
+
+    let lookup_trie = ctx.lookup.get();
+
+    ctx.repository
+        .delete("action-discovery-document-first".to_string())
+        .await
+        .unwrap();
+
+    // Act
+    let request_context = RequestContext::new(
+        "https://www.example.com/api/v1/resources".to_string(),
+        "GET".to_string(),
+    );
+    let key: Vec<RequestSegment> = request_context.try_into().unwrap();
+    let first_result = lookup_trie.get(key).await;
+
+    // Assert
+    assert!(first_result.is_err());
+}
+
+async fn insert_schema_document(ctx: &KubernetesActionRepositoryTest, name: &str, route: &str, action_uid: &str) {
+    let registration = ActionSetRegistration {
+        hostname: "www.example.com".to_string(),
+        routes: vec![ActionRouteRegistration {
+            method: "GET".to_string(),
+            route_template: route.to_string(),
+            action_uid: action_uid.to_string(),
+        }],
+    };
+
+    ctx.repository
+        .upsert(name.to_string(), registration)
+        .await
+        .expect("Failed to upsert schema");
+
+    // Act
+    ctx.api
+        .wait_for_creation(name.to_string(), ctx.namespace.clone(), DEFAULT_TEST_TIMEOUT)
+        .await;
 }

@@ -15,7 +15,7 @@ use url::Url;
 ///   - Static: `resource`
 ///   - Parameter: `{id}`
 /// Does not include the query string or fragment.
-#[derive(Debug, Clone, Display)]
+#[derive(Debug, Clone, Display, Hash)]
 pub enum RequestSegment {
     Verb(HTTPMethod),
     Hostname(String),
