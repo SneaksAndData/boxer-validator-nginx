@@ -52,7 +52,7 @@ impl ValidationService for CedarValidationService {
             .get((boxer_claims.schema.clone(), request_context.clone().try_into()?))
             .await?;
 
-        let policy_set = self.policy_repository.get(()).await?;
+        let policy_set = self.policy_repository.get(boxer_claims.schema.clone()).await?;
 
         let actor: EntityUid = boxer_claims.try_into()?;
 

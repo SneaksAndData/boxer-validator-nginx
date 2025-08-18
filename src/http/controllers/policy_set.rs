@@ -15,14 +15,16 @@ async fn post_policy_set(
     request: Json<PolicySetRegistration>,
     data: Data<Arc<PolicyDataRepository>>,
 ) -> Result<impl Responder> {
-    data.upsert(id.into_inner(), request.into_inner()).await?;
+    let (id, schema) = id.into_inner();
+    data.upsert((id, schema.clone()), request.into_inner().with_schema(schema))
+        .await?;
     Ok(HttpResponse::Ok().finish())
 }
 
 #[utoipa::path(context_path = "/policy_set/", responses((status = OK, body = PolicySetRegistration)))]
 #[get("{schema}/{id}")]
 async fn get_policy_set(id: Path<(String, String)>, data: Data<Arc<PolicyDataRepository>>) -> Result<impl Responder> {
-    let policy_set = data.get(id.into_inner()).await?;
+    let policy_set: PolicySetRegistration = data.get(id.into_inner()).await?.into();
     Ok(Json(policy_set))
 }
 

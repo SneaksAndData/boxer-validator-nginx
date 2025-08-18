@@ -13,6 +13,34 @@ pub struct PolicySetRegistration {
     pub policy: String,
 }
 
+impl PolicySetRegistration {
+    pub fn with_schema(self, schema: String) -> SchemaBoundPolicySetRegistration {
+        SchemaBoundPolicySetRegistration {
+            policy: self.policy.clone(),
+            schema,
+        }
+    }
+}
+
+pub struct SchemaBoundPolicySetRegistration {
+    pub policy: String,
+    pub schema: String,
+}
+
+impl ToResource<PolicyDocument> for SchemaBoundPolicySetRegistration {
+    fn to_resource(&self, object_meta: &ObjectMeta) -> Result<PolicyDocument, Status> {
+        let spec = PolicyDocumentSpec {
+            active: true,
+            policies: self.policy.clone(),
+            schema: self.schema.clone(),
+        };
+        Ok(PolicyDocument {
+            metadata: object_meta.clone(),
+            spec,
+        })
+    }
+}
+
 impl Default for PolicySetRegistration {
     fn default() -> Self {
         PolicySetRegistration {
@@ -21,7 +49,7 @@ impl Default for PolicySetRegistration {
     }
 }
 
-impl TryFromResource<PolicyDocument> for PolicySetRegistration {
+impl TryFromResource<PolicyDocument> for SchemaBoundPolicySetRegistration {
     type Error = Status;
 
     fn try_into_resource(resource: Arc<PolicyDocument>) -> Result<Self, Self::Error> {
@@ -31,15 +59,8 @@ impl TryFromResource<PolicyDocument> for PolicySetRegistration {
     }
 }
 
-impl ToResource<PolicyDocument> for PolicySetRegistration {
-    fn to_resource(&self, object_meta: &ObjectMeta) -> Result<PolicyDocument, Status> {
-        let spec = PolicyDocumentSpec {
-            active: true,
-            policies: self.policy.clone(),
-        };
-        Ok(PolicyDocument {
-            metadata: object_meta.clone(),
-            spec,
-        })
+impl Into<PolicySetRegistration> for SchemaBoundPolicySetRegistration {
+    fn into(self) -> PolicySetRegistration {
+        PolicySetRegistration { policy: self.policy }
     }
 }
