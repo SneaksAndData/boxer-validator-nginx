@@ -141,7 +141,7 @@ async fn test_remove(ctx: &mut KubernetesActionRepositoryTest) {
     let lookup_trie = ctx.lookup.get();
 
     ctx.repository
-        .delete("action-discovery-document-first".to_string())
+        .delete(("schema".to_string(), "action-discovery-document-first".to_string()))
         .await
         .unwrap();
 
@@ -168,7 +168,7 @@ async fn insert_schema_document(ctx: &KubernetesActionRepositoryTest, name: &str
     };
 
     ctx.repository
-        .upsert(name.to_string(), registration)
+        .upsert(("schema".to_string(), name.to_string()), registration)
         .await
         .expect("Failed to upsert schema");
 

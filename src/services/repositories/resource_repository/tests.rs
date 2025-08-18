@@ -54,9 +54,9 @@ impl AsyncTestContext for KubernetesResourceRepositoryTest {
 
 #[test_context(KubernetesResourceRepositoryTest)]
 #[tokio::test]
-async fn test_create_schema(ctx: &mut KubernetesResourceRepositoryTest) {
+async fn test_create_resource_discovery_document(ctx: &mut KubernetesResourceRepositoryTest) {
     // Arrange
-    let name = "action-discovery-document";
+    let name = "resource-discovery-document";
     let registration = ResourceSetRegistration {
         hostname: "www.example.com".to_string(),
         routes: vec![ResourceRouteRegistration {
@@ -66,7 +66,7 @@ async fn test_create_schema(ctx: &mut KubernetesResourceRepositoryTest) {
     };
 
     ctx.repository
-        .upsert(name.to_string(), registration)
+        .upsert(("schema".to_string(), name.to_string()), registration)
         .await
         .expect("Failed to upsert schema");
 

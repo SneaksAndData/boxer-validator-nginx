@@ -5,11 +5,11 @@ use boxer_core::services::backends::kubernetes::repositories::KubernetesReposito
 use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
 
 pub type PolicyDataRepository = dyn UpsertRepositoryWithDelete<
-    String,
+    (String, String),
     PolicySetRegistration,
     DeleteError = Status,
     Error = Status,
     ReadError = Status,
 >;
 
-impl UpsertRepositoryWithDelete<String, PolicySetRegistration> for KubernetesRepository<PolicyDocument> {}
+impl UpsertRepositoryWithDelete<(String, String), PolicySetRegistration> for KubernetesRepository<PolicyDocument> {}
