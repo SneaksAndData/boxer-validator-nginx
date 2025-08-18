@@ -17,7 +17,7 @@ pub struct SchemaBoundedTrieRepositoryData<Key>
 where
     Key: Ord,
 {
-    pub buckets: RwLock<HashMap<String, TrieRepositoryData<Key>>>,
+    buckets: RwLock<HashMap<String, TrieRepositoryData<Key>>>,
 }
 
 impl<Key> SchemaBoundedTrieRepositoryData<Key>
