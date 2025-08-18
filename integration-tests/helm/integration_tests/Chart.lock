@@ -1,6 +1,6 @@
 dependencies:
 - name: boxer-crd
   repository: oci://ghcr.io/sneaksanddata/helm
-  version: v0.0.2-3-g9c16c1a
-digest: sha256:a57988229d4cf316450b0a997aad1f963ad638176e4e18d6af7a9d541defa7a0
-generated: "2025-08-18T17:36:12.413268+02:00"
+  version: v0.0.3
+digest: sha256:28cd68355fb5fe312d6f8381b22613f06806053df54de3661dbee1a1080ba7da
+generated: "2025-08-18T17:39:51.543352+02:00"
