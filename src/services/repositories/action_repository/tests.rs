@@ -7,7 +7,7 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::Kub
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
 use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
 use boxer_core::services::service_provider::ServiceProvider;
-use boxer_core::testing::api_extensions::WaitForResource;
+use boxer_core::testing::api_extensions::{WaitForDelete, WaitForResource};
 use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::SpinLockKubernetesResourceManagerTestContext;
 use kube::Api;
 use std::sync::Arc;
@@ -145,6 +145,11 @@ async fn test_remove(ctx: &mut KubernetesActionRepositoryTest) {
         .delete(("schema".to_string(), "action-discovery-document-first".to_string()))
         .await
         .unwrap();
+
+    let key = format!("{}-{}", "schema", "action-discovery-document-first");
+    ctx.api
+        .wait_for_deletion::<ActionDiscoveryDocument>(key, ctx.namespace.clone(), DEFAULT_TEST_TIMEOUT)
+        .await;
 
     // Act
     let request_context = RequestContext::new(
