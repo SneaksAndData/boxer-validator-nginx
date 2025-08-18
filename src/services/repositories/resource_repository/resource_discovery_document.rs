@@ -32,14 +32,17 @@ pub struct ResourceDiscoveryDocumentSpec {
 }
 
 impl EntityCollectionResource<PathSegment> for ResourceDiscoveryDocument {
-    fn stream(self) -> impl Stream<Item = Result<(Vec<PathSegment>, EntityUid), anyhow::Error>> + Send + Sync {
-        stream::iter(self.spec.routes).map(move |route| {
-            let action_uid: EntityUid = EntityUid::from_str(&route.resource_uid).map_err(anyhow::Error::from)?;
-            let mut key: Vec<PathSegment> = vec![];
-            let segments: Vec<PathSegment> = route.try_into()?;
-            key.extend(segments);
-            Ok((key, action_uid))
-        })
+    fn stream(self) -> impl Stream<Item = Result<(Vec<PathSegment>, EntityUid, bool), anyhow::Error>> + Send + Sync {
+        let active = self.spec.active;
+        stream::iter(self.spec.routes)
+            .zip(stream::repeat(active))
+            .map(move |(route, active)| {
+                let action_uid: EntityUid = EntityUid::from_str(&route.resource_uid).map_err(anyhow::Error::from)?;
+                let mut key: Vec<PathSegment> = vec![];
+                let segments: Vec<PathSegment> = route.try_into()?;
+                key.extend(segments);
+                Ok((key, action_uid, active))
+            })
     }
 }
 
