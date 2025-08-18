@@ -4,9 +4,6 @@ use crate::services::repositories::action_repository::action_discovery_document:
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::action_repository::ActionReadOnlyRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
-use crate::services::repositories::lookup_trie::TrieRepositoryData;
-use crate::services::repositories::models::path_segment::PathSegment;
-use crate::services::repositories::models::request_segment::RequestSegment;
 use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
 use crate::services::repositories::policy_repository::read_only::PolicyRepositoryData;
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
@@ -25,10 +22,9 @@ pub struct KubernetesBackend {
     resource_repository: Arc<ResourceDiscoveryDocumentRepository>,
     policy_repository: Arc<PolicyDataRepository>,
 
-    action_lookup_table_listener:
-        Arc<ReadOnlyRepositoryBackend<TrieRepositoryData<RequestSegment>, ActionDiscoveryDocument>>,
+    action_lookup_table_listener: Arc<ReadOnlyRepositoryBackend<ActionReadOnlyRepository, ActionDiscoveryDocument>>,
     resource_lookup_table_listener:
-        Arc<ReadOnlyRepositoryBackend<TrieRepositoryData<PathSegment>, ResourceDiscoveryDocument>>,
+        Arc<ReadOnlyRepositoryBackend<ResourceReadOnlyRepository, ResourceDiscoveryDocument>>,
     policy_lookup_watcher: Arc<ReadOnlyRepositoryBackend<PolicyRepositoryData, PolicyDocument>>,
 }
 

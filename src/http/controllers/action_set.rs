@@ -14,14 +14,16 @@ async fn post_action_set(
     request: Json<ActionSetRegistration>,
     data: Data<Arc<ActionDataRepository>>,
 ) -> Result<impl Responder> {
-    data.upsert(id.into_inner(), request.into_inner()).await?;
+    let (id, schema) = id.into_inner();
+    data.upsert((id, schema.clone()), request.into_inner().with_schema(schema))
+        .await?;
     Ok(HttpResponse::Ok().finish())
 }
 
 #[utoipa::path(context_path = "/action_set/", responses((status = OK, body = ActionSetRegistration)))]
 #[get("{schema}/{id}")]
 async fn get_action_set(id: Path<(String, String)>, data: Data<Arc<ActionDataRepository>>) -> Result<impl Responder> {
-    let action_set = data.get(id.into_inner()).await?;
+    let action_set: ActionSetRegistration = data.get(id.into_inner()).await?.into();
     Ok(Json(action_set))
 }
 

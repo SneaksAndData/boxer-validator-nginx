@@ -1,5 +1,5 @@
-use crate::http::controllers::action_set::models::{ActionRouteRegistration, ActionSetRegistration};
-use crate::services::repositories::lookup_trie::EntityCollectionResource;
+use crate::http::controllers::action_set::models::{ActionRouteRegistration, SchemaBoundActionSetRegistration};
+use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource};
 use crate::services::repositories::models::http_method::HTTPMethod;
 use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
 use crate::services::repositories::models::request_segment::RequestSegment;
@@ -58,6 +58,7 @@ pub struct ActionDiscoveryDocumentSpec {
     pub active: bool,
     pub hostname: String,
     pub routes: Vec<ActionRoute>,
+    pub schema: String,
 }
 
 impl EntityCollectionResource<RequestSegment> for ActionDiscoveryDocument {
@@ -86,10 +87,10 @@ impl Default for ActionDiscoveryDocument {
     }
 }
 
-impl TryFrom<&ActionSetRegistration> for ActionDiscoveryDocumentSpec {
+impl TryFrom<&SchemaBoundActionSetRegistration> for ActionDiscoveryDocumentSpec {
     type Error = anyhow::Error;
 
-    fn try_from(value: &ActionSetRegistration) -> Result<Self, Self::Error> {
+    fn try_from(value: &SchemaBoundActionSetRegistration) -> Result<Self, Self::Error> {
         let mut routes = Vec::<ActionRoute>::new();
 
         for route in &value.routes {
@@ -105,12 +106,13 @@ impl TryFrom<&ActionSetRegistration> for ActionDiscoveryDocumentSpec {
             active: true,
             hostname: value.hostname.clone(),
             routes,
+            schema: value.schema.clone(),
         })
     }
 }
 
-impl Into<ActionSetRegistration> for ActionDiscoveryDocumentSpec {
-    fn into(self) -> ActionSetRegistration {
+impl Into<SchemaBoundActionSetRegistration> for ActionDiscoveryDocumentSpec {
+    fn into(self) -> SchemaBoundActionSetRegistration {
         let routes: Vec<ActionRouteRegistration> = self
             .routes
             .into_iter()
@@ -121,9 +123,10 @@ impl Into<ActionSetRegistration> for ActionDiscoveryDocumentSpec {
             })
             .collect();
 
-        ActionSetRegistration {
+        SchemaBoundActionSetRegistration {
             hostname: self.hostname,
             routes,
+            schema: self.schema,
         }
     }
 }
@@ -148,5 +151,11 @@ impl UpdateLabels for ActionDiscoveryDocument {
         labels.append(custom_labels);
         self.metadata.labels = Some(labels);
         self
+    }
+}
+
+impl SchemaBoundResource for ActionDiscoveryDocument {
+    fn schema(&self) -> String {
+        self.spec.schema.clone()
     }
 }

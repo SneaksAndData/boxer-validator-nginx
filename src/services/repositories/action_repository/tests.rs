@@ -1,11 +1,13 @@
 use super::*;
-use crate::http::controllers::action_set::models::{ActionRouteRegistration, ActionSetRegistration};
+use crate::http::controllers::action_set::models::{ActionRouteRegistration, SchemaBoundActionSetRegistration};
 use crate::models::request_context::RequestContext;
+use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
 use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
+use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use boxer_core::services::service_provider::ServiceProvider;
 use boxer_core::testing::api_extensions::{WaitForDelete, WaitForResource};
 use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::SpinLockKubernetesResourceManagerTestContext;
@@ -20,7 +22,7 @@ struct KubernetesActionRepositoryTest {
     repository: Arc<ActionDataRepository>,
     api: Api<ActionDiscoveryDocument>,
     namespace: String,
-    lookup: ReadOnlyRepositoryBackend<TrieRepositoryData<RequestSegment>, ActionDiscoveryDocument>,
+    lookup: ReadOnlyRepositoryBackend<SchemaBoundedTrieRepositoryData<RequestSegment>, ActionDiscoveryDocument>,
 }
 
 impl AsyncTestContext for KubernetesActionRepositoryTest {
@@ -34,7 +36,7 @@ impl AsyncTestContext for KubernetesActionRepositoryTest {
             owner_mark,
             operation_timeout: operation_timeout.clone(),
         };
-        let lookup_trie = Arc::new(TrieRepositoryData::<RequestSegment>::new());
+        let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<RequestSegment>::new());
         let lookup = ReadOnlyRepositoryBackend::start(config, lookup_trie.clone())
             .await
             .unwrap();
@@ -72,7 +74,7 @@ async fn test_create_action_document(ctx: &mut KubernetesActionRepositoryTest) {
     let key = request_context.try_into().unwrap();
 
     let lookup_trie = ctx.lookup.get();
-    let result = lookup_trie.get(key).await;
+    let result = lookup_trie.get(("schema".to_string(), key)).await;
 
     // Assert
     assert!(result.is_ok());
@@ -104,7 +106,7 @@ async fn test_multiple_actions(ctx: &mut KubernetesActionRepositoryTest) {
         "GET".to_string(),
     );
     let key: Vec<RequestSegment> = request_context.try_into().unwrap();
-    let first_result = lookup_trie.get(key).await;
+    let first_result = lookup_trie.get(("schema".to_string(), key)).await;
 
     let request_context = RequestContext::new(
         "https://www.example.com/api/v2/resources".to_string(),
@@ -112,7 +114,7 @@ async fn test_multiple_actions(ctx: &mut KubernetesActionRepositoryTest) {
     );
     let key = request_context.try_into().unwrap();
 
-    let second_result = lookup_trie.get(key).await;
+    let second_result = lookup_trie.get(("schema".to_string(), key)).await;
 
     // Assert
     assert!(first_result.is_ok());
@@ -157,20 +159,21 @@ async fn test_remove(ctx: &mut KubernetesActionRepositoryTest) {
         "GET".to_string(),
     );
     let key: Vec<RequestSegment> = request_context.try_into().unwrap();
-    let first_result = lookup_trie.get(key).await;
+    let first_result = lookup_trie.get(("schema".to_string(), key)).await;
 
     // Assert
     assert!(first_result.is_err());
 }
 
 async fn insert_schema_document(ctx: &KubernetesActionRepositoryTest, name: &str, route: &str, action_uid: &str) {
-    let registration = ActionSetRegistration {
+    let registration = SchemaBoundActionSetRegistration {
         hostname: "www.example.com".to_string(),
         routes: vec![ActionRouteRegistration {
             method: "GET".to_string(),
             route_template: route.to_string(),
             action_uid: action_uid.to_string(),
         }],
+        schema: "schema".to_string(),
     };
 
     ctx.repository

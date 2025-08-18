@@ -3,7 +3,8 @@ use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::KubernetesBackendSettings;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
-use crate::services::repositories::lookup_trie::{EntityCollectionResource, TrieRepositoryData};
+use crate::services::repositories::lookup_trie::schema_bound_trie_repository::SchemaBoundedTrieRepositoryData;
+use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource};
 use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::policy_repository;
 use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
@@ -163,7 +164,7 @@ impl BackendBuilder {
         kubeconfig: Config,
         owner_mark: ObjectOwnerMark,
         operation_timeout: Duration,
-    ) -> anyhow::Result<Arc<ReadOnlyRepositoryBackend<TrieRepositoryData<K>, R>>>
+    ) -> anyhow::Result<Arc<ReadOnlyRepositoryBackend<SchemaBoundedTrieRepositoryData<K>, R>>>
     where
         K: Debug + Ord + Clone + Send + Sync + Hash + 'static,
         R: kube::Resource<Scope = NamespaceResourceScope>
@@ -171,6 +172,7 @@ impl BackendBuilder {
             + EntityCollectionResource<K>
             + UpdateLabels
             + Clone
+            + SchemaBoundResource
             + Send
             + Sync
             + 'static,
@@ -182,8 +184,8 @@ impl BackendBuilder {
             owner_mark,
             operation_timeout,
         };
-        let lookup_trie = Arc::new(TrieRepositoryData::<K>::new());
-        let r = ReadOnlyRepositoryBackend::<TrieRepositoryData<K>, R>::start(config, lookup_trie).await?;
+        let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<K>::new());
+        let r = ReadOnlyRepositoryBackend::<SchemaBoundedTrieRepositoryData<K>, R>::start(config, lookup_trie).await?;
         Ok(Arc::new(r))
     }
 
