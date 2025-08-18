@@ -54,7 +54,7 @@ impl AsyncTestContext for KubernetesActionRepositoryTest {
 
 #[test_context(KubernetesActionRepositoryTest)]
 #[tokio::test]
-async fn test_create_schema(ctx: &mut KubernetesActionRepositoryTest) {
+async fn test_create_action_document(ctx: &mut KubernetesActionRepositoryTest) {
     // Arrange
 
     insert_schema_document(
@@ -77,6 +77,7 @@ async fn test_create_schema(ctx: &mut KubernetesActionRepositoryTest) {
     // Assert
     assert!(result.is_ok());
 }
+
 #[test_context(KubernetesActionRepositoryTest)]
 #[tokio::test]
 async fn test_multiple_actions(ctx: &mut KubernetesActionRepositoryTest) {
@@ -172,8 +173,8 @@ async fn insert_schema_document(ctx: &KubernetesActionRepositoryTest, name: &str
         .await
         .expect("Failed to upsert schema");
 
-    // Act
+    let key = format!("{}-{}", "schema", name);
     ctx.api
-        .wait_for_creation(name.to_string(), ctx.namespace.clone(), DEFAULT_TEST_TIMEOUT)
+        .wait_for_creation(key, ctx.namespace.clone(), DEFAULT_TEST_TIMEOUT)
         .await;
 }

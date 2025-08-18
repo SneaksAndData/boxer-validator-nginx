@@ -71,8 +71,9 @@ async fn test_create_resource_discovery_document(ctx: &mut KubernetesResourceRep
         .expect("Failed to upsert schema");
 
     // Act
+    let key = format!("{}-{}", "schema", name);
     ctx.api
-        .wait_for_creation(name.to_string(), ctx.namespace.clone(), DEFAULT_TEST_TIMEOUT)
+        .wait_for_creation(key, ctx.namespace.clone(), DEFAULT_TEST_TIMEOUT)
         .await;
 
     let request_context = RequestContext::new(
