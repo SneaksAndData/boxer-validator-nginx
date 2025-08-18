@@ -229,7 +229,7 @@ validator:
     listenIp: ""
 
     # The port on which the validator listens for HTTP requests
-    port: 8081
+    port: 80
 
     # The instance name for the validator
     # Used to generate the lease name and other instance-specific settings
