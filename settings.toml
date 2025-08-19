@@ -10,7 +10,3 @@ namespace = "default"                    # Kubernetes namespace
 lease_name = "boxer-validator"           # Name for the lease object
 lease_duration = "60s"                   # Duration string for lease lifetime
 lease_renew_duration = "15s"             # Duration string for lease renewal interval
-
-# Repository settings for schemas
-[backend.kubernetes.schema_repository]
-name = "boxer-validator-schema"

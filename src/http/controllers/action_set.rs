@@ -7,7 +7,12 @@ use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/action_set/", responses((status = OK)), request_body = ActionSetRegistration)]
+#[utoipa::path(context_path = "/action_set/",
+    responses(
+        (status = OK)
+    ),
+    request_body = ActionSetRegistration
+)]
 #[post("{id}")]
 async fn post_action_set(
     id: Path<String>,
@@ -18,14 +23,23 @@ async fn post_action_set(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[utoipa::path(context_path = "/action_set/", responses((status = OK, body = ActionSetRegistration)))]
+#[utoipa::path(context_path = "/action_set/",
+    responses(
+        (status = OK, body = ActionSetRegistration),
+        (status = NOT_FOUND, description = "Action set does not exist")
+    )
+)]
 #[get("{id}")]
 async fn get_action_set(id: Path<String>, data: Data<Arc<ActionDataRepository>>) -> Result<impl Responder> {
     let action_set = data.get(id.to_string()).await?;
     Ok(Json(action_set))
 }
 
-#[utoipa::path(context_path = "/action_set/", responses((status = OK)))]
+#[utoipa::path(context_path = "/action_set/",
+    responses(
+        (status = OK)
+    )
+)]
 #[delete("{id}")]
 async fn delete_action_set(id: Path<String>, data: Data<Arc<ActionDataRepository>>) -> Result<impl Responder> {
     data.delete(id.to_string()).await?;

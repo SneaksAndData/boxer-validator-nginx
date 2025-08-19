@@ -7,7 +7,12 @@ use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/resource_set/", responses((status = OK)), request_body = ResourceSetRegistration)]
+#[utoipa::path(context_path = "/resource_set/",
+    responses(
+        (status = OK)
+    ),
+    request_body = ResourceSetRegistration
+)]
 #[post("{id}")]
 async fn post_resource_set(
     id: Path<String>,
@@ -18,7 +23,12 @@ async fn post_resource_set(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[utoipa::path(context_path = "/resource_set/", responses((status = OK, body = ResourceSetRegistration)))]
+#[utoipa::path(context_path = "/resource_set/",
+    responses(
+        (status = OK, body = ResourceSetRegistration),
+        (status = NOT_FOUND, description = "Resource set does not exist")
+    )
+)]
 #[get("{id}")]
 async fn get_resource_set(
     id: Path<String>,
@@ -28,7 +38,11 @@ async fn get_resource_set(
     Ok(Json(resource_set))
 }
 
-#[utoipa::path(context_path = "/resource_set/", responses((status = OK)))]
+#[utoipa::path(context_path = "/resource_set/",
+    responses(
+        (status = OK)
+    )
+)]
 #[delete("{id}")]
 async fn delete_resource_set(
     id: Path<String>,
