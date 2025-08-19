@@ -21,7 +21,7 @@ jobs:
       contents: read       # required for dependabot PRs
     if: ${{ github.ref != 'refs/heads/main' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install minimal stable with clippy and rustfmt
         uses: actions-rust-lang/setup-rust-toolchain@v1.13.0
