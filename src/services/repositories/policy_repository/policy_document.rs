@@ -1,5 +1,4 @@
-use crate::http::controllers::action_set::models::SchemaBoundActionSetRegistration;
-use crate::http::controllers::policy_set::models::{PolicySetRegistration, SchemaBoundPolicySetRegistration};
+use crate::http::controllers::policy_set::models::SchemaBoundPolicySetRegistration;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
 use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
