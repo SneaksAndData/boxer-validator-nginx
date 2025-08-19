@@ -8,7 +8,6 @@ use std::sync::Arc;
 
 pub struct KubernetesSchemaProvider {
     schema_repository: Arc<SchemaRepository>,
-    schema_name: String,
 }
 
 #[async_trait]
@@ -16,7 +15,7 @@ impl SchemaProvider for KubernetesSchemaProvider {
     async fn get_schema(&self, boxer_claims: &BoxerClaims) -> Result<Schema> {
         let actions_schema = self
             .schema_repository
-            .get(self.schema_name.clone())
+            .get(boxer_claims.schema.clone())
             .await
             .map_err(Error::from)?;
         let principal_schema = SchemaFragment::from_json_str(&boxer_claims.schema)?;
@@ -25,10 +24,7 @@ impl SchemaProvider for KubernetesSchemaProvider {
 }
 
 impl KubernetesSchemaProvider {
-    pub fn new(schema_repository: Arc<SchemaRepository>, schema_name: String) -> Self {
-        KubernetesSchemaProvider {
-            schema_repository,
-            schema_name,
-        }
+    pub fn new(schema_repository: Arc<SchemaRepository>) -> Self {
+        KubernetesSchemaProvider { schema_repository }
     }
 }

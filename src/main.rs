@@ -34,10 +34,7 @@ async fn main() -> Result<()> {
         .configure(&cm.backend.kubernetes, cm.instance_name.clone())
         .await?;
 
-    let schema_provider = Arc::new(KubernetesSchemaProvider::new(
-        current_backend.get(),
-        cm.backend.kubernetes.schema_repository.name,
-    ));
+    let schema_provider = Arc::new(KubernetesSchemaProvider::new(current_backend.get()));
     let action_repository = current_backend.get();
     let resource_repository = current_backend.get();
     let policy_repository = current_backend.get();

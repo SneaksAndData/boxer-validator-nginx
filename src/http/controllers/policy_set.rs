@@ -8,7 +8,12 @@ use actix_web::Result;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/policy_set/", responses((status = OK)), request_body = PolicySetRegistration)]
+#[utoipa::path(context_path = "/policy_set/",
+    responses(
+        (status = OK)
+    ),
+    request_body = PolicySetRegistration
+)]
 #[post("{schema}/{id}")]
 async fn post_policy_set(
     id: Path<(String, String)>,
@@ -21,14 +26,23 @@ async fn post_policy_set(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[utoipa::path(context_path = "/policy_set/", responses((status = OK, body = PolicySetRegistration)))]
+#[utoipa::path(context_path = "/policy_set/",
+    responses(
+        (status = OK, body = PolicySetRegistration),
+        (status = NOT_FOUND, description = "Policy set does not exist")
+    )
+)]
 #[get("{schema}/{id}")]
 async fn get_policy_set(id: Path<(String, String)>, data: Data<Arc<PolicyDataRepository>>) -> Result<impl Responder> {
     let policy_set: PolicySetRegistration = data.get(id.into_inner()).await?.into();
     Ok(Json(policy_set))
 }
 
-#[utoipa::path(context_path = "/policy_set/", responses((status = OK)))]
+#[utoipa::path(context_path = "/policy_set/",
+    responses(
+        (status = OK)
+    )
+)]
 #[delete("{schema}/{id}")]
 async fn delete_policy_set(
     id: Path<(String, String)>,
