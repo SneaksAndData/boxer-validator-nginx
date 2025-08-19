@@ -8,28 +8,47 @@ use actix_web::Result;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/policy_set/", responses((status = OK)), request_body = PolicySetRegistration)]
-#[post("{id}")]
+#[utoipa::path(context_path = "/policy_set/",
+    responses(
+        (status = OK)
+    ),
+    request_body = PolicySetRegistration
+)]
+#[post("{schema}/{id}")]
 async fn post_policy_set(
-    id: Path<String>,
+    id: Path<(String, String)>,
     request: Json<PolicySetRegistration>,
     data: Data<Arc<PolicyDataRepository>>,
 ) -> Result<impl Responder> {
-    data.upsert(id.to_string(), request.into_inner()).await?;
+    let (id, schema) = id.into_inner();
+    data.upsert((id, schema.clone()), request.into_inner().with_schema(schema))
+        .await?;
     Ok(HttpResponse::Ok().finish())
 }
 
-#[utoipa::path(context_path = "/policy_set/", responses((status = OK, body = PolicySetRegistration)))]
-#[get("{id}")]
-async fn get_policy_set(id: Path<String>, data: Data<Arc<PolicyDataRepository>>) -> Result<impl Responder> {
-    let policy_set = data.get(id.to_string()).await?;
+#[utoipa::path(context_path = "/policy_set/",
+    responses(
+        (status = OK, body = PolicySetRegistration),
+        (status = NOT_FOUND, description = "Policy set does not exist")
+    )
+)]
+#[get("{schema}/{id}")]
+async fn get_policy_set(id: Path<(String, String)>, data: Data<Arc<PolicyDataRepository>>) -> Result<impl Responder> {
+    let policy_set: PolicySetRegistration = data.get(id.into_inner()).await?.into();
     Ok(Json(policy_set))
 }
 
-#[utoipa::path(context_path = "/policy_set/", responses((status = OK)))]
-#[delete("{id}")]
-async fn delete_policy_set(id: Path<String>, data: Data<Arc<PolicyDataRepository>>) -> Result<impl Responder> {
-    data.delete(id.to_string()).await?;
+#[utoipa::path(context_path = "/policy_set/",
+    responses(
+        (status = OK)
+    )
+)]
+#[delete("{schema}/{id}")]
+async fn delete_policy_set(
+    id: Path<(String, String)>,
+    data: Data<Arc<PolicyDataRepository>>,
+) -> Result<impl Responder> {
+    data.delete(id.into_inner()).await?;
     Ok(HttpResponse::Ok().finish())
 }
 

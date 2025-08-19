@@ -7,28 +7,47 @@ use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/action_set/", responses((status = OK)), request_body = ActionSetRegistration)]
-#[post("{id}")]
+#[utoipa::path(context_path = "/action_set/",
+    responses(
+        (status = OK)
+    ),
+    request_body = ActionSetRegistration
+)]
+#[post("{schema}/{id}")]
 async fn post_action_set(
-    id: Path<String>,
+    id: Path<(String, String)>,
     request: Json<ActionSetRegistration>,
     data: Data<Arc<ActionDataRepository>>,
 ) -> Result<impl Responder> {
-    data.upsert(id.to_string(), request.into_inner()).await?;
+    let (id, schema) = id.into_inner();
+    data.upsert((id, schema.clone()), request.into_inner().with_schema(schema))
+        .await?;
     Ok(HttpResponse::Ok().finish())
 }
 
-#[utoipa::path(context_path = "/action_set/", responses((status = OK, body = ActionSetRegistration)))]
-#[get("{id}")]
-async fn get_action_set(id: Path<String>, data: Data<Arc<ActionDataRepository>>) -> Result<impl Responder> {
-    let action_set = data.get(id.to_string()).await?;
+#[utoipa::path(context_path = "/action_set/",
+    responses(
+        (status = OK, body = ActionSetRegistration),
+        (status = NOT_FOUND, description = "Action set does not exist")
+    )
+)]
+#[get("{schema}/{id}")]
+async fn get_action_set(id: Path<(String, String)>, data: Data<Arc<ActionDataRepository>>) -> Result<impl Responder> {
+    let action_set: ActionSetRegistration = data.get(id.into_inner()).await?.into();
     Ok(Json(action_set))
 }
 
-#[utoipa::path(context_path = "/action_set/", responses((status = OK)))]
-#[delete("{id}")]
-async fn delete_action_set(id: Path<String>, data: Data<Arc<ActionDataRepository>>) -> Result<impl Responder> {
-    data.delete(id.to_string()).await?;
+#[utoipa::path(context_path = "/action_set/",
+    responses(
+        (status = OK)
+    )
+)]
+#[delete("{schema}/{id}")]
+async fn delete_action_set(
+    id: Path<(String, String)>,
+    data: Data<Arc<ActionDataRepository>>,
+) -> Result<impl Responder> {
+    data.delete(id.into_inner()).await?;
     Ok(HttpResponse::Ok().finish())
 }
 

@@ -24,7 +24,23 @@ pub struct ResourceSetRegistration {
     pub routes: Vec<ResourceRouteRegistration>,
 }
 
-impl TryFromResource<ResourceDiscoveryDocument> for ResourceSetRegistration {
+impl ResourceSetRegistration {
+    pub fn with_schema(self, schema: String) -> SchemaBoundResourceSetRegistration {
+        SchemaBoundResourceSetRegistration {
+            hostname: self.hostname,
+            routes: self.routes,
+            schema,
+        }
+    }
+}
+
+pub struct SchemaBoundResourceSetRegistration {
+    pub hostname: String,
+    pub routes: Vec<ResourceRouteRegistration>,
+    pub schema: String,
+}
+
+impl TryFromResource<ResourceDiscoveryDocument> for SchemaBoundResourceSetRegistration {
     type Error = Status;
 
     fn try_into_resource(resource: Arc<ResourceDiscoveryDocument>) -> Result<Self, Self::Error> {
@@ -34,7 +50,7 @@ impl TryFromResource<ResourceDiscoveryDocument> for ResourceSetRegistration {
     }
 }
 
-impl ToResource<ResourceDiscoveryDocument> for ResourceSetRegistration {
+impl ToResource<ResourceDiscoveryDocument> for SchemaBoundResourceSetRegistration {
     fn to_resource(&self, object_meta: &ObjectMeta) -> Result<ResourceDiscoveryDocument, Status> {
         let spec = ResourceDiscoveryDocumentSpec::try_from(self)
             .map_err(|e| Status::ConversionError(anyhow::Error::from(e)))?;
@@ -42,5 +58,23 @@ impl ToResource<ResourceDiscoveryDocument> for ResourceSetRegistration {
             metadata: object_meta.clone(),
             spec,
         })
+    }
+}
+
+impl Into<ResourceSetRegistration> for SchemaBoundResourceSetRegistration {
+    fn into(self) -> ResourceSetRegistration {
+        let routes: Vec<ResourceRouteRegistration> = self
+            .routes
+            .into_iter()
+            .map(|route| ResourceRouteRegistration {
+                route_template: route.route_template,
+                resource_uid: route.resource_uid,
+            })
+            .collect();
+
+        ResourceSetRegistration {
+            hostname: self.hostname,
+            routes,
+        }
     }
 }

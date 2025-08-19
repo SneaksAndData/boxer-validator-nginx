@@ -7,34 +7,50 @@ use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, web, HttpResponse, Responder, Result};
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "/resource_set/", responses((status = OK)), request_body = ResourceSetRegistration)]
-#[post("{id}")]
+#[utoipa::path(context_path = "/resource_set/",
+    responses(
+        (status = OK)
+    ),
+    request_body = ResourceSetRegistration
+)]
+#[post("{schema}/{id}")]
 async fn post_resource_set(
-    id: Path<String>,
+    id: Path<(String, String)>,
     request: Json<ResourceSetRegistration>,
     data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
 ) -> Result<impl Responder> {
-    data.upsert(id.to_string(), request.into_inner()).await?;
+    let (id, schema) = id.into_inner();
+    data.upsert((id, schema.clone()), request.into_inner().with_schema(schema))
+        .await?;
     Ok(HttpResponse::Ok().finish())
 }
 
-#[utoipa::path(context_path = "/resource_set/", responses((status = OK, body = ResourceSetRegistration)))]
-#[get("{id}")]
+#[utoipa::path(context_path = "/resource_set/",
+    responses(
+        (status = OK, body = ResourceSetRegistration),
+        (status = NOT_FOUND, description = "Resource set does not exist")
+    )
+)]
+#[get("{schema}/{id}")]
 async fn get_resource_set(
-    id: Path<String>,
+    id: Path<(String, String)>,
     data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
 ) -> Result<impl Responder> {
-    let resource_set = data.get(id.to_string()).await?;
+    let resource_set: ResourceSetRegistration = data.get(id.into_inner()).await?.into();
     Ok(Json(resource_set))
 }
 
-#[utoipa::path(context_path = "/resource_set/", responses((status = OK)))]
-#[delete("{id}")]
+#[utoipa::path(context_path = "/resource_set/",
+    responses(
+        (status = OK)
+    )
+)]
+#[delete("{schema}/{id}")]
 async fn delete_resource_set(
-    id: Path<String>,
+    id: Path<(String, String)>,
     data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
 ) -> Result<impl Responder> {
-    data.delete(id.to_string()).await?;
+    data.delete(id.into_inner()).await?;
     Ok(HttpResponse::Ok().finish())
 }
 

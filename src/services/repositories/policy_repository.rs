@@ -9,7 +9,7 @@ use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::PolicySet;
 
 pub trait PolicyReadOnlyRepositoryInterface:
-    ReadOnlyRepository<(), PolicySet, ReadError = anyhow::Error> + ResourceUpdateHandler<PolicyDocument>
+    ReadOnlyRepository<String, PolicySet, ReadError = anyhow::Error> + ResourceUpdateHandler<PolicyDocument>
 {
 }
 

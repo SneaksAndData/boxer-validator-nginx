@@ -6,34 +6,31 @@ use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::PolicySet;
 use kube::runtime::watcher;
 use log::{debug, warn};
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub struct PolicyRepositoryData {
-    policy_set: RwLock<PolicySet>,
+    policy_set: RwLock<HashMap<String, PolicySet>>,
 }
 
 pub(crate) fn new() -> Arc<PolicyRepositoryData> {
     Arc::new(PolicyRepositoryData {
-        policy_set: RwLock::new(PolicySet::default()),
+        policy_set: RwLock::new(HashMap::default()),
     })
 }
 
-impl PolicyRepositoryData {
-    async fn set_policies(&self, policy_set: PolicySet) -> () {
-        let mut guard = self.policy_set.write().await;
-        *(guard) = policy_set.clone();
-    }
-}
-
 #[async_trait]
-impl ReadOnlyRepository<(), PolicySet> for PolicyRepositoryData {
+impl ReadOnlyRepository<String, PolicySet> for PolicyRepositoryData {
     type ReadError = anyhow::Error;
 
-    async fn get(&self, _key: ()) -> Result<PolicySet, Self::ReadError> {
+    async fn get(&self, key: String) -> Result<PolicySet, Self::ReadError> {
         let guard = self.policy_set.read().await;
-        Ok((*guard).clone())
+        match guard.get(&key) {
+            Some(policy_set) => Ok(policy_set.clone()),
+            None => Err(anyhow::anyhow!("Policy set not found for key: {}", key)),
+        }
     }
 }
 
@@ -47,7 +44,15 @@ impl ResourceUpdateHandler<PolicyDocument> for PolicyRepositoryData {
                 let policies = PolicySet::from_str(&event.spec.policies);
                 match policies {
                     Err(err) => warn!("Failed to parse policy set: {:?}", err),
-                    Ok(policies) => self.set_policies(policies).await,
+                    Ok(policies) => {
+                        let mut guard = self.policy_set.write().await;
+                        guard
+                            .entry(event.spec.schema)
+                            .and_modify(|existing| {
+                                *existing = policies.clone();
+                            })
+                            .or_insert(policies.clone());
+                    }
                 }
             }
         }

@@ -6,6 +6,7 @@ use crate::services::repositories::action_repository::ActionReadOnlyRepository;
 use crate::services::repositories::policy_repository::PolicyReadOnlyRepository;
 use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use async_trait::async_trait;
+use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::{Authorizer, Context, Entities, Entity, EntityUid, Request};
 use log::{debug, info};
 use std::sync::Arc;
@@ -41,14 +42,17 @@ impl ValidationService for CedarValidationService {
         let schema = self.schema_provider.get_schema(&boxer_claims).await?;
         debug!("Cedar validation schemas: {:?}", schema);
 
-        let action = self.action_repository.get(request_context.clone().try_into()?).await?;
+        let action = self
+            .action_repository
+            .get((boxer_claims.schema.clone(), request_context.clone().try_into()?))
+            .await?;
 
         let resource = self
             .resource_repository
-            .get(request_context.clone().try_into()?)
+            .get((boxer_claims.schema.clone(), request_context.clone().try_into()?))
             .await?;
 
-        let policy_set = self.policy_repository.get(()).await?;
+        let policy_set = self.policy_repository.get(boxer_claims.schema.clone()).await?;
 
         let actor: EntityUid = boxer_claims.try_into()?;
 

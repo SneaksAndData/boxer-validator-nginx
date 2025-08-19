@@ -20,13 +20,14 @@ use tokio::sync::RwLock;
 use trie_rs::map::Trie;
 
 pub mod backend;
+pub mod schema_bound_trie_repository;
 
 pub struct TrieData<Key> {
     items: HashMap<Vec<Key>, EntityUid>,
     maybe_trie: Option<Arc<Trie<Key, EntityUid>>>,
 }
 
-pub struct TrieRepositoryData<Key> {
+struct TrieRepositoryData<Key> {
     pub rw_lock: RwLock<TrieData<Key>>,
 }
 
@@ -48,6 +49,10 @@ pub trait EntityCollectionResource<Key> {
     fn stream(
         self,
     ) -> impl futures::Stream<Item = Result<(Vec<Key>, EntityUid, bool), anyhow::Error>> + Send + Sync + 'static;
+}
+
+pub trait SchemaBoundResource {
+    fn schema(&self) -> String;
 }
 
 #[async_trait]

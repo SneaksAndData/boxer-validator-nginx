@@ -1,5 +1,5 @@
-use crate::http::controllers::resource_set::models::{ResourceRouteRegistration, ResourceSetRegistration};
-use crate::services::repositories::lookup_trie::EntityCollectionResource;
+use crate::http::controllers::resource_set::models::{ResourceRouteRegistration, SchemaBoundResourceSetRegistration};
+use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource};
 use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
@@ -29,6 +29,7 @@ pub struct ResourceDiscoveryDocumentSpec {
     pub active: bool,
     pub hostname: String,
     pub routes: Vec<ResourceRoute>,
+    pub schema: String,
 }
 
 impl EntityCollectionResource<PathSegment> for ResourceDiscoveryDocument {
@@ -55,8 +56,8 @@ impl Default for ResourceDiscoveryDocument {
     }
 }
 
-impl From<&ResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
-    fn from(value: &ResourceSetRegistration) -> Self {
+impl From<&SchemaBoundResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
+    fn from(value: &SchemaBoundResourceSetRegistration) -> Self {
         let mut routes = Vec::<ResourceRoute>::new();
 
         for route in &value.routes {
@@ -70,12 +71,13 @@ impl From<&ResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
             active: true,
             hostname: value.hostname.clone(),
             routes,
+            schema: value.schema.clone(),
         }
     }
 }
 
-impl Into<ResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
-    fn into(self) -> ResourceSetRegistration {
+impl Into<SchemaBoundResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
+    fn into(self) -> SchemaBoundResourceSetRegistration {
         let routes: Vec<ResourceRouteRegistration> = self
             .routes
             .into_iter()
@@ -85,9 +87,10 @@ impl Into<ResourceSetRegistration> for ResourceDiscoveryDocumentSpec {
             })
             .collect();
 
-        ResourceSetRegistration {
+        SchemaBoundResourceSetRegistration {
             hostname: self.hostname,
             routes,
+            schema: self.schema.clone(),
         }
     }
 }
@@ -138,5 +141,11 @@ impl TryInto<Vec<PathSegment>> for ResourceRoute {
             }
         }
         Ok(segments)
+    }
+}
+
+impl SchemaBoundResource for ResourceDiscoveryDocument {
+    fn schema(&self) -> String {
+        self.spec.schema.clone()
     }
 }

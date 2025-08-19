@@ -3,9 +3,11 @@ use crate::http::controllers::resource_set::models::{ResourceRouteRegistration, 
 use crate::models::request_context::RequestContext;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
+use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
 use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
+use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use boxer_core::services::service_provider::ServiceProvider;
 use boxer_core::testing::api_extensions::WaitForResource;
 use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::SpinLockKubernetesResourceManagerTestContext;
@@ -20,7 +22,7 @@ struct KubernetesResourceRepositoryTest {
     repository: Arc<ResourceDiscoveryDocumentRepository>,
     api: Api<ResourceDiscoveryDocument>,
     namespace: String,
-    lookup: ReadOnlyRepositoryBackend<TrieRepositoryData<PathSegment>, ResourceDiscoveryDocument>,
+    lookup: ReadOnlyRepositoryBackend<SchemaBoundedTrieRepositoryData<PathSegment>, ResourceDiscoveryDocument>,
 }
 
 impl AsyncTestContext for KubernetesResourceRepositoryTest {
@@ -34,7 +36,7 @@ impl AsyncTestContext for KubernetesResourceRepositoryTest {
             owner_mark,
             operation_timeout: operation_timeout.clone(),
         };
-        let lookup_trie = Arc::new(TrieRepositoryData::<PathSegment>::new());
+        let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<PathSegment>::new());
         let lookup = ReadOnlyRepositoryBackend::start(config, lookup_trie.clone())
             .await
             .unwrap();
@@ -54,9 +56,9 @@ impl AsyncTestContext for KubernetesResourceRepositoryTest {
 
 #[test_context(KubernetesResourceRepositoryTest)]
 #[tokio::test]
-async fn test_create_schema(ctx: &mut KubernetesResourceRepositoryTest) {
+async fn test_create_resource_discovery_document(ctx: &mut KubernetesResourceRepositoryTest) {
     // Arrange
-    let name = "action-discovery-document";
+    let name = "resource-discovery-document";
     let registration = ResourceSetRegistration {
         hostname: "www.example.com".to_string(),
         routes: vec![ResourceRouteRegistration {
@@ -66,13 +68,17 @@ async fn test_create_schema(ctx: &mut KubernetesResourceRepositoryTest) {
     };
 
     ctx.repository
-        .upsert(name.to_string(), registration)
+        .upsert(
+            ("schema".to_string(), name.to_string()),
+            registration.with_schema("schema".to_string()),
+        )
         .await
         .expect("Failed to upsert schema");
 
     // Act
+    let key = format!("{}-{}", "schema", name);
     ctx.api
-        .wait_for_creation(name.to_string(), ctx.namespace.clone(), DEFAULT_TEST_TIMEOUT)
+        .wait_for_creation(key, ctx.namespace.clone(), DEFAULT_TEST_TIMEOUT)
         .await;
 
     let request_context = RequestContext::new(
@@ -81,7 +87,7 @@ async fn test_create_schema(ctx: &mut KubernetesResourceRepositoryTest) {
     );
     let key = request_context.try_into().unwrap();
 
-    let after = ctx.lookup.get().get(key).await;
+    let after = ctx.lookup.get().get(("schema".to_string(), key)).await;
 
     // Assert
     assert!(after.is_ok());

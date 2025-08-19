@@ -25,7 +25,23 @@ pub struct ActionSetRegistration {
     pub routes: Vec<ActionRouteRegistration>,
 }
 
-impl TryFromResource<ActionDiscoveryDocument> for ActionSetRegistration {
+impl ActionSetRegistration {
+    pub fn with_schema(self, schema: String) -> SchemaBoundActionSetRegistration {
+        SchemaBoundActionSetRegistration {
+            hostname: self.hostname,
+            routes: self.routes,
+            schema,
+        }
+    }
+}
+
+pub struct SchemaBoundActionSetRegistration {
+    pub hostname: String,
+    pub routes: Vec<ActionRouteRegistration>,
+    pub schema: String,
+}
+
+impl TryFromResource<ActionDiscoveryDocument> for SchemaBoundActionSetRegistration {
     type Error = Status;
 
     fn try_into_resource(resource: Arc<ActionDiscoveryDocument>) -> Result<Self, Self::Error> {
@@ -35,7 +51,7 @@ impl TryFromResource<ActionDiscoveryDocument> for ActionSetRegistration {
     }
 }
 
-impl ToResource<ActionDiscoveryDocument> for ActionSetRegistration {
+impl ToResource<ActionDiscoveryDocument> for SchemaBoundActionSetRegistration {
     fn to_resource(&self, object_meta: &ObjectMeta) -> Result<ActionDiscoveryDocument, Status> {
         let spec =
             ActionDiscoveryDocumentSpec::try_from(self).map_err(|e| Status::ConversionError(anyhow::Error::from(e)))?;
@@ -43,5 +59,14 @@ impl ToResource<ActionDiscoveryDocument> for ActionSetRegistration {
             metadata: object_meta.clone(),
             spec,
         })
+    }
+}
+
+impl Into<ActionSetRegistration> for SchemaBoundActionSetRegistration {
+    fn into(self) -> ActionSetRegistration {
+        ActionSetRegistration {
+            hostname: self.hostname,
+            routes: self.routes,
+        }
     }
 }

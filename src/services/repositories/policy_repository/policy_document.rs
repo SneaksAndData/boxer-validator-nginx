@@ -1,4 +1,4 @@
-use crate::http::controllers::policy_set::models::PolicySetRegistration;
+use crate::http::controllers::policy_set::models::SchemaBoundPolicySetRegistration;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
 use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
@@ -19,6 +19,7 @@ use std::collections::BTreeMap;
 pub struct PolicyDocumentSpec {
     pub active: bool,
     pub policies: String,
+    pub schema: String,
 }
 
 impl Default for PolicyDocument {
@@ -32,23 +33,28 @@ impl Default for PolicyDocument {
             spec: PolicyDocumentSpec {
                 active: true,
                 policies: String::new(),
+                schema: Default::default(),
             },
         }
     }
 }
 
-impl From<PolicySetRegistration> for PolicyDocumentSpec {
-    fn from(value: PolicySetRegistration) -> Self {
+impl From<SchemaBoundPolicySetRegistration> for PolicyDocumentSpec {
+    fn from(value: SchemaBoundPolicySetRegistration) -> Self {
         PolicyDocumentSpec {
             active: true,
             policies: value.policy.to_string(),
+            schema: value.schema.to_string(),
         }
     }
 }
 
-impl Into<PolicySetRegistration> for PolicyDocumentSpec {
-    fn into(self) -> PolicySetRegistration {
-        PolicySetRegistration { policy: self.policies }
+impl Into<SchemaBoundPolicySetRegistration> for PolicyDocumentSpec {
+    fn into(self) -> SchemaBoundPolicySetRegistration {
+        SchemaBoundPolicySetRegistration {
+            policy: self.policies,
+            schema: self.schema,
+        }
     }
 }
 
