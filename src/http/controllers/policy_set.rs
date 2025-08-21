@@ -20,7 +20,7 @@ async fn post_policy_set(
     request: Json<PolicySetRegistration>,
     data: Data<Arc<PolicyDataRepository>>,
 ) -> Result<impl Responder> {
-    let (id, schema) = id.into_inner();
+    let (schema, id) = id.into_inner();
     data.upsert((id, schema.clone()), request.into_inner().with_schema(schema))
         .await?;
     Ok(HttpResponse::Ok().finish())

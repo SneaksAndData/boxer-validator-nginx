@@ -13,7 +13,6 @@ anyhow = "1.0.86"
 jwt-authorizer = "0.15.0"
 log = "0.4.22"
 env_logger = "0.11.5"
-base64 = "0.22.1"
 serde_json = "1.0.140"
 utoipa = { version = "5.3.1", features = ["actix_extras"] }
 actix-web = "4.11.0"
@@ -31,7 +30,7 @@ futures = "0.3.31"
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 schemars = "0.8.6"
 #boxer_core = { path = "../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.6" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.8" }
 
 [dev-dependencies]
 rstest = "0.25.0"
@@ -39,4 +38,4 @@ test-context = "0.4.1"
 # This line is for development, to be removed in the future,
 #before moving to production
 #boxer_core = { path = "../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.6" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.8" }
