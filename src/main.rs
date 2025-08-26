@@ -18,17 +18,27 @@ use actix_web::{web, App, HttpServer};
 use anyhow::Result;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::backends::BackendConfiguration;
+use boxer_core::services::observability::composed_logger::ComposedLogger;
+use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::service_provider::ServiceProvider;
 use log::info;
+use opentelemetry_instrumentation_actix_web::RequestTracing;
 use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    env_logger::init();
+    ComposedLogger::new()
+        .with_logger(open_telemetry::logging::init_logger()?)
+        .with_logger(Box::new(env_logger::Builder::from_default_env().build()))
+        .with_global_level(log::LevelFilter::Info)
+        .init()?;
+
     let cm = AppSettings::new()?;
     info!("Configuration manager started");
+
+    open_telemetry::tracing::init_tracer()?;
 
     let current_backend = backends::new()
         .configure(&cm.backend.kubernetes, cm.instance_name.clone())
@@ -56,6 +66,7 @@ async fn main() -> Result<()> {
     info!("listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
     HttpServer::new(move || {
         App::new()
+            .wrap(RequestTracing::new())
             .wrap(Logger::default())
             .app_data(web::Data::new(cedar_validation_service.clone()))
             .app_data(web::Data::new(schema_repository.clone()))
