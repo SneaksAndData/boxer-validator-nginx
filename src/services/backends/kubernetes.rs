@@ -3,17 +3,19 @@ mod configuration;
 use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::action_repository::ActionReadOnlyRepository;
-use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
+use crate::services::repositories::lookup_trie::backend::{AssociatedRepository, ReadOnlyRepositoryBackend};
+use crate::services::repositories::models::path_segment::PathSegment;
+use crate::services::repositories::models::request_segment::RequestSegment;
 use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
 use crate::services::repositories::policy_repository::read_only::PolicyRepositoryData;
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
-use crate::services::repositories::policy_repository::PolicyReadOnlyRepository;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
 use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::backends::Backend;
 use boxer_core::services::service_provider::ServiceProvider;
+use cedar_policy::{EntityUid, PolicySet};
 use std::sync::Arc;
 
 pub struct KubernetesBackend {
@@ -22,10 +24,23 @@ pub struct KubernetesBackend {
     resource_repository: Arc<ResourceDiscoveryDocumentRepository>,
     policy_repository: Arc<PolicyDataRepository>,
 
-    action_lookup_table_listener: Arc<ReadOnlyRepositoryBackend<ActionReadOnlyRepository, ActionDiscoveryDocument>>,
-    resource_lookup_table_listener:
-        Arc<ReadOnlyRepositoryBackend<ResourceReadOnlyRepository, ResourceDiscoveryDocument>>,
-    policy_lookup_watcher: Arc<ReadOnlyRepositoryBackend<PolicyRepositoryData, PolicyDocument>>,
+    action_lookup_table_listener: Arc<
+        ReadOnlyRepositoryBackend<
+            ActionReadOnlyRepository,
+            ActionDiscoveryDocument,
+            (String, Vec<RequestSegment>),
+            EntityUid,
+        >,
+    >,
+    resource_lookup_table_listener: Arc<
+        ReadOnlyRepositoryBackend<
+            ResourceReadOnlyRepository,
+            ResourceDiscoveryDocument,
+            (String, Vec<PathSegment>),
+            EntityUid,
+        >,
+    >,
+    policy_lookup_watcher: Arc<ReadOnlyRepositoryBackend<PolicyRepositoryData, PolicyDocument, String, PolicySet>>,
 }
 
 impl ServiceProvider<Arc<SchemaRepository>> for KubernetesBackend {
@@ -34,8 +49,8 @@ impl ServiceProvider<Arc<SchemaRepository>> for KubernetesBackend {
     }
 }
 
-impl ServiceProvider<Arc<ActionReadOnlyRepository>> for KubernetesBackend {
-    fn get(&self) -> Arc<ActionReadOnlyRepository> {
+impl ServiceProvider<Arc<AssociatedRepository<(String, Vec<RequestSegment>), EntityUid>>> for KubernetesBackend {
+    fn get(&self) -> Arc<AssociatedRepository<(String, Vec<RequestSegment>), EntityUid>> {
         self.action_lookup_table_listener.get().clone()
     }
 }
@@ -52,14 +67,14 @@ impl ServiceProvider<Arc<ResourceDiscoveryDocumentRepository>> for KubernetesBac
     }
 }
 
-impl ServiceProvider<Arc<ResourceReadOnlyRepository>> for KubernetesBackend {
-    fn get(&self) -> Arc<ResourceReadOnlyRepository> {
+impl ServiceProvider<Arc<AssociatedRepository<(String, Vec<PathSegment>), EntityUid>>> for KubernetesBackend {
+    fn get(&self) -> Arc<AssociatedRepository<(String, Vec<PathSegment>), EntityUid>> {
         self.resource_lookup_table_listener.get().clone()
     }
 }
 
-impl ServiceProvider<Arc<PolicyReadOnlyRepository>> for KubernetesBackend {
-    fn get(&self) -> Arc<PolicyReadOnlyRepository> {
+impl ServiceProvider<Arc<AssociatedRepository<String, PolicySet>>> for KubernetesBackend {
+    fn get(&self) -> Arc<AssociatedRepository<String, PolicySet>> {
         self.policy_lookup_watcher.get().clone()
     }
 }

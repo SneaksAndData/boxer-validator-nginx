@@ -17,9 +17,11 @@ use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::obj
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
     KubernetesResourceManagerConfig, UpdateLabels,
 };
-use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcherRunner;
 use boxer_core::services::backends::kubernetes::repositories::{KubernetesRepository, SoftDeleteResource};
 use boxer_core::services::backends::BackendConfiguration;
+use boxer_core::services::observability::open_telemetry::tracing::tracing_facade::WithTracingFacade;
+use cedar_policy::{EntityUid, PolicySet};
 use k8s_openapi::NamespaceResourceScope;
 use kube::Config;
 use std::fmt::Debug;
@@ -53,6 +55,7 @@ impl BackendConfiguration for BackendBuilder {
             kubeconfig.clone(),
             owner_mark.clone(),
             settings.operation_timeout.into(),
+            "action_lookup".to_string(),
         )
         .await?;
 
@@ -69,6 +72,7 @@ impl BackendConfiguration for BackendBuilder {
             kubeconfig.clone(),
             owner_mark.clone(),
             settings.operation_timeout.into(),
+            "resource_lookup".to_string(),
         )
         .await?;
 
@@ -164,7 +168,10 @@ impl BackendBuilder {
         kubeconfig: Config,
         owner_mark: ObjectOwnerMark,
         operation_timeout: Duration,
-    ) -> anyhow::Result<Arc<ReadOnlyRepositoryBackend<SchemaBoundedTrieRepositoryData<K>, R>>>
+        operation_name: String,
+    ) -> anyhow::Result<
+        Arc<ReadOnlyRepositoryBackend<SchemaBoundedTrieRepositoryData<K>, R, (String, Vec<K>), EntityUid>>,
+    >
     where
         K: Debug + Ord + Clone + Send + Sync + Hash + 'static,
         R: kube::Resource<Scope = NamespaceResourceScope>
@@ -185,7 +192,8 @@ impl BackendBuilder {
             operation_timeout,
         };
         let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<K>::new());
-        let r = ReadOnlyRepositoryBackend::<SchemaBoundedTrieRepositoryData<K>, R>::start(config, lookup_trie).await?;
+        let mut r = ReadOnlyRepositoryBackend::new(lookup_trie.clone(), lookup_trie.with_tracing(operation_name));
+        r.start(config).await?;
         Ok(Arc::new(r))
     }
 
@@ -194,7 +202,7 @@ impl BackendBuilder {
         kubeconfig: Config,
         owner_mark: ObjectOwnerMark,
         operation_timeout: Duration,
-    ) -> anyhow::Result<Arc<ReadOnlyRepositoryBackend<PolicyRepositoryData, PolicyDocument>>>
+    ) -> anyhow::Result<Arc<ReadOnlyRepositoryBackend<PolicyRepositoryData, PolicyDocument, String, PolicySet>>>
     where
         K: Ord,
     {
@@ -205,7 +213,11 @@ impl BackendBuilder {
             operation_timeout,
         };
         let lookup_trie = policy_repository::read_only::new();
-        let r = ReadOnlyRepositoryBackend::start(config, lookup_trie).await?;
+        let mut r = ReadOnlyRepositoryBackend::new(
+            lookup_trie.clone(),
+            lookup_trie.with_tracing("policy_lookup".to_string()),
+        );
+        r.start(config).await?;
         Ok(Arc::new(r))
     }
 }

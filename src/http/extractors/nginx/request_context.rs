@@ -1,6 +1,7 @@
 use crate::models::request_context::RequestContext;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{FromRequest, HttpRequest};
+use boxer_core::services::observability::open_telemetry::tracing::{start_trace, ErrorExt};
 use futures_util::future::{ready, Ready};
 
 const ORIGINAL_URL_HEADER: &str = "X-Original-URL";
@@ -10,13 +11,12 @@ impl FromRequest for RequestContext {
     type Error = actix_web::Error;
     type Future = Ready<Result<Self, Self::Error>>;
     fn from_request(req: &HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
-        let result = match extract_headers(req) {
-            Ok((original_url, original_method)) => {
-                let request_context = RequestContext::new(original_url, original_method);
-                Ok(request_context)
-            }
-            Err(e) => Err(ErrorBadRequest(e.to_string())),
-        };
+        let cx = start_trace("extract_request_context");
+        let result = extract_headers(req)
+            .stop_trace(cx)
+            .map(|(url, method)| RequestContext::new(url, method))
+            .map_err(|err| ErrorBadRequest(err.to_string()));
+
         ready(result)
     }
 }

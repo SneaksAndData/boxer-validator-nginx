@@ -1,5 +1,4 @@
 use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
-use crate::services::repositories::policy_repository::PolicyReadOnlyRepositoryInterface;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
@@ -58,5 +57,3 @@ impl ResourceUpdateHandler<PolicyDocument> for PolicyRepositoryData {
         }
     }
 }
-
-impl PolicyReadOnlyRepositoryInterface for PolicyRepositoryData {}
