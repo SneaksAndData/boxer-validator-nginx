@@ -8,8 +8,6 @@ use futures_util::future::LocalBoxFuture;
 use jwt_authorizer::{Authorizer, JwtAuthorizer, Validation};
 use log::debug;
 use opentelemetry::context::FutureExt;
-use opentelemetry::trace::TraceContextExt;
-use opentelemetry::Context;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;

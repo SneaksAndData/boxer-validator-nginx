@@ -5,12 +5,12 @@ use crate::services::repositories::action_repository::action_discovery_document:
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcher;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcherRunner;
 use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
-use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use boxer_core::services::service_provider::ServiceProvider;
 use boxer_core::testing::api_extensions::{WaitForDelete, WaitForResource};
 use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::SpinLockKubernetesResourceManagerTestContext;
+use cedar_policy::EntityUid;
 use kube::Api;
 use std::sync::Arc;
 use std::time::Duration;
@@ -22,7 +22,12 @@ struct KubernetesActionRepositoryTest {
     repository: Arc<ActionDataRepository>,
     api: Api<ActionDiscoveryDocument>,
     namespace: String,
-    lookup: ReadOnlyRepositoryBackend<SchemaBoundedTrieRepositoryData<RequestSegment>, ActionDiscoveryDocument>,
+    lookup: ReadOnlyRepositoryBackend<
+        SchemaBoundedTrieRepositoryData<RequestSegment>,
+        ActionDiscoveryDocument,
+        (String, Vec<RequestSegment>),
+        EntityUid,
+    >,
 }
 
 impl AsyncTestContext for KubernetesActionRepositoryTest {
@@ -37,10 +42,8 @@ impl AsyncTestContext for KubernetesActionRepositoryTest {
             operation_timeout: operation_timeout.clone(),
         };
         let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<RequestSegment>::new());
-        let lookup = ReadOnlyRepositoryBackend::start(config, lookup_trie.clone())
-            .await
-            .unwrap();
-
+        let mut lookup = ReadOnlyRepositoryBackend::new(lookup_trie.clone(), lookup_trie.clone());
+        lookup.start(config).await.unwrap();
         let repository = Arc::new(KubernetesRepository {
             resource_manager: parent.manager,
             operation_timeout: parent.config.operation_timeout,
