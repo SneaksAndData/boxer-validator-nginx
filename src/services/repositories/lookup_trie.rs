@@ -2,7 +2,7 @@
 use log::{debug, info, warn};
 
 #[cfg(test)]
-use std::{println as warn, println as debug, println as info};
+use std::{println as warn, println as info};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
