@@ -30,9 +30,9 @@ use utoipa_swagger_ui::SwaggerUi;
 #[actix_web::main]
 async fn main() -> Result<()> {
     ComposedLogger::new()
-        // .with_logger(open_telemetry::logging::init_logger()?)
+        .with_logger(open_telemetry::logging::init_logger()?)
         .with_logger(Box::new(env_logger::Builder::from_default_env().build()))
-        .with_global_level(log::LevelFilter::Debug)
+        .with_global_level(log::LevelFilter::Info)
         .init()?;
 
     let cm = AppSettings::new()?;
