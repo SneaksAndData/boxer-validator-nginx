@@ -32,13 +32,13 @@ async fn main() -> Result<()> {
     ComposedLogger::new()
         // .with_logger(open_telemetry::logging::init_logger()?)
         .with_logger(Box::new(env_logger::Builder::from_default_env().build()))
-        .with_global_level(log::LevelFilter::Info)
+        .with_global_level(log::LevelFilter::Debug)
         .init()?;
 
     let cm = AppSettings::new()?;
     info!("Configuration manager started");
 
-    open_telemetry::tracing::init_tracer()?;
+    // open_telemetry::tracing::init_tracer()?;
 
     let current_backend = backends::new()
         .configure(&cm.backend.kubernetes, cm.instance_name.clone())
