@@ -134,7 +134,7 @@ where
                                 if let Err(e) = result {
                                     warn!("Failed to upsert action: {}", e);
                                 } else {
-                                    debug!(
+                                    info!(
                                         "Successfully upserted action with key {:?} and UID: {}",
                                         segments, action_uid
                                     );
