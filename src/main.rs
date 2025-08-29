@@ -19,7 +19,6 @@ use anyhow::Result;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::backends::BackendConfiguration;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
-use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::service_provider::ServiceProvider;
 use log::info;
 use opentelemetry_instrumentation_actix_web::RequestTracing;
@@ -38,7 +37,7 @@ async fn main() -> Result<()> {
     let cm = AppSettings::new()?;
     info!("Configuration manager started");
 
-    open_telemetry::tracing::init_tracer()?;
+    // open_telemetry::tracing::init_tracer()?;
 
     let current_backend = backends::new()
         .configure(&cm.backend.kubernetes, cm.instance_name.clone())

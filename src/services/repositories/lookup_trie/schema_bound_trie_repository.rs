@@ -7,7 +7,7 @@ use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::EntityUid;
 use kube::runtime::watcher;
 use kube::Resource;
-use log::warn;
+use log::{info, warn};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -59,6 +59,7 @@ where
         match &result {
             Ok(document) => {
                 let mut guard = self.buckets.write().await;
+                info!("Handling update for schema: {}", document.schema());
                 let bucket = guard.entry(document.schema()).or_insert_with(TrieRepositoryData::new);
                 bucket.handle_update(result).await;
             }

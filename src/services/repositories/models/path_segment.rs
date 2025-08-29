@@ -30,10 +30,10 @@ impl Ord for PathSegment {
         match self {
             PathSegment::Static(s1) => match other {
                 PathSegment::Static(s2) => s1.cmp(s2),
-                PathSegment::Parameter => Ordering::Greater,
+                PathSegment::Parameter => Ordering::Equal,
             },
             PathSegment::Parameter => match other {
-                PathSegment::Static(_) => Ordering::Less,
+                PathSegment::Static(_) => Ordering::Equal,
                 PathSegment::Parameter => Ordering::Equal,
             },
         }
