@@ -8,7 +8,13 @@ use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
 use log::info;
 use std::sync::Arc;
 
-#[utoipa::path(context_path = "", responses((status = OK)))]
+#[utoipa::path(
+    context_path = "",
+    responses((status = OK)),
+    security(
+        ("internal" = [])
+    )
+)]
 #[get("/review")]
 async fn token_review(
     boxer_claims: BoxerClaims,

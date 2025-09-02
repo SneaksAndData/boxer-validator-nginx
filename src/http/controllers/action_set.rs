@@ -11,7 +11,10 @@ use std::sync::Arc;
     responses(
         (status = OK)
     ),
-    request_body = ActionSetRegistration
+    request_body = ActionSetRegistration,
+    security(
+        ("internal" = [])
+    )
 )]
 #[post("{schema}/{id}")]
 async fn post_action_set(
@@ -20,7 +23,7 @@ async fn post_action_set(
     data: Data<Arc<ActionDataRepository>>,
 ) -> Result<impl Responder> {
     let (schema, id) = id.into_inner();
-    data.upsert((id, schema.clone()), request.into_inner().with_schema(schema))
+    data.upsert((schema.clone(), id), request.into_inner().with_schema(schema))
         .await?;
     Ok(HttpResponse::Ok().finish())
 }
@@ -29,6 +32,9 @@ async fn post_action_set(
     responses(
         (status = OK, body = ActionSetRegistration),
         (status = NOT_FOUND, description = "Action set does not exist")
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[get("{schema}/{id}")]
@@ -40,6 +46,9 @@ async fn get_action_set(id: Path<(String, String)>, data: Data<Arc<ActionDataRep
 #[utoipa::path(context_path = "/action_set/",
     responses(
         (status = OK)
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[delete("{schema}/{id}")]

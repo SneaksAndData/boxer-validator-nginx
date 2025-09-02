@@ -10,7 +10,10 @@ use std::sync::Arc;
     responses(
         (status = OK),
     ),
-    request_body = Value
+    request_body = Value,
+    security(
+        ("internal" = [])
+    )
 )]
 #[post("{id}")]
 async fn post_schema(
@@ -28,6 +31,9 @@ async fn post_schema(
     responses(
         (status = OK, body = Value),
         (status = NOT_FOUND, description = "Schema does not exist")
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[get("{id}")]
@@ -42,6 +48,9 @@ async fn get_schema(id: Path<String>, data: Data<Arc<SchemaRepository>>) -> Resu
 #[utoipa::path(context_path = "/schema/",
     responses(
         (status = OK)
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[delete("{id}")]
