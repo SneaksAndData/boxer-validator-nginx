@@ -2,7 +2,7 @@
 use log::{debug, info, warn};
 
 #[cfg(test)]
-use std::{println as warn, println as debug, println as info};
+use std::{println as warn, println as info};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -134,7 +134,7 @@ where
                                 if let Err(e) = result {
                                     warn!("Failed to upsert action: {}", e);
                                 } else {
-                                    debug!(
+                                    info!(
                                         "Successfully upserted action with key {:?} and UID: {}",
                                         segments, action_uid
                                     );

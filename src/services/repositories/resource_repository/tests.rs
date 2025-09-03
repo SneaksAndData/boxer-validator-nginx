@@ -66,7 +66,7 @@ async fn test_create_resource_discovery_document(ctx: &mut KubernetesResourceRep
     let registration = ResourceSetRegistration {
         hostname: "www.example.com".to_string(),
         routes: vec![ResourceRouteRegistration {
-            route_template: "api/v1/resources".to_string(),
+            route_template: "api/v1/{object}".to_string(),
             resource_uid: "PhotoApp::Photo::\"vacationPhoto.jpg\"".to_string(),
         }],
     };

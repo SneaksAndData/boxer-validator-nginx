@@ -11,7 +11,10 @@ use std::sync::Arc;
     responses(
         (status = OK)
     ),
-    request_body = ResourceSetRegistration
+    request_body = ResourceSetRegistration,
+    security(
+        ("internal" = [])
+    )
 )]
 #[post("{schema}/{id}")]
 async fn post_resource_set(
@@ -29,6 +32,9 @@ async fn post_resource_set(
     responses(
         (status = OK, body = ResourceSetRegistration),
         (status = NOT_FOUND, description = "Resource set does not exist")
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[get("{schema}/{id}")]
@@ -43,6 +49,9 @@ async fn get_resource_set(
 #[utoipa::path(context_path = "/resource_set/",
     responses(
         (status = OK)
+    ),
+    security(
+        ("internal" = [])
     )
 )]
 #[delete("{schema}/{id}")]

@@ -269,31 +269,34 @@ validator:
         resourceOwnerLabel: ""
 
 
-# Observability settings for Datadog
-datadog:
+# Observability settings for OpenTelemetry
+openTelemetry:
 
   # if enabled, will set Datadog-specific environment variables on the container
   enabled: false
 
-  # Datadog endpoint to sink logs to
-  endpoint: "datadoghq.eu"
+  # Value to use as GRPC endpoint for OpenTelemetry export
+  # Defaults to current node port 4317 if not set
+  grpcEndpoint: ""
 
-  # Name for a Secret resource that contains Datadog API Key to use for log submissions
-  apiKeySecret: "secretName"
+  # Value to use as GRPC endpoint for OpenTelemetry export
+  # Defaults to Chart name or nameOverride if set
+  serviceName: ""
 
-  # Key in the secret that contains datadog api key
-  apiKeySecretKey: "secretKey"
+  # Enable OpenTelemetry logging
+  logs:
 
-  # Datadog Service Name parameter
-  serviceName: "boxer-validator-nginx"
+    # Set to true to enable OpenTelemetry logging
+    enabled: "false"
 
-  # value to use as a DogStatsd server url
-  # Examples: udp://127.0.0.1:8125 or unix:///path/to/dsd.socket
-  # https://github.com/DataDog/datadog-go?tab=readme-ov-file#unix-domain-sockets-client
-  statsdUrl: unix:///var/run/datadog/dsd.socket
+  # Enable OpenTelemetry metrics
+  metrics:
 
-  # enables metric origin detection by setting DD_ENTITY_ID
-  enableOriginDetection: true
+    # Set to true to enable OpenTelemetry metrics
+    enabled: "false"
 
+  # Enable OpenTelemetry tracing
+  tracing:
 
-
+    # Set to true to enable OpenTelemetry tracing
+    enabled: ""

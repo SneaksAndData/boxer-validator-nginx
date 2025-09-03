@@ -65,13 +65,13 @@ async fn test_create_action_document(ctx: &mut KubernetesActionRepositoryTest) {
     insert_schema_document(
         ctx,
         "action-discovery-document",
-        "api/v1/resources",
+        "api/v1/resources/{resourceId}",
         "PhotoApp::Photo::\"vacationPhoto.jpg\"",
     )
     .await;
 
     let request_context = RequestContext::new(
-        "https://www.example.com/api/v1/resources".to_string(),
+        "https://www.example.com/api/v1/resources/resource".to_string(),
         "GET".to_string(),
     );
     let key = request_context.try_into().unwrap();
