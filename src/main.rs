@@ -6,6 +6,7 @@ use crate::http::controllers::{action_set, policy_set, schema};
 use crate::http::controllers::{resource_set, token_review};
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::http::openapi::ApiDoc;
+use crate::services::audit::log_audit_service::LogAuditService;
 use crate::services::backends;
 use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
@@ -81,6 +82,7 @@ async fn main() -> Result<()> {
         action_repository,
         resource_repository,
         policy_repository,
+        Arc::new(LogAuditService::new()),
     ));
 
     let action_repository: Arc<ActionDataRepository> = current_backend.get();

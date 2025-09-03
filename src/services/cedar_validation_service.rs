@@ -1,4 +1,6 @@
 use crate::models::request_context::RequestContext;
+use crate::services::audit::audit_event::AccessAuditEvent;
+use crate::services::audit::AuditService;
 use crate::services::base::schema_provider::SchemaProvider;
 use crate::services::base::validation_service::ValidationService;
 use crate::services::repositories::lookup_trie::backend::AssociatedRepository;
@@ -18,6 +20,7 @@ pub struct CedarValidationService {
     action_repository: Arc<AssociatedRepository<(String, Vec<RequestSegment>), EntityUid>>,
     resource_repository: Arc<AssociatedRepository<(String, Vec<PathSegment>), EntityUid>>,
     policy_repository: Arc<AssociatedRepository<String, PolicySet>>,
+    audit: Arc<dyn AuditService>,
 }
 
 impl CedarValidationService {
@@ -26,6 +29,7 @@ impl CedarValidationService {
         action_repository: Arc<AssociatedRepository<(String, Vec<RequestSegment>), EntityUid>>,
         resource_repository: Arc<AssociatedRepository<(String, Vec<PathSegment>), EntityUid>>,
         policy_repository: Arc<AssociatedRepository<String, PolicySet>>,
+        audit: Arc<dyn AuditService>,
     ) -> Self {
         CedarValidationService {
             authorizer: Authorizer::new(),
@@ -33,6 +37,7 @@ impl CedarValidationService {
             action_repository,
             resource_repository,
             policy_repository,
+            audit,
         }
     }
 }
@@ -85,6 +90,10 @@ impl ValidationService for CedarValidationService {
             action.to_string(),
             resource.to_string()
         );
+
+        self.audit
+            .record(AccessAuditEvent::new(&actor, &action, &resource, &answer))?;
+
         match answer.decision() {
             cedar_policy::Decision::Allow => Ok(()),
             cedar_policy::Decision::Deny => anyhow::bail!("Access denied"),
