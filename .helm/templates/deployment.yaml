@@ -101,16 +101,11 @@ spec:
           {{ toYaml . | nindent 12 }}
         {{- end }}
         {{- with .Values.resources }}
-        resources:
-          {{ toYaml . | nindent 12 }}
+          resources:
+          {{- toYaml . | nindent 12 }}
         {{- end }}
-      {{- if or .Values.extraVolumes .Values.datadog.enabled }}
+      {{- if .Values.extraVolumes }}
       volumes:
-        {{- if .Values.datadog.enabled }}
-        - name: dsdsocket
-          hostPath:
-            path: /var/run/datadog/
-        {{- end }}
         {{- with .Values.extraVolumes }}
           {{ toYaml . | nindent 8 }}
         {{- end }}
