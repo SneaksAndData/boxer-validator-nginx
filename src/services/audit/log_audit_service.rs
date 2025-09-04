@@ -12,8 +12,21 @@ impl LogAuditService {
 
 impl AuditService for LogAuditService {
     fn record(&self, event: AccessAuditEvent) -> Result<()> {
-        log::info!(target: "audit",
-            summary:serde = event; "Audit Event access to resource: {:?}", event.resource());
+        log::info!(
+            // Indicates the audit events for easier filtering in log aggregation systems
+            log_type = "audit",
+
+            // The event decomposition for structured logging
+            action = event.action.as_str(),
+            actor = event.actor.as_str(),
+            resource = event.resource.as_str(),
+            decision:serde = event.decision,
+            reason_policies:serde = event.reason.policies,
+            reason_errors:serde = event.reason.errors;
+
+            // The log message
+            "Audit Event access to resource: {:?}", event.resource());
+
         Ok(())
     }
 }
