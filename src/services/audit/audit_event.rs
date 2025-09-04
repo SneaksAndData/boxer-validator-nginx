@@ -1,10 +1,11 @@
 use cedar_policy::{Decision, Diagnostics, EntityUid, Response};
 use std::collections::HashSet;
-use std::fmt::Display;
 
 #[derive(Debug)]
 pub struct Reason {
+    #[allow(dead_code)]
     pub policies: HashSet<String>,
+    #[allow(dead_code)]
     pub errors: HashSet<String>,
 }
 
@@ -19,10 +20,15 @@ impl From<&Diagnostics> for Reason {
 
 #[derive(Debug)]
 pub struct AccessAuditEvent {
+    #[allow(dead_code)]
     action: String,
+    #[allow(dead_code)]
     actor: String,
+    #[allow(dead_code)]
     resource: String,
+    #[allow(dead_code)]
     decision: Decision,
+    #[allow(dead_code)]
     reason: Reason,
 }
 
