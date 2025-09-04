@@ -1,6 +1,7 @@
 use crate::services::repositories::action_repository::action_discovery_document::{
     ActionDiscoveryDocument, ActionDiscoveryDocumentSpec,
 };
+use boxer_core::services::audit::audit_facade::to_audit_record::ToAuditRecord;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::backends::kubernetes::repositories::{ToResource, TryFromResource};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
@@ -35,6 +36,7 @@ impl ActionSetRegistration {
     }
 }
 
+#[derive(Serialize)]
 pub struct SchemaBoundActionSetRegistration {
     pub hostname: String,
     pub routes: Vec<ActionRouteRegistration>,
@@ -68,5 +70,11 @@ impl Into<ActionSetRegistration> for SchemaBoundActionSetRegistration {
             hostname: self.hostname,
             routes: self.routes,
         }
+    }
+}
+
+impl ToAuditRecord for SchemaBoundActionSetRegistration {
+    fn to_audit_record(&self) -> String {
+        serde_json::to_string(self).unwrap_or_else(|_| "<failed to serialize to json>: {}".to_string())
     }
 }

@@ -1,5 +1,5 @@
 #[cfg(not(test))]
-use log::{debug, info, warn};
+use log::{info, warn};
 
 #[cfg(test)]
 use std::{println as warn, println as info};
@@ -79,11 +79,11 @@ where
 {
     type Error = anyhow::Error;
 
-    async fn upsert(&self, key: Vec<Key>, entity: EntityUid) -> Result<(), Self::Error> {
+    async fn upsert(&self, key: Vec<Key>, entity: EntityUid) -> Result<EntityUid, Self::Error> {
         let mut guard = self.rw_lock.write().await;
-        guard.items.insert(key, entity);
+        guard.items.insert(key, entity.clone());
         guard.maybe_trie = Some(Arc::new(Trie::from_iter(guard.items.clone())));
-        Ok(())
+        Ok(entity)
     }
 
     async fn exists(&self, key: Vec<Key>) -> Result<bool, Self::Error> {
@@ -127,7 +127,7 @@ where
                         match result {
                             Ok((segments, action_uid, active)) => {
                                 let result = if active {
-                                    self.upsert(segments.clone(), action_uid.clone()).await
+                                    self.upsert(segments.clone(), action_uid.clone()).await.map(|_| ())
                                 } else {
                                     self.delete(segments.clone()).await
                                 };

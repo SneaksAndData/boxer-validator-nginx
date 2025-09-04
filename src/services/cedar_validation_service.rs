@@ -1,6 +1,4 @@
 use crate::models::request_context::RequestContext;
-use crate::services::audit::audit_event::AccessAuditEvent;
-use crate::services::audit::AuditService;
 use crate::services::base::schema_provider::SchemaProvider;
 use crate::services::base::validation_service::ValidationService;
 use crate::services::repositories::lookup_trie::backend::AssociatedRepository;
@@ -8,6 +6,8 @@ use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::models::request_segment::RequestSegment;
 use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
+use boxer_core::services::audit::authorization_audit_event::AuthorizationAuditEvent;
+use boxer_core::services::audit::AuditService;
 use boxer_core::services::observability::open_telemetry::tracing::start_trace;
 use cedar_policy::{Authorizer, Context, Entities, EntityUid, PolicySet, Request};
 use log::{debug, info};
@@ -92,7 +92,7 @@ impl ValidationService for CedarValidationService {
         );
 
         self.audit
-            .record(AccessAuditEvent::new(&actor, &action, &resource, &answer))?;
+            .record_authorization(AuthorizationAuditEvent::new(&actor, &action, &resource, &answer))?;
 
         match answer.decision() {
             cedar_policy::Decision::Allow => Ok(()),

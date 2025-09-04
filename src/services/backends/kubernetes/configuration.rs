@@ -12,6 +12,8 @@ use crate::services::repositories::policy_repository::read_only::PolicyRepositor
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use anyhow::bail;
 use async_trait::async_trait;
+use boxer_core::services::audit::audit_facade::WithAuditFacade;
+use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::object_owner_mark::ObjectOwnerMark;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
@@ -48,7 +50,8 @@ impl BackendConfiguration for BackendBuilder {
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?;
+        .await?
+        .with_audit(Arc::new(LogAuditService::new()));
 
         let action_lookup_table_listener = Self::create_lookup_trie(
             &settings.namespace,
@@ -65,7 +68,8 @@ impl BackendConfiguration for BackendBuilder {
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?;
+        .await?
+        .with_audit(Arc::new(LogAuditService::new()));
 
         let resource_lookup_table_listener = Self::create_lookup_trie(
             &settings.namespace,
@@ -82,7 +86,8 @@ impl BackendConfiguration for BackendBuilder {
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?;
+        .await?
+        .with_audit(Arc::new(LogAuditService::new()));
 
         let policy_lookup_watcher = Self::create_readonly_repository::<PathSegment>(
             &settings.namespace,
