@@ -12,7 +12,8 @@ impl LogAuditService {
 
 impl AuditService for LogAuditService {
     fn record(&self, event: AccessAuditEvent) -> Result<()> {
-        log::info!(summary:debug = event; "Audit Event access to resource: {:?}", event.resource());
+        log::info!(target: "audit",
+            summary:serde = event; "Audit Event access to resource: {:?}", event.resource());
         Ok(())
     }
 }
