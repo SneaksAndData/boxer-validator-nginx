@@ -6,6 +6,8 @@ use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::models::request_segment::RequestSegment;
 use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
+use boxer_core::services::audit::events::authorization_audit_event::AuthorizationAuditEvent;
+use boxer_core::services::audit::AuditService;
 use boxer_core::services::observability::open_telemetry::tracing::start_trace;
 use cedar_policy::{Authorizer, Context, Entities, EntityUid, PolicySet, Request};
 use log::{debug, info};
@@ -18,6 +20,7 @@ pub struct CedarValidationService {
     action_repository: Arc<AssociatedRepository<(String, Vec<RequestSegment>), EntityUid>>,
     resource_repository: Arc<AssociatedRepository<(String, Vec<PathSegment>), EntityUid>>,
     policy_repository: Arc<AssociatedRepository<String, PolicySet>>,
+    audit: Arc<dyn AuditService>,
 }
 
 impl CedarValidationService {
@@ -26,6 +29,7 @@ impl CedarValidationService {
         action_repository: Arc<AssociatedRepository<(String, Vec<RequestSegment>), EntityUid>>,
         resource_repository: Arc<AssociatedRepository<(String, Vec<PathSegment>), EntityUid>>,
         policy_repository: Arc<AssociatedRepository<String, PolicySet>>,
+        audit: Arc<dyn AuditService>,
     ) -> Self {
         CedarValidationService {
             authorizer: Authorizer::new(),
@@ -33,6 +37,7 @@ impl CedarValidationService {
             action_repository,
             resource_repository,
             policy_repository,
+            audit,
         }
     }
 }
@@ -85,6 +90,10 @@ impl ValidationService for CedarValidationService {
             action.to_string(),
             resource.to_string()
         );
+
+        self.audit
+            .record_authorization(AuthorizationAuditEvent::new(&actor, &action, &resource, &answer))?;
+
         match answer.decision() {
             cedar_policy::Decision::Allow => Ok(()),
             cedar_policy::Decision::Deny => anyhow::bail!("Access denied"),

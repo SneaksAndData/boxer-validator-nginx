@@ -3,22 +3,27 @@ use crate::models::validation_settings::ValidationSettings;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::error::ErrorUnauthorized;
 use actix_web::{Error, HttpMessage};
+use boxer_core::services::audit::events::token_validation_event::{TokenValidationEvent, TokenValidationResult};
+use boxer_core::services::audit::AuditService;
 use boxer_core::services::observability::open_telemetry::tracing::{start_trace, ErrorExt};
 use futures_util::future::LocalBoxFuture;
-use jwt_authorizer::{Authorizer, JwtAuthorizer, Validation};
-use log::debug;
+use jwt_authorizer::{AuthError, Authorizer, JwtAuthorizer, Validation};
+use log::{debug, error};
+use md5;
 use opentelemetry::context::FutureExt;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Middleware for external token validation factory
-pub struct InternalTokenMiddlewareFactory {}
+pub struct InternalTokenMiddlewareFactory {
+    pub audit_service: Arc<dyn AuditService>,
+}
 
 /// The ExternalTokenMiddlewareFactory's own methods implementation
 impl InternalTokenMiddlewareFactory {
-    pub(crate) fn new() -> Self {
-        InternalTokenMiddlewareFactory {}
+    pub(crate) fn new(audit_service: Arc<dyn AuditService>) -> Self {
+        InternalTokenMiddlewareFactory { audit_service }
     }
 }
 
@@ -40,6 +45,7 @@ where
     type Future = LocalBoxFuture<'static, Result<JwtAuthorizerMiddleware<NextService>, Self::InitError>>;
 
     fn new_transform(&self, service: NextService) -> Self::Future {
+        let audit_service = self.audit_service.clone();
         Box::pin(async move {
             let settings = ValidationSettings::new();
             let mut validation = Validation::new();
@@ -55,6 +61,7 @@ where
             let mw = JwtAuthorizerMiddleware {
                 service: Arc::new(service),
                 authorizer: Arc::new(authorizer),
+                audit_service,
             };
             Ok(mw)
         })
@@ -65,6 +72,7 @@ where
 pub struct JwtAuthorizerMiddleware<NextService> {
     service: Arc<NextService>,
     authorizer: Arc<Authorizer<DynamicClaimsCollection>>,
+    pub audit_service: Arc<dyn AuditService>,
 }
 
 impl<Next> JwtAuthorizerMiddleware<Next> {
@@ -81,14 +89,13 @@ impl<Next> JwtAuthorizerMiddleware<Next> {
     async fn authorize_with_authorizer(
         authorizer: Arc<Authorizer<DynamicClaimsCollection>>,
         boxer_token: &BoxerToken,
-    ) -> Result<DynamicClaimsCollection, Error> {
+    ) -> Result<DynamicClaimsCollection, AuthError> {
         let ctx = start_trace("authorizer_check");
         let token_data = authorizer
             .check_auth(&boxer_token.token)
             .with_context(ctx.clone())
             .await
-            .stop_trace(ctx)
-            .map_err(|_| ErrorUnauthorized("Unauthorized"))?;
+            .stop_trace(ctx)?;
         Ok(token_data.claims)
     }
 }
@@ -111,13 +118,27 @@ where
         // Clone the service and validator to be able to use them in the async block
         let service = Arc::clone(&self.service);
         let authorizer = Arc::clone(&self.authorizer);
+        let audit_service = Arc::clone(&self.audit_service);
         // The async block that will be executed when the middleware is called
         let future = async move {
             let parent = start_trace("internal_token_validation");
             let boxer_token: BoxerToken = Self::get_token(&req)?.try_into()?;
             let validation_result = Self::authorize_with_authorizer(authorizer, &boxer_token)
                 .with_context(parent.clone())
-                .await?;
+                .await;
+
+            let token_hash = md5::compute(&boxer_token.token);
+            let audit_result = match validation_result {
+                Ok(_) => TokenValidationResult::Success,
+                Err(ref err) => TokenValidationResult::Failure(err.to_string()),
+            };
+            let event = TokenValidationEvent::internal(format!("{:x}", token_hash), audit_result);
+            audit_service.record_token_validation(event).map_err(|err| {
+                error!("Failed to audit token validation: {}", err);
+                ErrorUnauthorized("Unauthorized")
+            })?;
+            let validation_result = validation_result.map_err(|_| ErrorUnauthorized("Unauthorized"))?;
+
             debug!("Token validated successfully");
 
             // make nested block to avoid borrowing issues

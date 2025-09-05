@@ -16,6 +16,7 @@ use crate::services::schema_provider::KubernetesSchemaProvider;
 use actix_web::middleware::{Condition, Logger};
 use actix_web::{web, App, HttpServer};
 use anyhow::Result;
+use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::backends::BackendConfiguration;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
@@ -76,11 +77,13 @@ async fn main() -> Result<()> {
     let action_repository = current_backend.get();
     let resource_repository = current_backend.get();
     let policy_repository = current_backend.get();
+    let audit_service = Arc::new(LogAuditService::new());
     let cedar_validation_service = Arc::new(CedarValidationService::new(
         schema_provider,
         action_repository,
         resource_repository,
         policy_repository,
+        audit_service.clone(),
     ));
 
     let action_repository: Arc<ActionDataRepository> = current_backend.get();
@@ -109,7 +112,10 @@ async fn main() -> Result<()> {
             .service(policy_set::crud())
             .service(
                 web::scope("/token")
-                    .wrap(Condition::new(production_mode, InternalTokenMiddlewareFactory::new()))
+                    .wrap(Condition::new(
+                        production_mode,
+                        InternalTokenMiddlewareFactory::new(audit_service.clone()),
+                    ))
                     .service(token_review::token_review),
             )
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
