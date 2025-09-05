@@ -2,7 +2,6 @@ mod http;
 mod models;
 mod services;
 
-use self::http::controllers::v1::{action_set, policy_set, resource_set, schema, token_review};
 use crate::http::controllers::v1;
 use crate::http::openapi::ApiDoc;
 use crate::services::backends;
@@ -12,8 +11,7 @@ use crate::services::repositories::action_repository::read_write::ActionDataRepo
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::schema_provider::KubernetesSchemaProvider;
-use actix_web::middleware::{Condition, Logger};
-use actix_web::web::service;
+use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use anyhow::Result;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
