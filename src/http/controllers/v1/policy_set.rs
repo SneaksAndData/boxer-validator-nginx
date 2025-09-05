@@ -1,6 +1,6 @@
 pub mod models;
 
-use crate::http::controllers::policy_set::models::PolicySetRegistration;
+use crate::http::controllers::v1::policy_set::models::PolicySetRegistration;
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};

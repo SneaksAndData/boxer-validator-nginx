@@ -1,6 +1,6 @@
 pub mod models;
 
-use crate::http::controllers::resource_set::models::ResourceSetRegistration;
+use crate::http::controllers::v1::resource_set::models::ResourceSetRegistration;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};

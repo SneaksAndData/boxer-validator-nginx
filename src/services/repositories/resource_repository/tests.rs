@@ -1,5 +1,5 @@
 use super::*;
-use crate::http::controllers::resource_set::models::{ResourceRouteRegistration, ResourceSetRegistration};
+use crate::http::controllers::v1::resource_set::models::{ResourceRouteRegistration, ResourceSetRegistration};
 use crate::models::request_context::RequestContext;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
