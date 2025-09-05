@@ -77,12 +77,13 @@ async fn main() -> Result<()> {
     let action_repository = current_backend.get();
     let resource_repository = current_backend.get();
     let policy_repository = current_backend.get();
+    let audit_service = Arc::new(LogAuditService::new());
     let cedar_validation_service = Arc::new(CedarValidationService::new(
         schema_provider,
         action_repository,
         resource_repository,
         policy_repository,
-        Arc::new(LogAuditService::new()),
+        audit_service.clone(),
     ));
 
     let action_repository: Arc<ActionDataRepository> = current_backend.get();
@@ -111,7 +112,10 @@ async fn main() -> Result<()> {
             .service(policy_set::crud())
             .service(
                 web::scope("/token")
-                    .wrap(Condition::new(production_mode, InternalTokenMiddlewareFactory::new()))
+                    .wrap(Condition::new(
+                        production_mode,
+                        InternalTokenMiddlewareFactory::new(audit_service.clone()),
+                    ))
                     .service(token_review::token_review),
             )
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))

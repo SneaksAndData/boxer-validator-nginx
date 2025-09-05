@@ -103,7 +103,8 @@ impl BackendConfiguration for BackendBuilder {
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?;
+        .await?
+        .with_audit(Arc::new(LogAuditService::new()));
 
         Ok(Arc::new(KubernetesBackend {
             schema_repository,

@@ -578,6 +578,7 @@ dependencies = [
  "k8s-openapi",
  "kube",
  "log",
+ "md5",
  "opentelemetry",
  "opentelemetry-instrumentation-actix-web",
  "rstest",
@@ -597,7 +598,6 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=audit-service#fed9d69c96127ff5c38bf33a84c99a355efe4535"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -2355,6 +2355,12 @@ name = "matchit"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
+
+[[package]]
+name = "md5"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae960838283323069879657ca3de837e9f7bbb4c7bf6ea7f1b290d5e9476d2e0"
 
 [[package]]
 name = "memchr"
