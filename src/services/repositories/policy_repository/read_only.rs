@@ -2,7 +2,8 @@ use crate::services::repositories::policy_repository::policy_document::PolicyDoc
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
-use cedar_policy::PolicySet;
+use cedar_policy::{Policy, PolicyId, PolicySet};
+use kube::core::object::HasSpec;
 use kube::runtime::watcher;
 use log::{debug, warn};
 use std::collections::HashMap;
@@ -40,17 +41,33 @@ impl ResourceUpdateHandler<PolicyDocument> for PolicyRepositoryData {
             Err(err) => warn!("Error while fetching policy: {:?}", err),
             Ok(event) => {
                 debug!("Received policy update: {:?}", event);
-                let policies = PolicySet::from_str(&event.spec.policies);
-                match policies {
+                let policy = Policy::from_str(&event.spec.policies);
+                match policy {
                     Err(err) => warn!("Failed to parse policy set: {:?}", err),
-                    Ok(policies) => {
+                    Ok(new_policy) => {
+                        // We use here unwrap because the name is guaranteed to be present by Kubernetes
+                        // and PolicyId::from_str return Infallible as an error
+                        let new_id = PolicyId::from_str(&event.metadata.name.clone().unwrap()).unwrap();
+                        let new_policy = new_policy.new_id(new_id);
                         let mut guard = self.policy_set.write().await;
-                        guard
-                            .entry(event.spec.schema)
-                            .and_modify(|existing| {
-                                *existing = policies.clone();
-                            })
-                            .or_insert(policies.clone());
+                        match guard.get_mut(&event.spec.schema) {
+                            Some(existing) => {
+                                let result = existing.add(new_policy);
+                                if let Err(err) = result {
+                                    warn!("Failed to add policy to an existing set: {:?}", err);
+                                    return;
+                                }
+                            }
+                            None => {
+                                let mut new_set = PolicySet::new();
+                                let result = new_set.add(new_policy);
+                                if let Err(err) = result {
+                                    warn!("Failed to add policy to new set: {:?}", err);
+                                    return;
+                                }
+                                guard.insert(event.spec.schema, new_set);
+                            }
+                        }
                     }
                 }
             }

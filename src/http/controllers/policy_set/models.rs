@@ -69,6 +69,6 @@ impl Into<PolicySetRegistration> for SchemaBoundPolicySetRegistration {
 
 impl ToAuditRecord for SchemaBoundPolicySetRegistration {
     fn to_audit_record(&self) -> String {
-        serde_json::to_string(self).unwrap_or_else(|_| "<failed to serialize to json>: {}".to_string())
+        serde_json::to_string_pretty(self).unwrap_or_else(|_| "<failed to serialize to json>: {}".to_string())
     }
 }
