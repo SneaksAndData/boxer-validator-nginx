@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::{Policy, PolicyId, PolicySet};
-use kube::core::object::HasSpec;
 use kube::runtime::watcher;
 use log::{debug, warn};
 use std::collections::HashMap;
