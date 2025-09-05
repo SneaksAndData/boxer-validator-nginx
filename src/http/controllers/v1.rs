@@ -1,3 +1,4 @@
+use crate::services::authorizer::Authorizer;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use boxer_core::services::audit::AuditService;
@@ -39,11 +40,15 @@ impl Modify for SecurityAddon {
         components.add_security_scheme("internal", SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)));
     }
 }
-pub fn urls(production_mode: bool, audit_service: Arc<dyn AuditService>) -> impl HttpServiceFactory {
+pub fn urls(
+    production_mode: bool,
+    authorizer: Arc<Authorizer>,
+    audit_service: Arc<dyn AuditService>,
+) -> impl HttpServiceFactory {
     web::scope("/api/v1")
         .service(schema::crud())
         .service(action_set::crud())
         .service(resource_set::crud())
         .service(policy_set::crud())
-        .service(token_review::routes(production_mode, audit_service))
+        .service(token_review::routes(production_mode, authorizer, audit_service))
 }

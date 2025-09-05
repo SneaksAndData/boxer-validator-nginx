@@ -4,6 +4,7 @@ mod services;
 
 use crate::http::controllers::v1;
 use crate::http::openapi::ApiDoc;
+use crate::services::authorizer::Authorizer;
 use crate::services::backends;
 use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
@@ -93,6 +94,7 @@ async fn main() -> Result<()> {
     let schema_repository: Arc<SchemaRepository> = current_backend.get();
 
     info!("listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
+    let authorizer = Arc::new(Authorizer::new(cm.get_signatures()?));
     HttpServer::new(move || {
         App::new()
             .wrap(RequestTracing::new())
@@ -104,7 +106,7 @@ async fn main() -> Result<()> {
             .app_data(web::Data::new(policy_repository.clone()))
             // The last middleware in the chain should always be InternalTokenMiddleware
             // to ensure that the token is valid in the beginning of the request processing
-            .service(v1::urls(production_mode, audit_service.clone()))
+            .service(v1::urls(production_mode, authorizer.clone(), audit_service.clone()))
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(cm.listen_address)?
