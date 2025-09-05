@@ -598,6 +598,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=audit-service#1bcb1d0a46c3551eb086abb4168bf7ce67b45ba1"
 dependencies = [
  "actix-web",
  "anyhow",
