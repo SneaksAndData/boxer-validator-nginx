@@ -1,4 +1,6 @@
-use crate::http::controllers::resource_set::models::{ResourceRouteRegistration, SchemaBoundResourceSetRegistration};
+use crate::http::controllers::v1::resource_set::models::{
+    ResourceRouteRegistration, SchemaBoundResourceSetRegistration,
+};
 use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource};
 use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};

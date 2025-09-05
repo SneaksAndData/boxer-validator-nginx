@@ -1,5 +1,5 @@
 use super::*;
-use crate::http::controllers::action_set::models::{ActionRouteRegistration, SchemaBoundActionSetRegistration};
+use crate::http::controllers::v1::action_set::models::{ActionRouteRegistration, SchemaBoundActionSetRegistration};
 use crate::models::request_context::RequestContext;
 use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;

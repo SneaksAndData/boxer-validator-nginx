@@ -1,6 +1,6 @@
 pub mod models;
 
-use crate::http::controllers::action_set::models::ActionSetRegistration;
+use crate::http::controllers::v1::action_set::models::ActionSetRegistration;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};

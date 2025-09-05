@@ -1,4 +1,4 @@
-use crate::http::controllers::action_set::models::SchemaBoundActionSetRegistration;
+use crate::http::controllers::v1::action_set::models::SchemaBoundActionSetRegistration;
 use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
