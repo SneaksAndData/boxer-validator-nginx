@@ -13,7 +13,7 @@ use log::info;
 use std::sync::Arc;
 
 #[utoipa::path(
-    context_path = "",
+    context_path = "/token",
     responses((status = OK)),
     security(
         ("internal" = [])

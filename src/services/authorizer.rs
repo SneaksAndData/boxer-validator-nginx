@@ -45,7 +45,7 @@ impl Authorizer {
             return Err(anyhow::anyhow!("No valid audience"));
         }
 
-        let issuer = header.issuer().ok_or(anyhow::anyhow!("No audience"))?;
+        let issuer = header.issuer().ok_or(anyhow::anyhow!("No issuer"))?;
         if !self.valid_issuers.contains(issuer) {
             return Err(anyhow::anyhow!("Invalid issuer"));
         }

@@ -115,7 +115,10 @@ where
             let token_hash = md5::compute(&boxer_token.token);
             let audit_result = match validation_result {
                 Ok(_) => TokenValidationResult::Success,
-                Err(ref err) => TokenValidationResult::Failure(err.to_string()),
+                Err(ref err) => {
+                    debug!("Token validation failed: {}", err);
+                    TokenValidationResult::Failure(err.to_string())
+                }
             };
             let event = TokenValidationEvent::internal(format!("{:x}", token_hash), audit_result);
             audit_service.record_token_validation(event).map_err(|err| {
