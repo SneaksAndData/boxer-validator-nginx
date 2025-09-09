@@ -3,12 +3,6 @@ instance_name = "integration-tests"
 
 listen_address = "127.0.0.1:8081"
 
-signatures = """
-{
-    "1": "0123456789ABCDEF0123456789ABCDEF"
-}
-"""
-
 [backend]
 # Kubernetes backend settings
 [backend.kubernetes]
@@ -29,3 +23,11 @@ enabled = false
 
 [opentelemetry.tracing_settings]
 enabled = false
+
+[token_settings]
+keys = """
+{
+    "public": "0123456789ABCDEF0123456789ABCDEF"
+}
+"""
+

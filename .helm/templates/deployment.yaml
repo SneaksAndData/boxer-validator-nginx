@@ -47,6 +47,12 @@ spec:
         {{- end }}
           image: "{{ include "app.image" . }}"
           imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          {{- if .Values.validator.config.enabled }}
+          envFrom:
+            - secretRef:
+                name: {{ include "app.fullname"}}-token-settings
+                optional: false
+          {{- end }}
           env:
             - name: APPLICATION_VERSION
               value: "{{ (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}"
@@ -69,6 +75,10 @@ spec:
               value: {{ (default .Release.Namespace .Values.validator.config.backend.kubernetes.operationTimeout) | quote }}
             - name: BOXER_VALIDATOR__BACKEND__KUBERNETES__RESOURCE_OWNER_LABEL
               value: {{ (default (include "app.fullname" .) .Values.validator.config.backend.kubernetes.resourceOwnerLabel) | quote }}
+            - name: BOXER_VALIDATOR__TOKEN_SETTINGS__AUDIENCE
+              value: {{ .Values.validator.config.tokenSettings.audience | default "boxer.sneaksanddata.com" }}
+            - name: BOXER_VALIDATOR__TOKEN_SETTINGS__ISSUER
+              value: {{ .Values.validator.config.tokenSettings.issuer | default "boxer.sneaksanddata.com" }}
           {{- end }}
           {{- if .Values.openTelemetry.enabled }}
             {{- if .Values.openTelemetry.grpcEndpoint }}

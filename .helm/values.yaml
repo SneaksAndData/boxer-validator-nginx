@@ -268,6 +268,16 @@ validator:
         # defaults to the release full name
         resourceOwnerLabel: ""
 
+    # The signature settings
+    tokenSettings:
+      # The keys for the boxer issuer
+      keys: ""
+
+      # The audience for the tokens issued by the Boxer Issuer
+      audience: ""
+
+      # The iss claim for the tokens issued by the Boxer Issuer
+      issuer: ""
 
 # Observability settings for OpenTelemetry
 openTelemetry:
