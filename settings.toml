@@ -23,3 +23,11 @@ enabled = false
 
 [opentelemetry.tracing_settings]
 enabled = false
+
+[token_settings]
+keys = """
+{
+    "public": "0123456789ABCDEF0123456789ABCDEF"
+}
+"""
+

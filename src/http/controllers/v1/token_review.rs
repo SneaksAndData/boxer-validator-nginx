@@ -1,5 +1,6 @@
 use crate::http::filters::jwt_filter::InternalTokenMiddlewareFactory;
 use crate::models::request_context::RequestContext;
+use crate::services::authorizer::Authorizer;
 use crate::services::base::validation_service::ValidationService;
 use crate::services::cedar_validation_service::CedarValidationService;
 use actix_web::http::StatusCode;
@@ -12,7 +13,7 @@ use log::info;
 use std::sync::Arc;
 
 #[utoipa::path(
-    context_path = "",
+    context_path = "/token",
     responses((status = OK)),
     security(
         ("internal" = [])
@@ -37,8 +38,12 @@ async fn token_review(
     HttpResponse::build(status_code).finish()
 }
 
-pub fn routes(production_mode: bool, audit_service: Arc<dyn AuditService>) -> impl actix_web::dev::HttpServiceFactory {
-    let middleware = InternalTokenMiddlewareFactory::new(audit_service.clone());
+pub fn routes(
+    production_mode: bool,
+    authorizer: Arc<Authorizer>,
+    audit_service: Arc<dyn AuditService>,
+) -> impl actix_web::dev::HttpServiceFactory {
+    let middleware = InternalTokenMiddlewareFactory::new(authorizer, audit_service.clone());
     web::scope("/token")
         .wrap(Condition::new(production_mode, middleware))
         .service(token_review)
