@@ -50,7 +50,7 @@ spec:
           {{- if .Values.validator.config.enabled }}
           envFrom:
             - secretRef:
-                name: {{ include "app.fullname"}}-token-settings
+                name: {{ include "app.fullname" . }}-token-settings
                 optional: false
           {{- end }}
           env:
