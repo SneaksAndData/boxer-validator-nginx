@@ -20,9 +20,9 @@ spec:
     metadata:
       labels:
         {{- include "app.labels" $ | nindent 8 }}
-      {{- with .Values.additionalAnnotations }}
       annotations:
         deployment/date: {{ now }} # Force redeployment
+      {{- with .Values.additionalAnnotations }}
         {{ toYaml . | nindent 8 }}
       {{- end }}
     spec:
