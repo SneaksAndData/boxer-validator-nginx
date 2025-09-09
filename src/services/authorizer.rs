@@ -1,4 +1,5 @@
-use crate::services::configuration::signature_settings::SignatureSettings;
+use crate::services::configuration::models::TokenSettings;
+use crate::services::configuration::signature_settings::EncryptionKeys;
 use anyhow::Result;
 use boxer_core::contracts::dynamic_claims_collection::DynamicClaimsCollection;
 use collection_macros::hashset;
@@ -8,17 +9,17 @@ use serde_json::Value;
 use std::collections::HashSet;
 
 pub struct Authorizer {
-    pub keys: SignatureSettings,
+    pub keys: EncryptionKeys,
     pub valid_issuers: HashSet<String>,
     pub valid_audiences: HashSet<String>,
 }
 
 impl Authorizer {
-    pub fn new(keys: SignatureSettings) -> Self {
+    pub fn new(keys: EncryptionKeys, token_settings: TokenSettings) -> Self {
         Authorizer {
             keys,
-            valid_issuers: hashset! {"boxer.sneaksanddata.com".to_string()},
-            valid_audiences: hashset!["boxer.sneaksanddata.com".to_string()],
+            valid_issuers: hashset! {token_settings.issuer},
+            valid_audiences: hashset![token_settings.audience],
         }
     }
 }

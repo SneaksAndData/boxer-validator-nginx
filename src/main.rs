@@ -94,7 +94,7 @@ async fn main() -> Result<()> {
     let schema_repository: Arc<SchemaRepository> = current_backend.get();
 
     info!("listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
-    let authorizer = Arc::new(Authorizer::new(cm.get_signatures()?));
+    let authorizer = Arc::new(Authorizer::new(cm.get_signatures()?, cm.token_settings));
     HttpServer::new(move || {
         App::new()
             .wrap(RequestTracing::new())
