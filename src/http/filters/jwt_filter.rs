@@ -80,7 +80,7 @@ impl<Next> JwtAuthorizerMiddleware<Next> {
         boxer_token: &BoxerToken,
         authorizer: Arc<Authorizer>,
     ) -> Result<DynamicClaimsCollection, anyhow::Error> {
-        let ctx = start_trace("authorizer_check");
+        let ctx = start_trace("authorizer_check", None);
         authorizer.validate(&boxer_token.token).stop_trace(ctx)
     }
 }
@@ -106,7 +106,7 @@ where
         let authorizer = self.authorizer.clone();
         // The async block that will be executed when the middleware is called
         let future = async move {
-            let parent = start_trace("internal_token_validation");
+            let parent = start_trace("internal_token_validation", None);
             let boxer_token: BoxerToken = Self::get_token(&req)?.try_into()?;
             let validation_result = Self::authorize_with_authorizer(&boxer_token, authorizer)
                 .with_context(parent.clone())
