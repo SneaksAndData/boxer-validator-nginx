@@ -38,6 +38,7 @@ boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v
 
 # opentelemety
 opentelemetry-instrumentation-actix-web = "0.22.0"
+opentelemetry = "0.30.0"
 
 [dev-dependencies]
 rstest = "0.25.0"

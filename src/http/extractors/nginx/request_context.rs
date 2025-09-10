@@ -11,7 +11,7 @@ impl FromRequest for RequestContext {
     type Error = actix_web::Error;
     type Future = Ready<Result<Self, Self::Error>>;
     fn from_request(req: &HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
-        let cx = start_trace("extract_request_context");
+        let cx = start_trace("extract_request_context", None);
         let result = extract_headers(req)
             .stop_trace(cx)
             .map(|(url, method)| RequestContext::new(url, method))
