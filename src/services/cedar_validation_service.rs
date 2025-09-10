@@ -45,7 +45,7 @@ impl CedarValidationService {
 #[async_trait]
 impl ValidationService for CedarValidationService {
     async fn validate(&self, boxer_claims: BoxerClaims, request_context: RequestContext) -> Result<(), anyhow::Error> {
-        let ctx = start_trace("request_validation");
+        let ctx = start_trace("request_validation", None);
         let schema = self
             .schema_provider
             .get_schema(&boxer_claims)
