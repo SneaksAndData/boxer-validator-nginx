@@ -30,4 +30,6 @@ keys = """
     "public": "0123456789ABCDEF0123456789ABCDEF"
 }
 """
+audience = "boxer.sneaksanddata.com" # Expected audience for tokens
+issuer = "boxer.sneaksanddata.com" # Expected audience for tokens
 

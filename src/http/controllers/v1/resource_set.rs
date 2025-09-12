@@ -23,7 +23,7 @@ async fn post_resource_set(
     data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
 ) -> Result<impl Responder> {
     let (schema, id) = id.into_inner();
-    data.upsert((id, schema.clone()), request.into_inner().with_schema(schema))
+    data.upsert((schema.clone(), id), request.into_inner().with_schema(schema))
         .await?;
     Ok(HttpResponse::Ok().finish())
 }
