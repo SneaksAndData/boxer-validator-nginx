@@ -1,8 +1,4 @@
-#[cfg(not(test))]
 use log::{info, warn};
-
-#[cfg(test)]
-use std::{println as warn, println as info};
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -136,21 +132,21 @@ where
                                         self.delete(segments.clone()).await
                                     };
                                     if let Err(e) = result {
-                                        warn!(resource_id = value; "Failed to upsert action: {}", e);
+                                        warn!(resource_id = name; "Failed to upsert action: {}", e);
                                     } else {
                                         info!(
-                                            resource_id = value;
+                                            resource_id = name;
                                             "Successfully upserted object with key {:?} and UID: {}",
                                             segments, action_uid
                                         );
                                     }
                                 }
-                                Err(e) => warn!(resource_id = value; "Error processing action route: {}", e),
+                                Err(e) => warn!(resource_id = name; "Error processing action route: {}", e),
                             }
                         }
                     })
                     .await;
-                info!(resource_id = value; "Finished updating action discovery trie");
+                info!(resource_id = resource_id; "Finished updating action discovery trie");
             }
         }
     }
