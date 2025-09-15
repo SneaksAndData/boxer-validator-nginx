@@ -59,6 +59,8 @@ spec:
           {{- if .Values.validator.config.enabled }}
             - name: RUST_LOG
               value: {{ .Values.validator.config.logLevel | default "info" | quote }}
+            - name: BOXER_VALIDATOR__DEPLOY_ENVIRONMENT
+              value: {{ .Values.environment | default "development" | lower }}
             - name: BOXER_VALIDATOR__INSTANCE_NAME
               value: {{ .Values.validator.config.instance_name | default .Release.Name | lower }}
             - name: BOXER_VALIDATOR__LISTEN_ADDRESS

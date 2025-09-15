@@ -33,6 +33,7 @@ pub struct TokenSettings {
 
 #[derive(Debug, Deserialize)]
 pub struct AppSettings {
+    pub deploy_environment: String,
     pub listen_address: SocketAddr,
     pub instance_name: String,
     pub backend: BackendSettings,
