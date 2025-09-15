@@ -121,30 +121,36 @@ where
         match event {
             Err(e) => warn!("Failed to handle update: {:?}", e),
             Ok(resource) => {
+                // Using the unwrap method here because the resource should always have a name
+                let resource_id = resource.meta().name.clone().unwrap();
                 resource
                     .stream()
-                    .for_each(|result| async move {
-                        match result {
-                            Ok((segments, action_uid, active)) => {
-                                let result = if active {
-                                    self.upsert(segments.clone(), action_uid.clone()).await.map(|_| ())
-                                } else {
-                                    self.delete(segments.clone()).await
-                                };
-                                if let Err(e) = result {
-                                    warn!("Failed to upsert action: {}", e);
-                                } else {
-                                    info!(
-                                        "Successfully upserted action with key {:?} and UID: {}",
-                                        segments, action_uid
-                                    );
+                    .for_each(|result| {
+                        let name = resource_id.clone();
+                        async move {
+                            match result {
+                                Ok((segments, action_uid, active)) => {
+                                    let result = if active {
+                                        self.upsert(segments.clone(), action_uid.clone()).await.map(|_| ())
+                                    } else {
+                                        self.delete(segments.clone()).await
+                                    };
+                                    if let Err(e) = result {
+                                        warn!(resource_id = value; "Failed to upsert action: {}", e);
+                                    } else {
+                                        info!(
+                                            resource_id = value;
+                                            "Successfully upserted object with key {:?} and UID: {}",
+                                            segments, action_uid
+                                        );
+                                    }
                                 }
+                                Err(e) => warn!(resource_id = value; "Error processing action route: {}", e),
                             }
-                            Err(e) => warn!("Error processing action route: {}", e),
                         }
                     })
                     .await;
-                info!("Finished updating action discovery trie");
+                info!(resource_id = value; "Finished updating action discovery trie");
             }
         }
     }
