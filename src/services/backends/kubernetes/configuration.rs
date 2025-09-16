@@ -42,7 +42,7 @@ impl BackendConfiguration for BackendBuilder {
         instance_name: String,
     ) -> anyhow::Result<Arc<Self::InitializedBackend>> {
         let kubeconfig = Self::get_kubeconfig(settings).await?;
-        let owner_mark = ObjectOwnerMark::new(&instance_name, &settings.resource_owner_label);
+        let owner_mark = ObjectOwnerMark::new(&settings.resource_owner_label, &instance_name);
 
         let schema_repository = Self::create_repository(
             &settings.namespace,
