@@ -12,9 +12,10 @@ use crate::services::repositories::action_repository::read_write::ActionDataRepo
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::schema_provider::KubernetesSchemaProvider;
-use actix_web::middleware::Logger;
+use actix_web::middleware::{from_fn, Logger};
 use actix_web::{web, App, HttpServer};
 use anyhow::Result;
+use boxer_core::http::middleware::logging::custom_error_logging;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
 use boxer_core::services::backends::BackendConfiguration;
@@ -99,6 +100,7 @@ async fn main() -> Result<()> {
         App::new()
             .wrap(RequestTracing::new())
             .wrap(Logger::default())
+            .wrap(from_fn(custom_error_logging))
             .app_data(web::Data::new(cedar_validation_service.clone()))
             .app_data(web::Data::new(schema_repository.clone()))
             .app_data(web::Data::new(action_repository.clone()))
