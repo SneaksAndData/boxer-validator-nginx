@@ -79,7 +79,7 @@ impl ValidationService for CedarValidationService {
 
         let actor: EntityUid = boxer_claims.principal.uid();
 
-        let entities = Entities::empty();
+        let entities = Entities::empty().add_entities(vec![boxer_claims.principal.clone()], None)?;
         let request = Request::new(actor.clone(), action.clone(), resource.clone(), Context::empty(), None)?;
         let answer = self.authorizer.is_authorized(&request, &policy_set, &entities);
 
