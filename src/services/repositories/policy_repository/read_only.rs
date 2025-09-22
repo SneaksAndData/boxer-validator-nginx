@@ -2,7 +2,7 @@ use crate::services::repositories::policy_repository::policy_document::PolicyDoc
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
-use cedar_policy::{Policy, PolicyId, PolicySet};
+use cedar_policy::{Policy, PolicyId, PolicySet, PolicySetError};
 use kube::runtime::watcher;
 use log::{debug, warn};
 use std::collections::HashMap;
@@ -49,27 +49,42 @@ impl ResourceUpdateHandler<PolicyDocument> for PolicyRepositoryData {
                         let new_id = PolicyId::from_str(&event.metadata.name.clone().unwrap()).unwrap();
                         let new_policy = new_policy.new_id(new_id);
                         let mut guard = self.policy_set.write().await;
-                        match guard.get_mut(&event.spec.schema) {
-                            Some(existing) => {
-                                let result = existing.add(new_policy);
-                                if let Err(err) = result {
-                                    warn!("Failed to add policy to an existing set: {:?}", err);
-                                    return;
-                                }
-                            }
-                            None => {
-                                let mut new_set = PolicySet::new();
-                                let result = new_set.add(new_policy);
-                                if let Err(err) = result {
-                                    warn!("Failed to add policy to new set: {:?}", err);
-                                    return;
-                                }
-                                guard.insert(event.spec.schema, new_set);
-                            }
-                        }
+                        insert_or_replace(&mut guard, event.spec.schema.clone(), new_policy.clone()).unwrap_or_else(
+                            |err| {
+                                warn!("Failed to insert or replace policy: {:?}", err);
+                            },
+                        );
                     }
                 }
             }
+        }
+    }
+}
+
+fn insert_or_replace(
+    map: &mut HashMap<String, PolicySet>,
+    key: String,
+    new_policy: Policy,
+) -> Result<(), PolicySetError> {
+    match map.get_mut(&key) {
+        Some(existing) => {
+            let result = existing.add(new_policy.clone());
+            if let Err(PolicySetError::AlreadyDefined(_)) = result {
+                warn!(
+                    "Policy with ID {:?} already exists in the set, overwriting.",
+                    new_policy.id()
+                );
+                let _ = existing.remove_static(new_policy.id().clone())?;
+                existing.add(new_policy)?;
+                return Ok(());
+            }
+            result
+        }
+        None => {
+            let mut new_set = PolicySet::new();
+            new_set.add(new_policy)?;
+            map.insert(key, new_set);
+            Ok(())
         }
     }
 }
