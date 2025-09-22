@@ -49,7 +49,7 @@ impl AsyncTestContext for KubernetesSchemaRepositoryTest {
 #[test_context(KubernetesSchemaRepositoryTest)]
 #[tokio::test]
 async fn test_create_policy(ctx: &mut KubernetesSchemaRepositoryTest) {
-    env_logger::builder().filter_level(LevelFilter::Debug).init();
+    let _ = env_logger::builder().filter_level(LevelFilter::Debug).try_init();
 
     let policy_str = r#"permit(
     principal == User::"alice",
@@ -85,7 +85,7 @@ async fn test_create_policy(ctx: &mut KubernetesSchemaRepositoryTest) {
 #[test_context(KubernetesSchemaRepositoryTest)]
 #[tokio::test]
 async fn test_create_multiple_policies(ctx: &mut KubernetesSchemaRepositoryTest) {
-    env_logger::builder().filter_level(LevelFilter::Debug).init();
+    let _ = env_logger::builder().filter_level(LevelFilter::Debug).try_init();
 
     let policy_1 = r#"permit(
     principal == User::"alice",
@@ -136,7 +136,7 @@ async fn test_create_multiple_policies(ctx: &mut KubernetesSchemaRepositoryTest)
 #[test_context(KubernetesSchemaRepositoryTest)]
 #[tokio::test]
 async fn test_modify_policy(ctx: &mut KubernetesSchemaRepositoryTest) {
-    env_logger::builder().filter_level(LevelFilter::Debug).init();
+    let _ = env_logger::builder().filter_level(LevelFilter::Debug).try_init();
 
     let policy_initial = r#"permit(
     principal == User::"alice",
