@@ -126,17 +126,24 @@ where
             })?;
             debug!("Token validated successfully");
 
-            // make nested block to avoid borrowing issues
-            {
-                let mut ext = req.extensions_mut();
-                ext.insert(validation_result);
+            match validation_result {
+                Err(e) => {
+                    return Err(ErrorUnauthorized(format!("Unauthorized: {}", e)));
+                }
+                Ok(_) => {
+                    // make nested block to avoid borrowing issues
+                    {
+                        let mut ext = req.extensions_mut();
+                        ext.insert(validation_result);
+                    }
+                    let res = service
+                        .call(req)
+                        .with_context(parent.clone())
+                        .await
+                        .stop_trace(parent)?;
+                    Ok(res)
+                }
             }
-            let res = service
-                .call(req)
-                .with_context(parent.clone())
-                .await
-                .stop_trace(parent)?;
-            Ok(res)
         };
         Box::pin(future)
     }
