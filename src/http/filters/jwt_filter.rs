@@ -7,10 +7,12 @@ use boxer_core::contracts::dynamic_claims_collection::DynamicClaimsCollection;
 use boxer_core::services::audit::events::token_validation_event::TokenValidationEvent;
 use boxer_core::services::audit::AuditService;
 use boxer_core::services::observability::open_telemetry::tracing::{start_trace, ErrorExt};
+use collection_macros::hashset;
 use futures_util::future::LocalBoxFuture;
 use log::{debug, error};
 use md5;
 use opentelemetry::context::FutureExt;
+use std::collections::HashSet;
 use std::sync::Arc;
 
 /// Middleware for external token validation factory
@@ -127,8 +129,8 @@ where
             debug!("Token validated successfully");
 
             match validation_result {
-                Err(e) => {
-                    return Err(ErrorUnauthorized(format!("Unauthorized: {}", e)));
+                Err(_) => {
+                    return Err(ErrorUnauthorized("Unauthorized"));
                 }
                 Ok(claims) => {
                     // make nested block to avoid borrowing issues
@@ -149,9 +151,9 @@ where
     }
 }
 
-fn extract_validation_reason(result: &Result<DynamicClaimsCollection, anyhow::Error>) -> String {
+fn extract_validation_reason(result: &Result<DynamicClaimsCollection, anyhow::Error>) -> HashSet<String> {
     match result {
-        Ok(_) => "".to_string(),
-        Err(e) => e.to_string(),
+        Ok(_) => HashSet::new(),
+        Err(e) => hashset![e.to_string()],
     }
 }

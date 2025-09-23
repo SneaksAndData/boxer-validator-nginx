@@ -539,7 +539,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=fix-token-types#c85c240aa7df173e52a9c9a98908f58fa298dc06"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=fix-token-types#5817c797ef4125a1c72cc00121dd1c633835f0ff"
 dependencies = [
  "actix-web",
  "anyhow",
