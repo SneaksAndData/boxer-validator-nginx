@@ -130,11 +130,11 @@ where
                 Err(e) => {
                     return Err(ErrorUnauthorized(format!("Unauthorized: {}", e)));
                 }
-                Ok(_) => {
+                Ok(claims) => {
                     // make nested block to avoid borrowing issues
                     {
                         let mut ext = req.extensions_mut();
-                        ext.insert(validation_result);
+                        ext.insert(claims);
                     }
                     let res = service
                         .call(req)
