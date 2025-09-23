@@ -45,7 +45,7 @@ pub struct SchemaBoundResourceSetRegistration {
 impl TryFromResource<ResourceDiscoveryDocument> for SchemaBoundResourceSetRegistration {
     type Error = Status;
 
-    fn try_into_resource(resource: Arc<ResourceDiscoveryDocument>) -> Result<Self, Self::Error> {
+    fn try_from_resource(resource: Arc<ResourceDiscoveryDocument>) -> Result<Self, Self::Error> {
         let spec = resource.spec.clone();
         spec.try_into()
             .map_err(|e| Status::ConversionError(anyhow::Error::from(e)))

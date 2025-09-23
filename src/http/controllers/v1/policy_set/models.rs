@@ -54,7 +54,7 @@ impl Default for PolicySetRegistration {
 impl TryFromResource<PolicyDocument> for SchemaBoundPolicySetRegistration {
     type Error = Status;
 
-    fn try_into_resource(resource: Arc<PolicyDocument>) -> Result<Self, Self::Error> {
+    fn try_from_resource(resource: Arc<PolicyDocument>) -> Result<Self, Self::Error> {
         let spec = resource.spec.clone();
         spec.try_into()
             .map_err(|e| Status::ConversionError(anyhow::Error::from(e)))
