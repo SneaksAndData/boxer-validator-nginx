@@ -4,7 +4,7 @@ use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Tr
 use actix_web::error::ErrorUnauthorized;
 use actix_web::{Error, HttpMessage};
 use boxer_core::contracts::dynamic_claims_collection::DynamicClaimsCollection;
-use boxer_core::services::audit::events::token_validation_event::{TokenValidationEvent, TokenValidationResult};
+use boxer_core::services::audit::events::token_validation_event::TokenValidationEvent;
 use boxer_core::services::audit::AuditService;
 use boxer_core::services::observability::open_telemetry::tracing::{start_trace, ErrorExt};
 use futures_util::future::LocalBoxFuture;
@@ -113,20 +113,17 @@ where
                 .await;
 
             let token_hash = md5::compute(&boxer_token.token);
-            let audit_result = match validation_result {
-                Ok(_) => TokenValidationResult::Success,
-                Err(ref err) => {
-                    debug!("Token validation failed: {}", err);
-                    TokenValidationResult::Failure(err.to_string())
-                }
-            };
-            let event = TokenValidationEvent::internal(format!("{:x}", token_hash), audit_result);
+
+            let event = TokenValidationEvent::internal(
+                format!("{:x}", token_hash),
+                validation_result.is_ok(),
+                extract_validation_reason(&validation_result),
+            );
+
             audit_service.record_token_validation(event).map_err(|err| {
                 error!("Failed to audit token validation: {}", err);
                 ErrorUnauthorized("Unauthorized")
             })?;
-            let validation_result = validation_result.map_err(|_| ErrorUnauthorized("Unauthorized"))?;
-
             debug!("Token validated successfully");
 
             // make nested block to avoid borrowing issues
@@ -142,5 +139,12 @@ where
             Ok(res)
         };
         Box::pin(future)
+    }
+}
+
+fn extract_validation_reason(result: &Result<DynamicClaimsCollection, anyhow::Error>) -> String {
+    match result {
+        Ok(_) => "".to_string(),
+        Err(e) => e.to_string(),
     }
 }
