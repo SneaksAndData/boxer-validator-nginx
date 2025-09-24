@@ -4,13 +4,14 @@ use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Tr
 use actix_web::error::ErrorUnauthorized;
 use actix_web::{Error, HttpMessage};
 use boxer_core::contracts::dynamic_claims_collection::DynamicClaimsCollection;
-use boxer_core::services::audit::events::token_validation_event::{TokenValidationEvent, TokenValidationResult};
+use boxer_core::services::audit::events::token_validation_event::TokenValidationEvent;
 use boxer_core::services::audit::AuditService;
 use boxer_core::services::observability::open_telemetry::tracing::{start_trace, ErrorExt};
+use collection_macros::hashset;
 use futures_util::future::LocalBoxFuture;
 use log::{debug, error};
-use md5;
 use opentelemetry::context::FutureExt;
+use std::collections::HashSet;
 use std::sync::Arc;
 
 /// Middleware for external token validation factory
@@ -112,35 +113,44 @@ where
                 .with_context(parent.clone())
                 .await;
 
-            let token_hash = md5::compute(&boxer_token.token);
-            let audit_result = match validation_result {
-                Ok(_) => TokenValidationResult::Success,
-                Err(ref err) => {
-                    debug!("Token validation failed: {}", err);
-                    TokenValidationResult::Failure(err.to_string())
-                }
-            };
-            let event = TokenValidationEvent::internal(format!("{:x}", token_hash), audit_result);
+            let event = TokenValidationEvent::internal(
+                &boxer_token.token,
+                validation_result.is_ok(),
+                extract_validation_reason(&validation_result),
+            );
+
             audit_service.record_token_validation(event).map_err(|err| {
                 error!("Failed to audit token validation: {}", err);
                 ErrorUnauthorized("Unauthorized")
             })?;
-            let validation_result = validation_result.map_err(|_| ErrorUnauthorized("Unauthorized"))?;
-
             debug!("Token validated successfully");
 
-            // make nested block to avoid borrowing issues
-            {
-                let mut ext = req.extensions_mut();
-                ext.insert(validation_result);
+            match validation_result {
+                Err(_) => {
+                    return Err(ErrorUnauthorized("Unauthorized"));
+                }
+                Ok(claims) => {
+                    // make nested block to avoid borrowing issues
+                    {
+                        let mut ext = req.extensions_mut();
+                        ext.insert(claims);
+                    }
+                    let res = service
+                        .call(req)
+                        .with_context(parent.clone())
+                        .await
+                        .stop_trace(parent)?;
+                    Ok(res)
+                }
             }
-            let res = service
-                .call(req)
-                .with_context(parent.clone())
-                .await
-                .stop_trace(parent)?;
-            Ok(res)
         };
         Box::pin(future)
+    }
+}
+
+fn extract_validation_reason(result: &Result<DynamicClaimsCollection, anyhow::Error>) -> HashSet<String> {
+    match result {
+        Ok(_) => HashSet::new(),
+        Err(e) => hashset![e.to_string()],
     }
 }
