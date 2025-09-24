@@ -518,7 +518,6 @@ dependencies = [
  "k8s-openapi",
  "kube",
  "log",
- "md5",
  "opentelemetry",
  "opentelemetry-instrumentation-actix-web",
  "rstest",
@@ -533,13 +532,12 @@ dependencies = [
  "url",
  "utoipa",
  "utoipa-swagger-ui",
- "uuid",
 ]
 
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.19#d8c5d2ece2edbadcc6898cce814994bc123d74dd"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=fix-token-id#f9fa51a14f91f6143494da419561e88e44f07389"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -555,6 +553,7 @@ dependencies = [
  "kube",
  "log",
  "maplit",
+ "md5",
  "opentelemetry",
  "opentelemetry-appender-log",
  "opentelemetry-appender-tracing",

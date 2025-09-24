@@ -10,7 +10,6 @@ use boxer_core::services::observability::open_telemetry::tracing::{start_trace, 
 use collection_macros::hashset;
 use futures_util::future::LocalBoxFuture;
 use log::{debug, error};
-use md5;
 use opentelemetry::context::FutureExt;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -114,10 +113,8 @@ where
                 .with_context(parent.clone())
                 .await;
 
-            let token_hash = md5::compute(&boxer_token.token);
-
             let event = TokenValidationEvent::internal(
-                format!("{:x}", token_hash),
+                &boxer_token.token,
                 validation_result.is_ok(),
                 extract_validation_reason(&validation_result),
             );
