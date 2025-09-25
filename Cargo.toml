@@ -32,9 +32,9 @@ schemars = "0.8.6"
 env_filter = "0.1.3"
 collection_macros = "0.2.0"
 
-#boxer_core = { path = "../boxer-core/" }
+boxer_core = { path = "../boxer-core/" }
+#boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "validator-metrics" }
 #boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.20" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "validator-metrics" }
 
 # opentelemety
 opentelemetry-instrumentation-actix-web = "0.22.0"
@@ -45,6 +45,6 @@ rstest = "0.25.0"
 test-context = "0.4.1"
 # This line is for development, to be removed in the future,
 #before moving to production
-#boxer_core = { path = "../boxer-core/" }
+boxer_core = { path = "../boxer-core/" }
+#boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "validator-metrics" }
 #boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.20" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "validator-metrics" }
