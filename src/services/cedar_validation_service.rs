@@ -8,10 +8,10 @@ use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
 use boxer_core::services::audit::events::authorization_audit_event::AuthorizationAuditEvent;
 use boxer_core::services::audit::AuditService;
+use boxer_core::services::observability::open_telemetry::metrics::authorization_metric::AuthorizationMetric;
 use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
-use boxer_core::services::observability::open_telemetry::metrics::token_accepted::{
-    TokenAccepted, TokenAcceptedMetric,
-};
+use boxer_core::services::observability::open_telemetry::metrics::token_accepted::TokenAccepted;
+use boxer_core::services::observability::open_telemetry::metrics::token_rejected::TokenRejected;
 use boxer_core::services::observability::open_telemetry::tracing::start_trace;
 use boxer_core::services::service_provider::ServiceProvider;
 use cedar_policy::{Authorizer, Context, Entities, EntityUid, PolicySet, Request};
@@ -108,7 +108,11 @@ impl ValidationService for CedarValidationService {
                 metric.increment(actor, action, resource);
                 Ok(())
             }
-            cedar_policy::Decision::Deny => anyhow::bail!("Access denied"),
+            cedar_policy::Decision::Deny => {
+                let metric: TokenRejected = self.metrics_provider.get();
+                metric.increment(actor, action, resource);
+                anyhow::bail!("Access denied")
+            }
         }
     }
 }
