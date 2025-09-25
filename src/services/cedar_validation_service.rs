@@ -8,7 +8,12 @@ use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
 use boxer_core::services::audit::events::authorization_audit_event::AuthorizationAuditEvent;
 use boxer_core::services::audit::AuditService;
+use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
+use boxer_core::services::observability::open_telemetry::metrics::token_accepted::{
+    TokenAccepted, TokenAcceptedMetric,
+};
 use boxer_core::services::observability::open_telemetry::tracing::start_trace;
+use boxer_core::services::service_provider::ServiceProvider;
 use cedar_policy::{Authorizer, Context, Entities, EntityUid, PolicySet, Request};
 use log::{debug, info};
 use opentelemetry::context::FutureExt;
@@ -21,6 +26,7 @@ pub struct CedarValidationService {
     resource_repository: Arc<AssociatedRepository<(String, Vec<PathSegment>), EntityUid>>,
     policy_repository: Arc<AssociatedRepository<String, PolicySet>>,
     audit: Arc<dyn AuditService>,
+    metrics_provider: MetricsProvider,
 }
 
 impl CedarValidationService {
@@ -30,6 +36,7 @@ impl CedarValidationService {
         resource_repository: Arc<AssociatedRepository<(String, Vec<PathSegment>), EntityUid>>,
         policy_repository: Arc<AssociatedRepository<String, PolicySet>>,
         audit: Arc<dyn AuditService>,
+        metrics_provider: MetricsProvider,
     ) -> Self {
         CedarValidationService {
             authorizer: Authorizer::new(),
@@ -38,6 +45,7 @@ impl CedarValidationService {
             resource_repository,
             policy_repository,
             audit,
+            metrics_provider,
         }
     }
 }
@@ -95,7 +103,11 @@ impl ValidationService for CedarValidationService {
             .record_authorization(AuthorizationAuditEvent::new(&actor, &action, &resource, &answer))?;
 
         match answer.decision() {
-            cedar_policy::Decision::Allow => Ok(()),
+            cedar_policy::Decision::Allow => {
+                let metric: TokenAccepted = self.metrics_provider.get();
+                metric.increment(actor, action, resource);
+                Ok(())
+            }
             cedar_policy::Decision::Deny => anyhow::bail!("Access denied"),
         }
     }
