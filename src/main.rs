@@ -22,6 +22,7 @@ use boxer_core::services::backends::BackendConfiguration;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::observability::open_telemetry::metrics::init_metrics;
+use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use boxer_core::services::observability::open_telemetry::tracing::init_tracer;
 use boxer_core::services::service_provider::ServiceProvider;
 use env_filter::Builder;
@@ -30,6 +31,8 @@ use opentelemetry_instrumentation_actix_web::RequestTracing;
 use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+
+const ROOT_METRICS_NAMESPACE: &str = "boxer-validator";
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -84,6 +87,7 @@ async fn main() -> Result<()> {
         resource_repository,
         policy_repository,
         audit_service.clone(),
+        MetricsProvider::new(ROOT_METRICS_NAMESPACE, cm.instance_name.clone()),
     ));
 
     let action_repository: Arc<ActionDataRepository> = current_backend.get();

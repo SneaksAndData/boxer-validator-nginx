@@ -13,4 +13,6 @@ WORKDIR /app
 COPY --from=build-env /app/src/target/release .
 COPY --from=build-env /app/src/settings.toml /app/settings.toml
 
+USER 65534:65534
+
 ENTRYPOINT ["/app/boxer-validator-nginx"]
