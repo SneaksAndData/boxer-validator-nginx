@@ -1,10 +1,10 @@
-FROM --platform=$BUILDPLATFORM rust:1.88.0-bookworm AS build-env
+FROM rust:1.88.0-bookworm AS build-env
 
 WORKDIR /app/src
 COPY . .
 RUN cargo build --release
 
-FROM --platform=$BUILDPLATFORM debian:bookworm-slim
+FROM debian:bookworm-slim
 
 RUN apt-get update -y && \
     apt-get install -y curl netcat-openbsd && \
