@@ -7,7 +7,7 @@ RUN cargo build --release
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim
 
 RUN apt-get update -y && \
-    apt-get install -y curl netcat-traditional && \
+    apt-get install -y curl netcat-openbsd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -21,3 +21,4 @@ COPY --from=build-env /app/src/settings.toml /app/settings.toml
 USER 65534:65534
 
 CMD ["/app/boxer-validator-nginx"]
+#// TODO: add command to deployment
