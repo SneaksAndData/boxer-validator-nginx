@@ -1,18 +1,23 @@
 FROM rust:1.88.0-bookworm AS build-env
 
 WORKDIR /app/src
-
 COPY . .
-
 RUN cargo build --release
 
 FROM debian:bookworm-slim
-RUN apt-get update -y && apt-get install -y curl
+
+RUN apt-get update -y && \
+    apt-get install -y curl netcat-openbsd && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 
 WORKDIR /app
 COPY --from=build-env /app/src/target/release .
 COPY --from=build-env /app/src/settings.toml /app/settings.toml
 
+
+
 USER 65534:65534
 
-ENTRYPOINT ["/app/boxer-validator-nginx"]
+CMD ["/app/boxer-validator-nginx"]
