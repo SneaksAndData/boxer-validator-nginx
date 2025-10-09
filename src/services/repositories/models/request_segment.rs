@@ -17,8 +17,8 @@ use url::Url;
 /// Does not include the query string or fragment.
 #[derive(Debug, Clone, Display, Hash)]
 pub enum RequestSegment {
-    Verb(HTTPMethod),
     Hostname(String),
+    Verb(HTTPMethod),
     Path(PathSegment),
 }
 

@@ -1,5 +1,8 @@
 use log::{info, warn};
 
+use crate::services::prefix_tree::bucket::TrieBucket;
+use crate::services::prefix_tree::hash_tree::HashTrie;
+use crate::services::prefix_tree::MutableTrie;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
@@ -11,23 +14,21 @@ use kube::Resource;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::sync::Arc;
 use tokio::sync::RwLock;
-use trie_rs::map::Trie;
 
 pub mod backend;
 pub mod schema_bound_trie_repository;
 
-pub struct TrieData<Key> {
+pub struct TrieData<Key, Bucket: TrieBucket<Key, EntityUid>> {
     items: HashMap<Vec<Key>, EntityUid>,
-    maybe_trie: Option<Arc<Trie<Key, EntityUid>>>,
+    trie: HashTrie<Bucket>,
 }
 
-struct TrieRepositoryData<Key> {
-    pub rw_lock: RwLock<TrieData<Key>>,
+struct TrieRepositoryData<Key, Bucket: TrieBucket<Key, EntityUid>> {
+    pub rw_lock: RwLock<TrieData<Key, Bucket>>,
 }
 
-impl<Key> TrieRepositoryData<Key>
+impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default> TrieRepositoryData<Key, Bucket>
 where
     Key: Ord,
 {
@@ -35,7 +36,7 @@ where
         TrieRepositoryData {
             rw_lock: RwLock::new(TrieData {
                 items: HashMap::new(),
-                maybe_trie: None,
+                trie: HashTrie::new(),
             }),
         }
     }
@@ -52,24 +53,28 @@ pub trait SchemaBoundResource {
 }
 
 #[async_trait]
-impl<Key> ReadOnlyRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key>
+impl<Key, Bucket: TrieBucket<Key, EntityUid>> ReadOnlyRepository<Vec<Key>, EntityUid>
+    for TrieRepositoryData<Key, Bucket>
 where
     Key: Ord + Send + Sync + Debug + Hash,
+    Bucket: Send + Sync,
 {
     type ReadError = anyhow::Error;
 
     async fn get(&self, key: Vec<Key>) -> Result<EntityUid, Self::ReadError> {
         let guard = self.rw_lock.read().await;
         guard
-            .maybe_trie
-            .clone()
-            .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
+            .trie
+            .get(&key)
+            .await
+            .map(|e| e.clone())
             .ok_or(anyhow!("Entity not found: {:?}", key))
     }
 }
 
 #[async_trait]
-impl<Key> UpsertRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key>
+impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default + Send + Sync> UpsertRepository<Vec<Key>, EntityUid>
+    for TrieRepositoryData<Key, Bucket>
 where
     Key: Ord + Send + Sync + Debug + Clone + Hash,
 {
@@ -77,41 +82,37 @@ where
 
     async fn upsert(&self, key: Vec<Key>, entity: EntityUid) -> Result<EntityUid, Self::Error> {
         let mut guard = self.rw_lock.write().await;
-        guard.items.insert(key, entity.clone());
-        guard.maybe_trie = Some(Arc::new(Trie::from_iter(guard.items.clone())));
+        guard.trie.insert(key, entity.clone()).await;
         Ok(entity)
     }
 
     async fn exists(&self, key: Vec<Key>) -> Result<bool, Self::Error> {
         let guard = self.rw_lock.read().await;
-        Ok(guard
-            .maybe_trie
-            .clone()
-            .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
-            .is_some())
+        Ok(guard.trie.get(key).await.is_some())
     }
 }
 
 #[async_trait]
-impl<Key> CanDelete<Vec<Key>, EntityUid> for TrieRepositoryData<Key>
+impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default + Send + Sync> CanDelete<Vec<Key>, EntityUid>
+    for TrieRepositoryData<Key, Bucket>
 where
     Key: Ord + Send + Sync + Debug + Clone + Hash,
 {
     type DeleteError = anyhow::Error;
 
     async fn delete(&self, key: Vec<Key>) -> Result<(), Self::DeleteError> {
-        let mut guard = self.rw_lock.write().await;
-        guard.items.remove(&key);
-        guard.maybe_trie = Some(Arc::new(Trie::from_iter(guard.items.clone())));
+        let guard = self.rw_lock.write().await;
+        guard.trie.delete(key).await;
         Ok(())
     }
 }
 
 #[async_trait]
-impl<R, K> ResourceUpdateHandler<R> for TrieRepositoryData<K>
+impl<R, K, Bucket> ResourceUpdateHandler<R> for TrieRepositoryData<K, Bucket>
 where
     R: EntityCollectionResource<K> + Debug + Resource + Send + Sync + 'static,
     K: Ord + Send + Sync + Debug + Clone + Hash + 'static,
+    Bucket: TrieBucket<K, EntityUid> + Default + Send + Sync,
 {
     async fn handle_update(&self, event: Result<R, Error>) -> () {
         match event {

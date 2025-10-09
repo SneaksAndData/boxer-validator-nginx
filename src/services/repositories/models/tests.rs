@@ -90,7 +90,7 @@ fn test_path_segment_symmetry(
 }
 
 #[rstest]
-fn est_path_segment_transitivity(
+fn test_path_segment_transitivity(
     #[values(Static("api".to_string()), Parameter)] x: PathSegment,
     #[values(Static("api".to_string()), Parameter)] y: PathSegment,
     #[values(Static("api".to_string()), Parameter)] z: PathSegment,

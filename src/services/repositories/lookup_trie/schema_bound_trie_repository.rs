@@ -1,6 +1,7 @@
 use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource, TrieRepositoryData};
 use anyhow::anyhow;
 
+use crate::services::prefix_tree::bucket::TrieBucket;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
@@ -13,16 +14,18 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use tokio::sync::RwLock;
 
-pub struct SchemaBoundedTrieRepositoryData<Key>
+pub struct SchemaBoundedTrieRepositoryData<Key, Bucket>
 where
     Key: Ord,
+    Bucket: TrieBucket<Key, EntityUid>,
 {
-    buckets: RwLock<HashMap<String, TrieRepositoryData<Key>>>,
+    buckets: RwLock<HashMap<String, TrieRepositoryData<Key, Bucket>>>,
 }
 
-impl<Key> SchemaBoundedTrieRepositoryData<Key>
+impl<Key, Bucket> SchemaBoundedTrieRepositoryData<Key, Bucket>
 where
     Key: Ord,
+    Bucket: TrieBucket<Key, EntityUid>,
 {
     pub fn new() -> Self {
         SchemaBoundedTrieRepositoryData {
@@ -32,9 +35,10 @@ where
 }
 
 #[async_trait]
-impl<Key> ReadOnlyRepository<(String, Vec<Key>), EntityUid> for SchemaBoundedTrieRepositoryData<Key>
+impl<Key, Bucket> ReadOnlyRepository<(String, Vec<Key>), EntityUid> for SchemaBoundedTrieRepositoryData<Key, Bucket>
 where
     Key: Ord + Send + Sync + Debug + Hash + 'static,
+    Bucket: TrieBucket<Key, EntityUid> + Send + Sync,
 {
     type ReadError = anyhow::Error;
 
@@ -50,10 +54,11 @@ where
 }
 
 #[async_trait]
-impl<R, Key> ResourceUpdateHandler<R> for SchemaBoundedTrieRepositoryData<Key>
+impl<R, Key, Bucket> ResourceUpdateHandler<R> for SchemaBoundedTrieRepositoryData<Key, Bucket>
 where
     Key: Ord + Send + Sync + Debug + Hash + Clone + 'static,
     R: SchemaBoundResource + Resource + EntityCollectionResource<Key> + Send + Sync + Debug + 'static,
+    Bucket: TrieBucket<Key, EntityUid> + Send + Sync + Default,
 {
     async fn handle_update(&self, result: Result<R, watcher::Error>) -> () {
         match &result {

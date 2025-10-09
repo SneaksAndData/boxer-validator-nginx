@@ -23,7 +23,7 @@ struct KubernetesActionRepositoryTest {
     api: Api<ActionDiscoveryDocument>,
     namespace: String,
     lookup: ReadOnlyRepositoryBackend<
-        SchemaBoundedTrieRepositoryData<RequestSegment>,
+        SchemaBoundedTrieRepositoryData<RequestSegment, RequestBucket<EntityUid>>,
         ActionDiscoveryDocument,
         (String, Vec<RequestSegment>),
         EntityUid,
@@ -41,7 +41,10 @@ impl AsyncTestContext for KubernetesActionRepositoryTest {
             owner_mark,
             operation_timeout: operation_timeout.clone(),
         };
-        let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<RequestSegment>::new());
+        let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<
+            RequestSegment,
+            RequestBucket<EntityUid>,
+        >::new());
         let mut lookup = ReadOnlyRepositoryBackend::new(lookup_trie.clone(), lookup_trie.clone());
         lookup.start(config).await.unwrap();
         let repository = Arc::new(KubernetesRepository {
@@ -90,38 +93,42 @@ async fn test_multiple_actions(ctx: &mut KubernetesActionRepositoryTest) {
     insert_schema_document(
         ctx,
         "action-discovery-document-first",
-        "api/v1/resources",
+        "api/v1/resources/resource/{resource_id}",
         "PhotoApp::Photo::\"vacationPhoto.jpg\"",
     )
     .await;
     insert_schema_document(
         ctx,
         "action-discovery-document-second",
-        "api/v2/resources",
+        "api/v1/resources/{resource_id}",
         "PhotoApp::Photo::\"vacationPhoto.jpg\"",
     )
     .await;
-    let lookup_trie = ctx.lookup.get();
+    for i in 1..=20 {
+        let lookup_trie = ctx.lookup.get();
 
-    // Act
-    let request_context = RequestContext::new(
-        "https://www.example.com/api/v1/resources".to_string(),
-        "GET".to_string(),
-    );
-    let key: Vec<RequestSegment> = request_context.try_into().unwrap();
-    let first_result = lookup_trie.get(("schema".to_string(), key)).await;
+        // Act
+        let request_context = RequestContext::new(
+            "https://www.example.com/api/v1/resources/1".to_string(),
+            "GET".to_string(),
+        );
+        let key: Vec<RequestSegment> = request_context.try_into().unwrap();
+        let first_result = lookup_trie.get(("schema".to_string(), key)).await;
 
-    let request_context = RequestContext::new(
-        "https://www.example.com/api/v2/resources".to_string(),
-        "GET".to_string(),
-    );
-    let key = request_context.try_into().unwrap();
+        let request_context = RequestContext::new(
+            "https://www.example.com/api/v1/resources/2".to_string(),
+            "GET".to_string(),
+        );
+        let key = request_context.try_into().unwrap();
 
-    let second_result = lookup_trie.get(("schema".to_string(), key)).await;
+        let second_result = lookup_trie.get(("schema".to_string(), key)).await;
 
-    // Assert
-    assert!(first_result.is_ok());
-    assert!(second_result.is_ok());
+        // Assert
+        assert!(first_result.is_ok(), "First result was an error: {:?}", first_result);
+        assert!(second_result.is_ok(), "Second result was an error: {:?}", second_result);
+
+        println!("Iteration {} successful", i);
+    }
 }
 
 #[test_context(KubernetesActionRepositoryTest)]
