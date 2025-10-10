@@ -3,7 +3,6 @@ use crate::services::prefix_tree::naive_tree::ParametrizedMatcher;
 use crate::services::repositories::models::http_method::HTTPMethod;
 use crate::services::repositories::models::path_segment::PathSegment;
 use anyhow::anyhow;
-use std::cmp::Ordering;
 use strum_macros::Display;
 use url::Url;
 
@@ -16,7 +15,7 @@ use url::Url;
 ///   - Static: `resource`
 ///   - Parameter: `{id}`
 /// Does not include the query string or fragment.
-#[derive(Debug, Clone, Display, Hash)]
+#[derive(Debug, Clone, Display, Hash, Ord, PartialOrd, Eq, PartialEq)]
 pub enum RequestSegment {
     Hostname(String),
     Verb(HTTPMethod),
@@ -28,58 +27,6 @@ impl ParametrizedMatcher for RequestSegment {
         matches!(self, RequestSegment::Path(PathSegment::Parameter))
     }
 }
-
-/// Implements the `Ord` trait for `PathSegment`.
-/// VERB < HOSTNAME < (STATIC == PARAMETER)
-/// NOTE: This ordering is not consistent with the `PartialOrd` trait, which is intentional.
-/// This is because `PathSegment` is used in a Trie, and the Trie requires a total order for its keys.
-/// Additionally, this implementation ensures that the `Parameter` segment is always considered less than any other segment,
-/// and equal to `Static` segments.
-/// Also, see the `PartialOrd` implementation for `PathSegment` below.
-impl Ord for RequestSegment {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match self {
-            RequestSegment::Verb(v1) => match other {
-                RequestSegment::Verb(v2) => v1.cmp(v2),
-                RequestSegment::Hostname(_) => Ordering::Greater,
-                RequestSegment::Path(PathSegment::Static(_)) => Ordering::Greater,
-                RequestSegment::Path(PathSegment::Parameter) => Ordering::Greater,
-            },
-            RequestSegment::Hostname(p1) => match other {
-                RequestSegment::Verb(_) => Ordering::Less,
-                RequestSegment::Hostname(p2) => p1.cmp(p2),
-                RequestSegment::Path(PathSegment::Static(_)) => Ordering::Greater,
-                RequestSegment::Path(PathSegment::Parameter) => Ordering::Greater,
-            },
-            RequestSegment::Path(PathSegment::Static(s1)) => match other {
-                RequestSegment::Verb(_) => Ordering::Less,
-                RequestSegment::Hostname(_) => Ordering::Less,
-                RequestSegment::Path(PathSegment::Static(s2)) => s1.cmp(s2),
-                RequestSegment::Path(PathSegment::Parameter) => Ordering::Equal,
-            },
-            RequestSegment::Path(PathSegment::Parameter) => match other {
-                RequestSegment::Verb(_) => Ordering::Less,
-                RequestSegment::Hostname(_) => Ordering::Less,
-                RequestSegment::Path(PathSegment::Static(_)) => Ordering::Equal,
-                RequestSegment::Path(PathSegment::Parameter) => Ordering::Equal,
-            },
-        }
-    }
-}
-
-impl PartialOrd for RequestSegment {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for RequestSegment {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-
-impl Eq for RequestSegment {}
 
 impl TryFrom<RequestContext> for Vec<RequestSegment> {
     type Error = anyhow::Error;
