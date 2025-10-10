@@ -1,28 +1,29 @@
-use crate::services::prefix_tree::mutable_trie_builder::MutablePrefixTree;
-use crate::services::prefix_tree::{MutableTrie, TrieBucket};
+use crate::services::prefix_tree::trie_bucket::TrieBucket;
+use crate::services::prefix_tree::MutablePrefixTree;
+use crate::services::prefix_tree::PrefixTree;
 use async_trait::async_trait;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
-pub struct HashTrie<Bucket> {
+pub struct NaiveTrie<Bucket> {
     root: Arc<Bucket>,
 }
 
-impl<Bucket> HashTrie<Bucket>
+impl<Bucket> NaiveTrie<Bucket>
 where
     Bucket: Default,
 {
     pub fn new() -> Self {
-        HashTrie {
+        NaiveTrie {
             root: Arc::new(Bucket::default()),
         }
     }
 }
 
 #[async_trait]
-impl<Key, Value, Bucket> MutableTrie<Key, Value> for HashTrie<Bucket>
+impl<Key, Value, Bucket> PrefixTree<Key, Value> for NaiveTrie<Bucket>
 where
     Key: Hash + ParametrizedMatcher + Sync + Debug,
     Bucket: TrieBucket<Key, Value> + Send + Sync + Debug,
@@ -43,13 +44,13 @@ where
             }
         }
 
-        let last = keys.last().unwrap(); // last key element
+        let last = keys.last().unwrap();
         current.get_value(last).await
     }
 }
 
 #[async_trait]
-impl<Key, Value, Bucket> MutablePrefixTree<Key, Value> for HashTrie<Bucket>
+impl<Key, Value, Bucket> MutablePrefixTree<Key, Value> for NaiveTrie<Bucket>
 where
     Key: Hash + ParametrizedMatcher + Sync + Debug,
     Bucket: TrieBucket<Key, Value> + Send + Sync + Debug,
@@ -71,7 +72,7 @@ where
         }
 
         let keys = key.as_ref();
-        let last = keys.last().unwrap(); // last key element
+        let last = keys.last().unwrap();
         current.set_value(value, last).await;
     }
     async fn delete(&self, key: impl AsRef<[Key]> + Send) -> Option<Value> {
@@ -85,7 +86,7 @@ where
         }
 
         let keys = key.as_ref();
-        let last = keys.last().unwrap(); // last key element
+        let last = keys.last().unwrap();
         current.clear(last).await
     }
 }

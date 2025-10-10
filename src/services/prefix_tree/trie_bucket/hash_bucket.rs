@@ -1,10 +1,11 @@
-use crate::services::prefix_tree::TrieBucket;
+use crate::services::prefix_tree::trie_bucket::TrieBucket;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+/// A bucket implementation using a hash map to store children and an optional value.
 #[derive(Default, Debug)]
 pub struct HashTrieBucket<K, V> {
     children: RwLock<HashMap<K, Arc<Self>>>,
@@ -41,15 +42,15 @@ where
             .insert(key.clone(), Arc::new(HashTrieBucket::new()));
     }
 
-    async fn get_value(&self, key: &Key) -> Option<Value> {
-        todo!()
+    async fn get_value(&self, _key: &Key) -> Option<Value> {
+        self.value.read().await.clone()
     }
 
-    async fn clear(&self, key: &Key) -> Option<Value> {
+    async fn clear(&self, _key: &Key) -> Option<Value> {
         self.value.write().await.take()
     }
 
-    async fn set_value(&self, value: Value, key: &Key) {
+    async fn set_value(&self, value: Value, _key: &Key) {
         self.value.write().await.replace(value);
     }
 }

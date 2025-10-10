@@ -1,5 +1,5 @@
 use crate::models::request_context::RequestContext;
-use crate::services::prefix_tree::hash_tree::ParametrizedMatcher;
+use crate::services::prefix_tree::naive_tree::ParametrizedMatcher;
 use crate::services::repositories::models::http_method::HTTPMethod;
 use crate::services::repositories::models::path_segment::PathSegment;
 use anyhow::anyhow;

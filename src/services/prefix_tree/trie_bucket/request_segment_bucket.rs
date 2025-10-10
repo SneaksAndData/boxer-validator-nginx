@@ -1,5 +1,5 @@
-use crate::services::prefix_tree::bucket::TrieBucket;
-use crate::services::prefix_tree::hash_tree::ParametrizedMatcher;
+use crate::services::prefix_tree::naive_tree::ParametrizedMatcher;
+use crate::services::prefix_tree::trie_bucket::TrieBucket;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::fmt::Debug;

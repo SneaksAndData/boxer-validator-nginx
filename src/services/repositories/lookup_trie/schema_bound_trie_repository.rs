@@ -1,7 +1,7 @@
 use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource, TrieRepositoryData};
 use anyhow::anyhow;
 
-use crate::services::prefix_tree::hash_tree::ParametrizedMatcher;
+use crate::services::prefix_tree::naive_tree::ParametrizedMatcher;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
