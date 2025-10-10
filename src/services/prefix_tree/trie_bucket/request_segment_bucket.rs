@@ -79,7 +79,7 @@ where
         if key.is_parameter() {
             self.parameter_value.write().await.replace(value);
         } else {
-            self.exact_labels.write().await.insert(key.clone(), value.clone());
+            self.exact_labels.write().await.insert(key.clone(), value);
         };
     }
 }
