@@ -55,7 +55,7 @@ where
             lock.replace(Arc::new(Self::default()));
         } else {
             let mut lock = self.next.exact_match.write().await;
-            lock.insert(key.clone(), Arc::new(Self::default())).map(|_| ());
+            lock.insert(key.clone(), Arc::new(Self::default()));
         }
     }
 
