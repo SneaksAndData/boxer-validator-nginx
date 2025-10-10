@@ -1,7 +1,8 @@
 use log::{info, warn};
 
-use crate::services::prefix_tree::bucket::TrieBucket;
+use crate::services::prefix_tree::bucket::request_segment_bucket::RequestBucket;
 use crate::services::prefix_tree::hash_tree::{HashTrie, ParametrizedMatcher};
+use crate::services::prefix_tree::mutable_trie_builder::MutablePrefixTree;
 use crate::services::prefix_tree::MutableTrie;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -19,24 +20,31 @@ use tokio::sync::RwLock;
 pub mod backend;
 pub mod schema_bound_trie_repository;
 
-pub struct TrieData<Key, Bucket: TrieBucket<Key, EntityUid>> {
-    items: HashMap<Vec<Key>, EntityUid>,
-    trie: HashTrie<Bucket>,
-}
-
-struct TrieRepositoryData<Key, Bucket: TrieBucket<Key, EntityUid>> {
-    pub rw_lock: RwLock<TrieData<Key, Bucket>>,
-}
-
-impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default> TrieRepositoryData<Key, Bucket>
+pub struct TrieData<Key, Value>
 where
-    Key: Ord,
+    Key: Debug + Send + Sync,
+    Value: Send + Sync,
+{
+    trie: HashTrie<RequestBucket<Key, Value>>,
+}
+
+struct TrieRepositoryData<Key, Value>
+where
+    Key: Debug + Send + Sync,
+    Value: Send + Sync,
+{
+    pub rw_lock: RwLock<TrieData<Key, Value>>,
+}
+
+impl<Key, Value> TrieRepositoryData<Key, Value>
+where
+    Key: Ord + Send + Sync + Debug,
+    Value: Send + Sync,
 {
     pub fn new() -> Self {
         TrieRepositoryData {
             rw_lock: RwLock::new(TrieData {
-                items: HashMap::new(),
-                trie: HashTrie::new(),
+                trie: HashTrie::<RequestBucket<Key, Value>>::new(),
             }),
         }
     }
@@ -53,11 +61,9 @@ pub trait SchemaBoundResource {
 }
 
 #[async_trait]
-impl<Key, Bucket: TrieBucket<Key, EntityUid>> ReadOnlyRepository<Vec<Key>, EntityUid>
-    for TrieRepositoryData<Key, Bucket>
+impl<Key> ReadOnlyRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key, EntityUid>
 where
-    Key: Ord + Send + Sync + Debug + Hash + ParametrizedMatcher,
-    Bucket: Send + Sync + Debug,
+    Key: Hash + ParametrizedMatcher + Sync + Send + Debug + Clone + Eq,
 {
     type ReadError = anyhow::Error;
 
@@ -73,8 +79,7 @@ where
 }
 
 #[async_trait]
-impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default + Send + Sync + Debug> UpsertRepository<Vec<Key>, EntityUid>
-    for TrieRepositoryData<Key, Bucket>
+impl<Key> UpsertRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key, EntityUid>
 where
     Key: Ord + Send + Sync + Debug + Clone + Hash + ParametrizedMatcher,
 {
@@ -93,8 +98,7 @@ where
 }
 
 #[async_trait]
-impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default + Send + Sync + Debug> CanDelete<Vec<Key>, EntityUid>
-    for TrieRepositoryData<Key, Bucket>
+impl<Key> CanDelete<Vec<Key>, EntityUid> for TrieRepositoryData<Key, EntityUid>
 where
     Key: Ord + Send + Sync + Debug + Clone + Hash + ParametrizedMatcher,
 {
@@ -108,11 +112,10 @@ where
 }
 
 #[async_trait]
-impl<R, K, Bucket> ResourceUpdateHandler<R> for TrieRepositoryData<K, Bucket>
+impl<R, K> ResourceUpdateHandler<R> for TrieRepositoryData<K, EntityUid>
 where
     R: EntityCollectionResource<K> + Debug + Resource + Send + Sync + 'static,
     K: Ord + Send + Sync + Debug + Clone + Hash + 'static + ParametrizedMatcher,
-    Bucket: TrieBucket<K, EntityUid> + Default + Send + Sync + Debug,
 {
     async fn handle_update(&self, event: Result<R, Error>) -> () {
         match event {

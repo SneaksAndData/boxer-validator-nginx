@@ -23,7 +23,7 @@ struct KubernetesResourceRepositoryTest {
     api: Api<ResourceDiscoveryDocument>,
     namespace: String,
     lookup: ReadOnlyRepositoryBackend<
-        SchemaBoundedTrieRepositoryData<PathSegment, PathSegmentBucket<EntityUid>>,
+        SchemaBoundedTrieRepositoryData<PathSegment>,
         ResourceDiscoveryDocument,
         (String, Vec<PathSegment>),
         EntityUid,
@@ -41,10 +41,7 @@ impl AsyncTestContext for KubernetesResourceRepositoryTest {
             owner_mark,
             operation_timeout: operation_timeout.clone(),
         };
-        let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<
-            PathSegment,
-            PathSegmentBucket<EntityUid>,
-        >::new());
+        let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<PathSegment>::new());
         let mut lookup = ReadOnlyRepositoryBackend::new(lookup_trie.clone(), lookup_trie.clone());
         lookup.start(config).await.unwrap();
 

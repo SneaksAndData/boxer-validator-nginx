@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use std::sync::Arc;
 
 pub mod hash_bucket;
-pub mod path_segment_bucket;
 pub mod request_segment_bucket;
 
 #[async_trait]

@@ -1,7 +1,6 @@
 use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource, TrieRepositoryData};
 use anyhow::anyhow;
 
-use crate::services::prefix_tree::bucket::TrieBucket;
 use crate::services::prefix_tree::hash_tree::ParametrizedMatcher;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
@@ -15,18 +14,16 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use tokio::sync::RwLock;
 
-pub struct SchemaBoundedTrieRepositoryData<Key, Bucket>
+pub struct SchemaBoundedTrieRepositoryData<Key>
 where
-    Key: Ord,
-    Bucket: TrieBucket<Key, EntityUid>,
+    Key: Ord + Debug + Send + Sync,
 {
-    buckets: RwLock<HashMap<String, TrieRepositoryData<Key, Bucket>>>,
+    buckets: RwLock<HashMap<String, TrieRepositoryData<Key, EntityUid>>>,
 }
 
-impl<Key, Bucket> SchemaBoundedTrieRepositoryData<Key, Bucket>
+impl<Key> SchemaBoundedTrieRepositoryData<Key>
 where
-    Key: Ord,
-    Bucket: TrieBucket<Key, EntityUid>,
+    Key: Ord + Debug + Send + Sync,
 {
     pub fn new() -> Self {
         SchemaBoundedTrieRepositoryData {
@@ -36,10 +33,9 @@ where
 }
 
 #[async_trait]
-impl<Key, Bucket> ReadOnlyRepository<(String, Vec<Key>), EntityUid> for SchemaBoundedTrieRepositoryData<Key, Bucket>
+impl<Key> ReadOnlyRepository<(String, Vec<Key>), EntityUid> for SchemaBoundedTrieRepositoryData<Key>
 where
-    Key: Ord + Send + Sync + Debug + Hash + 'static + ParametrizedMatcher,
-    Bucket: TrieBucket<Key, EntityUid> + Send + Sync + Debug,
+    Key: Ord + Send + Sync + Debug + Hash + 'static + ParametrizedMatcher + Clone,
 {
     type ReadError = anyhow::Error;
 
@@ -55,11 +51,10 @@ where
 }
 
 #[async_trait]
-impl<R, Key, Bucket> ResourceUpdateHandler<R> for SchemaBoundedTrieRepositoryData<Key, Bucket>
+impl<R, Key> ResourceUpdateHandler<R> for SchemaBoundedTrieRepositoryData<Key>
 where
     Key: Ord + Send + Sync + Debug + Hash + Clone + 'static + ParametrizedMatcher,
     R: SchemaBoundResource + Resource + EntityCollectionResource<Key> + Send + Sync + Debug + 'static,
-    Bucket: TrieBucket<Key, EntityUid> + Send + Sync + Default + Debug,
 {
     async fn handle_update(&self, result: Result<R, watcher::Error>) -> () {
         match &result {

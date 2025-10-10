@@ -1,6 +1,7 @@
 use crate::models::request_context::RequestContext;
 use crate::services::prefix_tree::bucket::request_segment_bucket::RequestBucket;
 use crate::services::prefix_tree::hash_tree::{HashTrie, ParametrizedMatcher};
+use crate::services::prefix_tree::mutable_trie_builder::MutablePrefixTree;
 use crate::services::prefix_tree::MutableTrie;
 use crate::services::repositories::models::http_method::HTTPMethod;
 use crate::services::repositories::models::path_segment::PathSegment;
@@ -105,7 +106,7 @@ async fn test_path_segment_matchers(key: &str) -> String {
             RequestSegment::Path(PathSegment::Static("my-id".to_string())),
         ],
     ];
-    let mut trie = HashTrie::<RequestBucket<String>>::new();
+    let mut trie = HashTrie::<RequestBucket<RequestSegment, String>>::new();
 
     for i in 0..segments.len() {
         trie.insert(segments[i].clone(), format!("value{}", i)).await;

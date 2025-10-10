@@ -1,3 +1,4 @@
+use crate::services::prefix_tree::mutable_trie_builder::MutablePrefixTree;
 use crate::services::prefix_tree::{MutableTrie, TrieBucket};
 use async_trait::async_trait;
 use std::fmt::Debug;
@@ -24,33 +25,9 @@ where
 impl<Key, Value, Bucket> MutableTrie<Key, Value> for HashTrie<Bucket>
 where
     Key: Hash + ParametrizedMatcher + Sync + Debug,
-    Bucket: TrieBucket<Key, Value> + Send + Sync + std::fmt::Debug,
+    Bucket: TrieBucket<Key, Value> + Send + Sync + Debug,
     Value: Send + Sync + 'static,
 {
-    type Bucket = Bucket;
-
-    async fn insert(&mut self, key: impl AsRef<[Key]> + Send, value: Value) {
-        if key.as_ref().is_empty() {
-            return;
-        }
-
-        let mut current = self.root.clone();
-        let mut is_parameter = false;
-
-        for k in key.as_ref() {
-            if current.child(k).await.is_none() {
-                current.create_child(k).await;
-            }
-
-            current = current.child(k).await.unwrap();
-            is_parameter = k.is_parameter();
-        }
-
-        let keys = key.as_ref();
-        let last = keys.last().unwrap(); // last key element
-        current.set_value(value, last).await;
-    }
-
     async fn get(&self, key: impl AsRef<[Key]> + Send) -> Option<Value> {
         let keys = key.as_ref();
         if keys.is_empty() {
@@ -69,7 +46,34 @@ where
         let last = keys.last().unwrap(); // last key element
         current.get_value(last).await
     }
+}
 
+#[async_trait]
+impl<Key, Value, Bucket> MutablePrefixTree<Key, Value> for HashTrie<Bucket>
+where
+    Key: Hash + ParametrizedMatcher + Sync + Debug,
+    Bucket: TrieBucket<Key, Value> + Send + Sync + Debug,
+    Value: Send + Sync + 'static,
+{
+    async fn insert(&mut self, key: impl AsRef<[Key]> + Send, value: Value) {
+        if key.as_ref().is_empty() {
+            return;
+        }
+
+        let mut current = self.root.clone();
+
+        for k in key.as_ref() {
+            if current.child(k).await.is_none() {
+                current.create_child(k).await;
+            }
+
+            current = current.child(k).await.unwrap();
+        }
+
+        let keys = key.as_ref();
+        let last = keys.last().unwrap(); // last key element
+        current.set_value(value, last).await;
+    }
     async fn delete(&self, key: impl AsRef<[Key]> + Send) -> Option<Value> {
         let mut current = self.root.clone();
 

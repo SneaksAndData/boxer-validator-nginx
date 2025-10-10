@@ -1,7 +1,6 @@
 use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::KubernetesBackendSettings;
-use crate::services::prefix_tree::bucket::TrieBucket;
 use crate::services::prefix_tree::hash_tree::ParametrizedMatcher;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
@@ -171,14 +170,14 @@ impl BackendBuilder {
             .map_err(|e| e.into())
     }
 
-    pub async fn create_lookup_trie<R, K, Bucket>(
+    pub async fn create_lookup_trie<R, K>(
         namespace: &str,
         kubeconfig: Config,
         owner_mark: ObjectOwnerMark,
         operation_timeout: Duration,
         operation_name: String,
     ) -> anyhow::Result<
-        Arc<ReadOnlyRepositoryBackend<SchemaBoundedTrieRepositoryData<K, Bucket>, R, (String, Vec<K>), EntityUid>>,
+        Arc<ReadOnlyRepositoryBackend<SchemaBoundedTrieRepositoryData<K>, R, (String, Vec<K>), EntityUid>>,
     >
     where
         K: Debug + Ord + Clone + Send + Sync + Hash + 'static + ParametrizedMatcher,
@@ -192,7 +191,6 @@ impl BackendBuilder {
             + Sync
             + 'static,
         R::DynamicType: Hash + Eq + Clone + Default,
-        Bucket: TrieBucket<K, EntityUid> + Default + Send + Sync + 'static + Debug,
     {
         let config = KubernetesResourceManagerConfig {
             namespace: namespace.to_string(),
@@ -200,7 +198,7 @@ impl BackendBuilder {
             owner_mark,
             operation_timeout,
         };
-        let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<K, Bucket>::new());
+        let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<K>::new());
         let mut r = ReadOnlyRepositoryBackend::new(lookup_trie.clone(), lookup_trie.with_tracing(operation_name));
         r.start(config).await?;
         Ok(Arc::new(r))
