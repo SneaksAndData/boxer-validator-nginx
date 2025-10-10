@@ -11,9 +11,9 @@ pub trait TrieBucket<Key, Value> {
 
     async fn create_child(&self, key: &Key);
 
-    async fn get_value(&self) -> Option<Value>;
+    async fn get_value(&self, key: &Key) -> Option<Value>;
 
-    async fn clear(&self) -> Option<Value>;
+    async fn clear(&self, key: &Key) -> Option<Value>;
 
-    async fn set_value(&self, value: Value);
+    async fn set_value(&self, value: Value, key: &Key);
 }

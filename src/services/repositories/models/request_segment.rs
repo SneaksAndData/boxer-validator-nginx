@@ -1,4 +1,5 @@
 use crate::models::request_context::RequestContext;
+use crate::services::prefix_tree::hash_tree::ParametrizedMatcher;
 use crate::services::repositories::models::http_method::HTTPMethod;
 use crate::services::repositories::models::path_segment::PathSegment;
 use anyhow::anyhow;
@@ -20,6 +21,12 @@ pub enum RequestSegment {
     Hostname(String),
     Verb(HTTPMethod),
     Path(PathSegment),
+}
+
+impl ParametrizedMatcher for RequestSegment {
+    fn is_parameter(&self) -> bool {
+        matches!(self, RequestSegment::Path(PathSegment::Parameter))
+    }
 }
 
 /// Implements the `Ord` trait for `PathSegment`.

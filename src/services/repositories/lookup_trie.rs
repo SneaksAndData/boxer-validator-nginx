@@ -1,7 +1,7 @@
 use log::{info, warn};
 
 use crate::services::prefix_tree::bucket::TrieBucket;
-use crate::services::prefix_tree::hash_tree::HashTrie;
+use crate::services::prefix_tree::hash_tree::{HashTrie, ParametrizedMatcher};
 use crate::services::prefix_tree::MutableTrie;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -56,8 +56,8 @@ pub trait SchemaBoundResource {
 impl<Key, Bucket: TrieBucket<Key, EntityUid>> ReadOnlyRepository<Vec<Key>, EntityUid>
     for TrieRepositoryData<Key, Bucket>
 where
-    Key: Ord + Send + Sync + Debug + Hash,
-    Bucket: Send + Sync,
+    Key: Ord + Send + Sync + Debug + Hash + ParametrizedMatcher,
+    Bucket: Send + Sync + Debug,
 {
     type ReadError = anyhow::Error;
 
@@ -73,10 +73,10 @@ where
 }
 
 #[async_trait]
-impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default + Send + Sync> UpsertRepository<Vec<Key>, EntityUid>
+impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default + Send + Sync + Debug> UpsertRepository<Vec<Key>, EntityUid>
     for TrieRepositoryData<Key, Bucket>
 where
-    Key: Ord + Send + Sync + Debug + Clone + Hash,
+    Key: Ord + Send + Sync + Debug + Clone + Hash + ParametrizedMatcher,
 {
     type Error = anyhow::Error;
 
@@ -93,10 +93,10 @@ where
 }
 
 #[async_trait]
-impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default + Send + Sync> CanDelete<Vec<Key>, EntityUid>
+impl<Key, Bucket: TrieBucket<Key, EntityUid> + Default + Send + Sync + Debug> CanDelete<Vec<Key>, EntityUid>
     for TrieRepositoryData<Key, Bucket>
 where
-    Key: Ord + Send + Sync + Debug + Clone + Hash,
+    Key: Ord + Send + Sync + Debug + Clone + Hash + ParametrizedMatcher,
 {
     type DeleteError = anyhow::Error;
 
@@ -111,8 +111,8 @@ where
 impl<R, K, Bucket> ResourceUpdateHandler<R> for TrieRepositoryData<K, Bucket>
 where
     R: EntityCollectionResource<K> + Debug + Resource + Send + Sync + 'static,
-    K: Ord + Send + Sync + Debug + Clone + Hash + 'static,
-    Bucket: TrieBucket<K, EntityUid> + Default + Send + Sync,
+    K: Ord + Send + Sync + Debug + Clone + Hash + 'static + ParametrizedMatcher,
+    Bucket: TrieBucket<K, EntityUid> + Default + Send + Sync + Debug,
 {
     async fn handle_update(&self, event: Result<R, Error>) -> () {
         match event {

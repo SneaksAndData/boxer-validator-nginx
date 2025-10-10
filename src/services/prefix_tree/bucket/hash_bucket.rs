@@ -41,15 +41,15 @@ where
             .insert(key.clone(), Arc::new(HashTrieBucket::new()));
     }
 
-    async fn get_value(&self) -> Option<Value> {
-        self.value.read().await.clone()
+    async fn get_value(&self, key: &Key) -> Option<Value> {
+        todo!()
     }
 
-    async fn clear(&self) -> Option<Value> {
+    async fn clear(&self, key: &Key) -> Option<Value> {
         self.value.write().await.take()
     }
 
-    async fn set_value(&self, value: Value) {
+    async fn set_value(&self, value: Value, key: &Key) {
         self.value.write().await.replace(value);
     }
 }

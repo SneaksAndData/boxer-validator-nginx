@@ -1,26 +1,40 @@
 use crate::services::prefix_tree::bucket::TrieBucket;
-use crate::services::repositories::models::path_segment::PathSegment;
+use crate::services::prefix_tree::hash_tree::ParametrizedMatcher;
 use crate::services::repositories::models::request_segment::RequestSegment;
 use async_trait::async_trait;
-use log::warn;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 #[derive(Debug)]
-pub struct RequestBucket<Value> {
+struct NextReference<Value> {
     exact_match: RwLock<HashMap<RequestSegment, Arc<RequestBucket<Value>>>>,
     parameter: RwLock<Option<Arc<RequestBucket<Value>>>>,
-    value: RwLock<Option<Value>>,
+}
+
+impl<Value> NextReference<Value> {
+    fn new() -> Self {
+        NextReference {
+            exact_match: RwLock::new(HashMap::new()),
+            parameter: RwLock::new(None),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct RequestBucket<Value> {
+    next: NextReference<Value>,
+    exact_labels: RwLock<HashMap<RequestSegment, Value>>,
+    parameter_value: RwLock<Option<Value>>,
 }
 
 impl<Value> Default for RequestBucket<Value> {
     fn default() -> Self {
         RequestBucket {
-            exact_match: RwLock::new(HashMap::new()),
-            parameter: RwLock::new(None),
-            value: RwLock::new(None),
+            next: NextReference::new(),
+            exact_labels: RwLock::new(HashMap::new()),
+            parameter_value: RwLock::new(None),
         }
     }
 }
@@ -31,45 +45,44 @@ where
     Value: Clone + Send + Sync + Debug,
 {
     async fn child(&self, key: &RequestSegment) -> Option<Arc<Self>> {
-        match key {
-            RequestSegment::Path(PathSegment::Static(_)) => {
-                let exact_match = self.exact_match.read().await.get(key).map(|c| c.clone());
-                match exact_match {
-                    Some(c) => Some(c),
-                    None => self.parameter.read().await.clone(),
-                }
-            }
-            RequestSegment::Path(PathSegment::Parameter) => self.parameter.read().await.clone(),
-            other => self.exact_match.read().await.get(other).map(|c| c.clone()),
+        let exact_match = self.next.exact_match.read().await.get(key).map(|c| c.clone());
+        if exact_match.is_some() {
+            return exact_match;
         }
+        self.next.parameter.read().await.clone()
     }
 
     async fn create_child(&self, key: &RequestSegment) {
-        match key {
-            RequestSegment::Path(PathSegment::Parameter) => {
-                let mut lock = self.parameter.write().await;
-                lock.replace(Arc::new(Self::default()));
-            }
-            _ => {
-                let mut lock = self.exact_match.write().await;
-                lock.insert(key.clone(), Arc::new(Self::default())).map(|_| ());
-            }
+        if key.is_parameter() {
+            let mut lock = self.next.parameter.write().await;
+            lock.replace(Arc::new(Self::default()));
+        } else {
+            let mut lock = self.next.exact_match.write().await;
+            lock.insert(key.clone(), Arc::new(Self::default())).map(|_| ());
         }
     }
 
-    async fn get_value(&self) -> Option<Value> {
-        self.value.read().await.clone()
-    }
-
-    async fn clear(&self) -> Option<Value> {
-        self.value.write().await.take()
-    }
-
-    async fn set_value(&self, value: Value) {
-        let mut prev = self.value.write().await; //.replace(value);
-        if prev.is_some() {
-            warn!("Overwriting existing value in RequestBucket at segment: {:?}", self);
+    async fn get_value(&self, key: &RequestSegment) -> Option<Value> {
+        let exact_match = self.exact_labels.read().await.get(key).cloned();
+        if exact_match.is_some() {
+            return exact_match;
         }
-        prev.replace(value);
+        self.parameter_value.read().await.clone()
+    }
+
+    async fn clear(&self, key: &RequestSegment) -> Option<Value> {
+        if key.is_parameter() {
+            self.parameter_value.write().await.take()
+        } else {
+            self.exact_labels.write().await.remove(key)
+        }
+    }
+
+    async fn set_value(&self, value: Value, key: &RequestSegment) {
+        if key.is_parameter() {
+            self.parameter_value.write().await.replace(value);
+        } else {
+            self.exact_labels.write().await.insert(key.clone(), value.clone());
+        };
     }
 }

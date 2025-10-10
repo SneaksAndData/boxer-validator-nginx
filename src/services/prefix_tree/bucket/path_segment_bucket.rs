@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use utoipa::Path;
 
 #[derive(Debug)]
 pub struct PathSegmentBucket<Value> {
@@ -55,15 +56,15 @@ where
         }
     }
 
-    async fn get_value(&self) -> Option<Value> {
+    async fn get_value(&self, key: &PathSegment) -> Option<Value> {
         self.value.read().await.clone()
     }
 
-    async fn clear(&self) -> Option<Value> {
+    async fn clear(&self, key: &PathSegment) -> Option<Value> {
         self.value.write().await.take()
     }
 
-    async fn set_value(&self, value: Value) {
+    async fn set_value(&self, value: Value, key: &PathSegment) {
         let mut prev = self.value.write().await; //.replace(value);
         if prev.is_some() {
             warn!("Overwriting existing value in PathSegmentBucket at segment: {:?}", self);

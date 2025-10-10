@@ -2,6 +2,7 @@ use crate::services::repositories::lookup_trie::{EntityCollectionResource, Schem
 use anyhow::anyhow;
 
 use crate::services::prefix_tree::bucket::TrieBucket;
+use crate::services::prefix_tree::hash_tree::ParametrizedMatcher;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
@@ -37,8 +38,8 @@ where
 #[async_trait]
 impl<Key, Bucket> ReadOnlyRepository<(String, Vec<Key>), EntityUid> for SchemaBoundedTrieRepositoryData<Key, Bucket>
 where
-    Key: Ord + Send + Sync + Debug + Hash + 'static,
-    Bucket: TrieBucket<Key, EntityUid> + Send + Sync,
+    Key: Ord + Send + Sync + Debug + Hash + 'static + ParametrizedMatcher,
+    Bucket: TrieBucket<Key, EntityUid> + Send + Sync + Debug,
 {
     type ReadError = anyhow::Error;
 
@@ -56,9 +57,9 @@ where
 #[async_trait]
 impl<R, Key, Bucket> ResourceUpdateHandler<R> for SchemaBoundedTrieRepositoryData<Key, Bucket>
 where
-    Key: Ord + Send + Sync + Debug + Hash + Clone + 'static,
+    Key: Ord + Send + Sync + Debug + Hash + Clone + 'static + ParametrizedMatcher,
     R: SchemaBoundResource + Resource + EntityCollectionResource<Key> + Send + Sync + Debug + 'static,
-    Bucket: TrieBucket<Key, EntityUid> + Send + Sync + Default,
+    Bucket: TrieBucket<Key, EntityUid> + Send + Sync + Default + Debug,
 {
     async fn handle_update(&self, result: Result<R, watcher::Error>) -> () {
         match &result {

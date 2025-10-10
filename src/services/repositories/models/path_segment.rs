@@ -1,4 +1,5 @@
 use crate::models::request_context::RequestContext;
+use crate::services::prefix_tree::hash_tree::ParametrizedMatcher;
 use std::cmp::Ordering;
 use strum_macros::Display;
 use url::Url;
@@ -22,6 +23,12 @@ impl TryFrom<RequestContext> for Vec<PathSegment> {
             segments.push(PathSegment::Static(part.to_string()));
         }
         Ok(segments)
+    }
+}
+
+impl ParametrizedMatcher for PathSegment {
+    fn is_parameter(&self) -> bool {
+        matches!(self, PathSegment::Parameter)
     }
 }
 

@@ -23,8 +23,8 @@ where
 #[async_trait]
 impl<Key, Value, Bucket> MutableTrie<Key, Value> for HashTrie<Bucket>
 where
-    Key: Hash + Sync + Debug,
-    Bucket: TrieBucket<Key, Value> + Send + Sync,
+    Key: Hash + ParametrizedMatcher + Sync + Debug,
+    Bucket: TrieBucket<Key, Value> + Send + Sync + std::fmt::Debug,
     Value: Send + Sync + 'static,
 {
     type Bucket = Bucket;
@@ -35,6 +35,7 @@ where
         }
 
         let mut current = self.root.clone();
+        let mut is_parameter = false;
 
         for k in key.as_ref() {
             if current.child(k).await.is_none() {
@@ -42,22 +43,31 @@ where
             }
 
             current = current.child(k).await.unwrap();
+            is_parameter = k.is_parameter();
         }
 
-        current.set_value(value).await;
+        let keys = key.as_ref();
+        let last = keys.last().unwrap(); // last key element
+        current.set_value(value, last).await;
     }
 
     async fn get(&self, key: impl AsRef<[Key]> + Send) -> Option<Value> {
+        let keys = key.as_ref();
+        if keys.is_empty() {
+            return None;
+        }
         let mut current = self.root.clone();
 
         for k in key.as_ref() {
-            match current.child(k).await {
+            let child = current.child(k).await;
+            match child {
                 Some(child) => current = child,
                 None => return None,
             }
         }
 
-        current.get_value().await
+        let last = keys.last().unwrap(); // last key element
+        current.get_value(last).await
     }
 
     async fn delete(&self, key: impl AsRef<[Key]> + Send) -> Option<Value> {
@@ -70,6 +80,12 @@ where
             }
         }
 
-        current.clear().await
+        let keys = key.as_ref();
+        let last = keys.last().unwrap(); // last key element
+        current.clear(last).await
     }
+}
+
+pub trait ParametrizedMatcher {
+    fn is_parameter(&self) -> bool;
 }
