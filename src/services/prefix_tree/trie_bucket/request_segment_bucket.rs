@@ -55,7 +55,7 @@ where
             lock.replace(Arc::new(Self::default()));
         } else {
             let mut lock = self.next.exact_match.write().await;
-            lock.insert(key.clone(), Arc::new(Self::default())).map(|_| ());
+            lock.insert(key.clone(), Arc::new(Self::default()));
         }
     }
 
@@ -79,7 +79,7 @@ where
         if key.is_parameter() {
             self.parameter_value.write().await.replace(value);
         } else {
-            self.exact_labels.write().await.insert(key.clone(), value.clone());
+            self.exact_labels.write().await.insert(key.clone(), value);
         };
     }
 }
