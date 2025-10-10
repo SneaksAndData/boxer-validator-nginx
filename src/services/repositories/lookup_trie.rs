@@ -1,7 +1,7 @@
 use log::{info, warn};
 
 use crate::services::prefix_tree::naive_tree::{NaiveTrie, ParametrizedMatcher};
-use crate::services::prefix_tree::trie_bucket::request_segment_bucket::RequestBucket;
+use crate::services::prefix_tree::trie_bucket::request_segment_bucket::PrioritizedBucket;
 use crate::services::prefix_tree::MutablePrefixTree;
 use crate::services::prefix_tree::PrefixTree;
 use anyhow::anyhow;
@@ -24,7 +24,7 @@ where
     Key: Debug + Send + Sync,
     Value: Send + Sync,
 {
-    trie: NaiveTrie<RequestBucket<Key, Value>>,
+    trie: NaiveTrie<PrioritizedBucket<Key, Value>>,
 }
 
 struct TrieRepositoryData<Key, Value>
@@ -43,7 +43,7 @@ where
     pub fn new() -> Self {
         TrieRepositoryData {
             rw_lock: RwLock::new(TrieData {
-                trie: NaiveTrie::<RequestBucket<Key, Value>>::new(),
+                trie: NaiveTrie::<PrioritizedBucket<Key, Value>>::new(),
             }),
         }
     }

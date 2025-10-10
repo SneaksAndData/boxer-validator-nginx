@@ -1,7 +1,7 @@
 use crate::models::request_context::RequestContext;
 use crate::services::prefix_tree::naive_tree::{NaiveTrie, ParametrizedMatcher};
 use crate::services::prefix_tree::trie_bucket::hash_bucket::HashTrieBucket;
-use crate::services::prefix_tree::trie_bucket::request_segment_bucket::RequestBucket;
+use crate::services::prefix_tree::trie_bucket::request_segment_bucket::PrioritizedBucket;
 use crate::services::prefix_tree::MutablePrefixTree;
 use crate::services::prefix_tree::PrefixTree;
 use crate::services::repositories::models::http_method::HTTPMethod;
@@ -154,7 +154,7 @@ async fn test_path_segment_matchers(key: &str) -> String {
             RequestSegment::Path(PathSegment::Static("my-id".to_string())),
         ],
     ];
-    let mut trie = NaiveTrie::<RequestBucket<RequestSegment, String>>::new();
+    let mut trie = NaiveTrie::<PrioritizedBucket<RequestSegment, String>>::new();
 
     for i in 0..segments.len() {
         trie.insert(segments[i].clone(), format!("value{}", i)).await;

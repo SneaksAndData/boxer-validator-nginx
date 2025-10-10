@@ -7,31 +7,11 @@ use std::hash::Hash;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+/// PrioritizedBucket used to hold in the tree values based on their priorities.
+/// Exact matches have higher priority over parameterized matches.
+/// This bucket implementation uses separate storage for exact matches and parameterized matches.
 #[derive(Debug)]
-struct NextReference<Key, Value>
-where
-    Key: Send + Sync + Debug,
-    Value: Send + Sync,
-{
-    exact_match: RwLock<HashMap<Key, Arc<RequestBucket<Key, Value>>>>,
-    parameter: RwLock<Option<Arc<RequestBucket<Key, Value>>>>,
-}
-
-impl<Key, Value> NextReference<Key, Value>
-where
-    Key: Send + Sync + Debug,
-    Value: Send + Sync,
-{
-    fn new() -> Self {
-        NextReference {
-            exact_match: RwLock::new(HashMap::new()),
-            parameter: RwLock::new(None),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct RequestBucket<Key, Value>
+pub struct PrioritizedBucket<Key, Value>
 where
     Key: Send + Sync + Debug,
     Value: Send + Sync,
@@ -41,13 +21,13 @@ where
     parameter_value: RwLock<Option<Value>>,
 }
 
-impl<Key, Value> Default for RequestBucket<Key, Value>
+impl<Key, Value> Default for PrioritizedBucket<Key, Value>
 where
     Key: Send + Sync + Debug,
     Value: Send + Sync,
 {
     fn default() -> Self {
-        RequestBucket {
+        PrioritizedBucket {
             next: NextReference::new(),
             exact_labels: RwLock::new(HashMap::new()),
             parameter_value: RwLock::new(None),
@@ -56,7 +36,7 @@ where
 }
 
 #[async_trait]
-impl<Key, Value> TrieBucket<Key, Value> for RequestBucket<Key, Value>
+impl<Key, Value> TrieBucket<Key, Value> for PrioritizedBucket<Key, Value>
 where
     Value: Clone + Send + Sync,
     Key: ParametrizedMatcher + Send + Sync + Debug + Clone + Eq + Hash,
@@ -101,5 +81,28 @@ where
         } else {
             self.exact_labels.write().await.insert(key.clone(), value.clone());
         };
+    }
+}
+
+#[derive(Debug)]
+struct NextReference<Key, Value>
+where
+    Key: Send + Sync + Debug,
+    Value: Send + Sync,
+{
+    exact_match: RwLock<HashMap<Key, Arc<PrioritizedBucket<Key, Value>>>>,
+    parameter: RwLock<Option<Arc<PrioritizedBucket<Key, Value>>>>,
+}
+
+impl<Key, Value> NextReference<Key, Value>
+where
+    Key: Send + Sync + Debug,
+    Value: Send + Sync,
+{
+    fn new() -> Self {
+        NextReference {
+            exact_match: RwLock::new(HashMap::new()),
+            parameter: RwLock::new(None),
+        }
     }
 }
