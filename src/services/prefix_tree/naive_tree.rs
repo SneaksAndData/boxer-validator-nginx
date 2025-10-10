@@ -44,7 +44,7 @@ where
             }
         }
 
-        let last = keys.last().unwrap();
+        let last = keys.last().expect("keys should always have at least one key");
         current.get_value(last).await
     }
 }
@@ -57,6 +57,7 @@ where
     Value: Send + Sync + 'static,
 {
     async fn insert(&mut self, key: impl AsRef<[Key]> + Send, value: Value) {
+        let keys = key.as_ref();
         if key.as_ref().is_empty() {
             return;
         }
@@ -71,11 +72,15 @@ where
             current = current.child(k).await.unwrap();
         }
 
-        let keys = key.as_ref();
-        let last = keys.last().unwrap();
+        let last = keys.last().expect("keys should always have at least one key");
         current.set_value(value, last).await;
     }
     async fn delete(&self, key: impl AsRef<[Key]> + Send) -> Option<Value> {
+        let keys = key.as_ref();
+        if key.as_ref().is_empty() {
+            return None;
+        }
+
         let mut current = self.root.clone();
 
         for k in key.as_ref() {
@@ -85,12 +90,13 @@ where
             }
         }
 
-        let keys = key.as_ref();
-        let last = keys.last().unwrap();
+        let last = keys.last().expect("keys should always have at least one key");
         current.clear(last).await
     }
 }
 
+/// A trait to identify if a key is a parameter (e.g., in URL routing).
 pub trait ParametrizedMatcher {
+    /// Returns true if the key is a parameter.
     fn is_parameter(&self) -> bool;
 }
