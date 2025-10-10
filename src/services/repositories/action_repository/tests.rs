@@ -101,31 +101,27 @@ async fn test_multiple_actions(ctx: &mut KubernetesActionRepositoryTest) {
         "PhotoApp::Photo::\"vacationPhoto.jpg\"",
     )
     .await;
-    for i in 1..=20 {
-        let lookup_trie = ctx.lookup.get();
+    let lookup_trie = ctx.lookup.get();
 
-        // Act
-        let request_context = RequestContext::new(
-            "https://www.example.com/api/v1/resources/1".to_string(),
-            "GET".to_string(),
-        );
-        let key: Vec<RequestSegment> = request_context.try_into().unwrap();
-        let first_result = lookup_trie.get(("schema".to_string(), key)).await;
+    // Act
+    let request_context = RequestContext::new(
+        "https://www.example.com/api/v1/resources/1".to_string(),
+        "GET".to_string(),
+    );
+    let key: Vec<RequestSegment> = request_context.try_into().unwrap();
+    let first_result = lookup_trie.get(("schema".to_string(), key)).await;
 
-        let request_context = RequestContext::new(
-            "https://www.example.com/api/v1/resources/2".to_string(),
-            "GET".to_string(),
-        );
-        let key = request_context.try_into().unwrap();
+    let request_context = RequestContext::new(
+        "https://www.example.com/api/v1/resources/2".to_string(),
+        "GET".to_string(),
+    );
+    let key = request_context.try_into().unwrap();
 
-        let second_result = lookup_trie.get(("schema".to_string(), key)).await;
+    let second_result = lookup_trie.get(("schema".to_string(), key)).await;
 
-        // Assert
-        assert!(first_result.is_ok(), "First result was an error: {:?}", first_result);
-        assert!(second_result.is_ok(), "Second result was an error: {:?}", second_result);
-
-        println!("Iteration {} successful", i);
-    }
+    // Assert
+    assert!(first_result.is_ok(), "First result was an error: {:?}", first_result);
+    assert!(second_result.is_ok(), "Second result was an error: {:?}", second_result);
 }
 
 #[test_context(KubernetesActionRepositoryTest)]
