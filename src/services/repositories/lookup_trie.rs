@@ -1,5 +1,9 @@
 use log::{info, warn};
 
+use crate::services::prefix_tree::naive_tree::{NaiveTrie, ParametrizedMatcher};
+use crate::services::prefix_tree::trie_bucket::request_segment_bucket::PrioritizedBucket;
+use crate::services::prefix_tree::MutablePrefixTree;
+use crate::services::prefix_tree::PrefixTree;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
@@ -8,34 +12,38 @@ use cedar_policy::EntityUid;
 use futures::StreamExt;
 use kube::runtime::watcher::Error;
 use kube::Resource;
-use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::sync::Arc;
 use tokio::sync::RwLock;
-use trie_rs::map::Trie;
 
 pub mod backend;
 pub mod schema_bound_trie_repository;
 
-pub struct TrieData<Key> {
-    items: HashMap<Vec<Key>, EntityUid>,
-    maybe_trie: Option<Arc<Trie<Key, EntityUid>>>,
-}
-
-struct TrieRepositoryData<Key> {
-    pub rw_lock: RwLock<TrieData<Key>>,
-}
-
-impl<Key> TrieRepositoryData<Key>
+pub struct TrieData<Key, Value>
 where
-    Key: Ord,
+    Key: Debug + Send + Sync,
+    Value: Send + Sync,
+{
+    trie: NaiveTrie<PrioritizedBucket<Key, Value>>,
+}
+
+struct TrieRepositoryData<Key, Value>
+where
+    Key: Debug + Send + Sync,
+    Value: Send + Sync,
+{
+    pub rw_lock: RwLock<TrieData<Key, Value>>,
+}
+
+impl<Key, Value> TrieRepositoryData<Key, Value>
+where
+    Key: Ord + Send + Sync + Debug,
+    Value: Send + Sync,
 {
     pub fn new() -> Self {
         TrieRepositoryData {
             rw_lock: RwLock::new(TrieData {
-                items: HashMap::new(),
-                maybe_trie: None,
+                trie: NaiveTrie::<PrioritizedBucket<Key, Value>>::new(),
             }),
         }
     }
@@ -52,66 +60,61 @@ pub trait SchemaBoundResource {
 }
 
 #[async_trait]
-impl<Key> ReadOnlyRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key>
+impl<Key> ReadOnlyRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key, EntityUid>
 where
-    Key: Ord + Send + Sync + Debug + Hash,
+    Key: Hash + ParametrizedMatcher + Sync + Send + Debug + Clone + Eq,
 {
     type ReadError = anyhow::Error;
 
     async fn get(&self, key: Vec<Key>) -> Result<EntityUid, Self::ReadError> {
         let guard = self.rw_lock.read().await;
         guard
-            .maybe_trie
-            .clone()
-            .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
+            .trie
+            .get(&key)
+            .await
+            .map(|e| e.clone())
             .ok_or(anyhow!("Entity not found: {:?}", key))
     }
 }
 
 #[async_trait]
-impl<Key> UpsertRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key>
+impl<Key> UpsertRepository<Vec<Key>, EntityUid> for TrieRepositoryData<Key, EntityUid>
 where
-    Key: Ord + Send + Sync + Debug + Clone + Hash,
+    Key: Ord + Send + Sync + Debug + Clone + Hash + ParametrizedMatcher,
 {
     type Error = anyhow::Error;
 
     async fn upsert(&self, key: Vec<Key>, entity: EntityUid) -> Result<EntityUid, Self::Error> {
         let mut guard = self.rw_lock.write().await;
-        guard.items.insert(key, entity.clone());
-        guard.maybe_trie = Some(Arc::new(Trie::from_iter(guard.items.clone())));
+        guard.trie.insert(key, entity.clone()).await;
         Ok(entity)
     }
 
     async fn exists(&self, key: Vec<Key>) -> Result<bool, Self::Error> {
         let guard = self.rw_lock.read().await;
-        Ok(guard
-            .maybe_trie
-            .clone()
-            .and_then(|trie| trie.exact_match(&key).map(|e| e.clone()))
-            .is_some())
+        Ok(guard.trie.get(key).await.is_some())
     }
 }
 
 #[async_trait]
-impl<Key> CanDelete<Vec<Key>, EntityUid> for TrieRepositoryData<Key>
+impl<Key> CanDelete<Vec<Key>, EntityUid> for TrieRepositoryData<Key, EntityUid>
 where
-    Key: Ord + Send + Sync + Debug + Clone + Hash,
+    Key: Ord + Send + Sync + Debug + Clone + Hash + ParametrizedMatcher,
 {
     type DeleteError = anyhow::Error;
 
     async fn delete(&self, key: Vec<Key>) -> Result<(), Self::DeleteError> {
-        let mut guard = self.rw_lock.write().await;
-        guard.items.remove(&key);
-        guard.maybe_trie = Some(Arc::new(Trie::from_iter(guard.items.clone())));
+        let guard = self.rw_lock.write().await;
+        guard.trie.delete(key).await;
         Ok(())
     }
 }
 
 #[async_trait]
-impl<R, K> ResourceUpdateHandler<R> for TrieRepositoryData<K>
+impl<R, K> ResourceUpdateHandler<R> for TrieRepositoryData<K, EntityUid>
 where
     R: EntityCollectionResource<K> + Debug + Resource + Send + Sync + 'static,
-    K: Ord + Send + Sync + Debug + Clone + Hash + 'static,
+    K: Ord + Send + Sync + Debug + Clone + Hash + 'static + ParametrizedMatcher,
 {
     async fn handle_update(&self, event: Result<R, Error>) -> () {
         match event {
