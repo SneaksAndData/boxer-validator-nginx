@@ -104,7 +104,7 @@ where
     type DeleteError = anyhow::Error;
 
     async fn delete(&self, key: Vec<Key>) -> Result<(), Self::DeleteError> {
-        let mut guard = self.rw_lock.write().await;
+        let guard = self.rw_lock.write().await;
         guard.trie.delete(key).await;
         Ok(())
     }
