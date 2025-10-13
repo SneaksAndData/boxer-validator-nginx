@@ -1,6 +1,7 @@
 use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource, TrieRepositoryData};
 use anyhow::anyhow;
 
+use crate::services::prefix_tree::naive_tree::ParametrizedMatcher;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
@@ -15,14 +16,14 @@ use tokio::sync::RwLock;
 
 pub struct SchemaBoundedTrieRepositoryData<Key>
 where
-    Key: Ord,
+    Key: Ord + Debug + Send + Sync,
 {
-    buckets: RwLock<HashMap<String, TrieRepositoryData<Key>>>,
+    buckets: RwLock<HashMap<String, TrieRepositoryData<Key, EntityUid>>>,
 }
 
 impl<Key> SchemaBoundedTrieRepositoryData<Key>
 where
-    Key: Ord,
+    Key: Ord + Debug + Send + Sync,
 {
     pub fn new() -> Self {
         SchemaBoundedTrieRepositoryData {
@@ -34,7 +35,7 @@ where
 #[async_trait]
 impl<Key> ReadOnlyRepository<(String, Vec<Key>), EntityUid> for SchemaBoundedTrieRepositoryData<Key>
 where
-    Key: Ord + Send + Sync + Debug + Hash + 'static,
+    Key: Ord + Send + Sync + Debug + Hash + 'static + ParametrizedMatcher + Clone,
 {
     type ReadError = anyhow::Error;
 
@@ -52,7 +53,7 @@ where
 #[async_trait]
 impl<R, Key> ResourceUpdateHandler<R> for SchemaBoundedTrieRepositoryData<Key>
 where
-    Key: Ord + Send + Sync + Debug + Hash + Clone + 'static,
+    Key: Ord + Send + Sync + Debug + Hash + Clone + 'static + ParametrizedMatcher,
     R: SchemaBoundResource + Resource + EntityCollectionResource<Key> + Send + Sync + Debug + 'static,
 {
     async fn handle_update(&self, result: Result<R, watcher::Error>) -> () {

@@ -1,9 +1,9 @@
 use crate::models::request_context::RequestContext;
-use std::cmp::Ordering;
+use crate::services::prefix_tree::naive_tree::ParametrizedMatcher;
 use strum_macros::Display;
 use url::Url;
 
-#[derive(Debug, Clone, Display, Hash)]
+#[derive(Debug, Clone, Display, Hash, Ord, PartialOrd, Eq, PartialEq)]
 pub enum PathSegment {
     Static(String),
     Parameter,
@@ -25,30 +25,8 @@ impl TryFrom<RequestContext> for Vec<PathSegment> {
     }
 }
 
-impl Ord for PathSegment {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match self {
-            PathSegment::Static(s1) => match other {
-                PathSegment::Static(s2) => s1.cmp(s2),
-                PathSegment::Parameter => Ordering::Equal,
-            },
-            PathSegment::Parameter => match other {
-                PathSegment::Static(_) => Ordering::Equal,
-                PathSegment::Parameter => Ordering::Equal,
-            },
-        }
+impl ParametrizedMatcher for PathSegment {
+    fn is_parameter(&self) -> bool {
+        matches!(self, PathSegment::Parameter)
     }
 }
-
-impl PartialOrd for PathSegment {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl PartialEq for PathSegment {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-
-impl Eq for PathSegment {}

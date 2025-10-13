@@ -1,6 +1,7 @@
 use crate::services::backends::kubernetes::KubernetesBackend;
 use crate::services::backends::BackendBuilder;
 use crate::services::configuration::models::KubernetesBackendSettings;
+use crate::services::prefix_tree::naive_tree::ParametrizedMatcher;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
 use crate::services::repositories::lookup_trie::schema_bound_trie_repository::SchemaBoundedTrieRepositoryData;
@@ -179,7 +180,7 @@ impl BackendBuilder {
         Arc<ReadOnlyRepositoryBackend<SchemaBoundedTrieRepositoryData<K>, R, (String, Vec<K>), EntityUid>>,
     >
     where
-        K: Debug + Ord + Clone + Send + Sync + Hash + 'static,
+        K: Debug + Ord + Clone + Send + Sync + Hash + 'static + ParametrizedMatcher,
         R: kube::Resource<Scope = NamespaceResourceScope>
             + SoftDeleteResource
             + EntityCollectionResource<K>
