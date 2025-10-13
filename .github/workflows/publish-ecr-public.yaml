@@ -55,14 +55,14 @@ jobs:
         id: aws_secrets
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v5.1.0
         with:
           aws-access-key-id: ${{ env.ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.ACCESS_KEY }}
           aws-region: us-east-1
 
       - name: Log in to the GitHub Container Registry
-        uses: docker/login-action@v3.5.0
+        uses: docker/login-action@v3.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
