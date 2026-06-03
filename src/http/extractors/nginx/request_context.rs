@@ -28,7 +28,7 @@ impl FromRequest for RequestContext {
 
 fn extract_headers(req: &HttpRequest) -> anyhow::Result<(String, String)> {
     let original_url = extract_header(req, ORIGINAL_URL_NGINX_HEADER, ORIGINAL_URL_TRAEFIK_HEADER)?;
-    let original_method = extract_header(req, ORIGINAL_METHOD_NGINX_HEADER, ORIGINAL_METHOD_TRAEFIK_HEADER)?;
+    let original_method = extract_url(req, ORIGINAL_METHOD_NGINX_HEADER)?;
     Ok((original_url, original_method))
 }
 
@@ -37,13 +37,26 @@ fn extract_header(req: &HttpRequest, header_name: &'static str, fallback: &'stat
     let fallback_header = req.headers().get(fallback);
     let result = match header {
         Some(value) => Some(value.to_str()?.to_string()),
+        None => match fallback_header {
+            Some(value) => Some(value.to_str()?.to_string()),
+            None => None,
+        },
+    };
+
+    Ok(result.ok_or_else(|| anyhow::anyhow!("Missing required header: {header_name} or {fallback} in request"))?)
+}
+
+fn extract_url(req: &HttpRequest, header_name: &'static str) -> anyhow::Result<String> {
+    let header = req.headers().get(header_name);
+    let result = match header {
+        Some(value) => Some(value.to_str()?.to_string()),
         None => match extract_traefik_headers(req) {
             Some(value) => Some(value),
             None => None,
         },
     };
 
-    Ok(result.ok_or_else(|| anyhow::anyhow!("Missing required header: {header_name} or {fallback} in request"))?)
+    Ok(result.ok_or_else(|| anyhow::anyhow!("Missing required headers"))?)
 }
 
 fn extract_traefik_headers(req: &HttpRequest) -> Option<String> {
