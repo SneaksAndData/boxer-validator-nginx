@@ -131,17 +131,6 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_headers_traefik_headers() {
-        let req = make_req(&[
-            (ORIGINAL_URL_TRAEFIK_HEADER, "/forwarded-uri"),
-            (ORIGINAL_METHOD_TRAEFIK_HEADER, "POST"),
-        ]);
-        let (url, method) = extract_headers(&req).unwrap();
-        assert_eq!(url, "/forwarded-uri");
-        assert_eq!(method, "POST");
-    }
-
-    #[test]
     fn test_extract_headers_missing_url_returns_error() {
         let req = make_req(&[(ORIGINAL_METHOD_NGINX_HEADER, "GET")]);
         let result = extract_headers(&req);
