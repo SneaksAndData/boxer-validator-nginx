@@ -27,8 +27,8 @@ impl FromRequest for RequestContext {
 }
 
 fn extract_headers(req: &HttpRequest) -> anyhow::Result<(String, String)> {
-    let original_url = extract_header(req, ORIGINAL_URL_NGINX_HEADER, ORIGINAL_URL_TRAEFIK_HEADER)?;
-    let original_method = extract_url(req, ORIGINAL_METHOD_NGINX_HEADER)?;
+    let original_url = extract_url(req, ORIGINAL_URL_NGINX_HEADER)?;
+    let original_method = extract_header(req, ORIGINAL_METHOD_NGINX_HEADER, ORIGINAL_METHOD_TRAEFIK_HEADER)?;
     Ok((original_url, original_method))
 }
 
