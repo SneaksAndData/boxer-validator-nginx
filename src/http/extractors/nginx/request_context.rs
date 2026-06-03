@@ -30,15 +30,17 @@ fn extract_headers(req: &HttpRequest) -> anyhow::Result<(String, String)> {
 }
 
 fn extract_header(req: &HttpRequest, header_name: &'static str, fallback: &'static str) -> anyhow::Result<String> {
-    let ctx = format!("{0}|{1}", header_name, fallback);
-    let header_value = req
-        .headers()
-        .get(header_name)
-        .or_else(|| req.headers().get(fallback))
-        .ok_or(anyhow::Error::msg("Missing original URL header").context(ctx))?
-        .to_str()?
-        .to_owned();
-    Ok(header_value)
+    let header = req.headers().get(header_name);
+    let fallback_header = req.headers().get(fallback);
+    let result = match header {
+        Some(value) => Some(value.to_str()?.to_string()),
+        None => match fallback_header {
+            Some(value) => Some(value.to_str()?.to_string()),
+            None => None,
+        },
+    };
+
+    Ok(result.ok_or_else(|| anyhow::anyhow!("Missing required header: {header_name} or {fallback} in request"))?)
 }
 
 #[cfg(test)]
