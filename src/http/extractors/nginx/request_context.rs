@@ -5,9 +5,12 @@ use boxer_core::services::observability::open_telemetry::tracing::{start_trace, 
 use futures_util::future::{ready, Ready};
 
 const ORIGINAL_URL_NGINX_HEADER: &str = "X-Original-URL";
-const ORIGINAL_URL_TRAEFIK_HEADER: &str = "X-Forwarded-Uri";
 const ORIGINAL_METHOD_NGINX_HEADER: &str = "X-Original-Method";
+
 const ORIGINAL_METHOD_TRAEFIK_HEADER: &str = "X-Forwarded-Method";
+const ORIGINAL_PROTOCOL_TRAEFIK_HEADER: &str = "X-Forwarded-Proto";
+const ORIGINAL_HOST_TRAEFIK_HEADER: &str = "X-Forwarded-Host";
+const ORIGINAL_URL_TRAEFIK_HEADER: &str = "X-Forwarded-Uri";
 
 impl FromRequest for RequestContext {
     type Error = actix_web::Error;
@@ -34,13 +37,24 @@ fn extract_header(req: &HttpRequest, header_name: &'static str, fallback: &'stat
     let fallback_header = req.headers().get(fallback);
     let result = match header {
         Some(value) => Some(value.to_str()?.to_string()),
-        None => match fallback_header {
-            Some(value) => Some(value.to_str()?.to_string()),
+        None => match extract_traefik_headers(req) {
+            Some(value) => Some(value),
             None => None,
         },
     };
 
     Ok(result.ok_or_else(|| anyhow::anyhow!("Missing required header: {header_name} or {fallback} in request"))?)
+}
+
+fn extract_traefik_headers(req: &HttpRequest) -> Option<String> {
+    let headers = req.headers();
+
+    let proto = headers.get(ORIGINAL_PROTOCOL_TRAEFIK_HEADER)?.to_str().ok()?;
+    let host = headers.get(ORIGINAL_HOST_TRAEFIK_HEADER)?.to_str().ok()?;
+    let uri = headers.get(ORIGINAL_URL_TRAEFIK_HEADER)?.to_str().ok()?;
+
+    let uri = uri.trim_start_matches('/');
+    Some(format!("{proto}://{host}/{uri}"))
 }
 
 #[cfg(test)]
