@@ -4,8 +4,10 @@ use actix_web::{FromRequest, HttpRequest};
 use boxer_core::services::observability::open_telemetry::tracing::{start_trace, ErrorExt};
 use futures_util::future::{ready, Ready};
 
-const ORIGINAL_URL_HEADER: &str = "X-Original-URL";
-const ORIGINAL_METHOD_HEADER: &str = "X-Original-Method";
+const ORIGINAL_URL_NGINX_HEADER: &str = "X-Original-URL";
+const ORIGINAL_URL_TRAEFIK_HEADER: &str = "X-Forwarded-Uri";
+const ORIGINAL_METHOD_NGINX_HEADER: &str = "X-Original-Method";
+const ORIGINAL_METHOD_TRAEFIK_HEADER: &str = "X-Forwarded-Method";
 
 impl FromRequest for RequestContext {
     type Error = actix_web::Error;
@@ -22,15 +24,16 @@ impl FromRequest for RequestContext {
 }
 
 fn extract_headers(req: &HttpRequest) -> anyhow::Result<(String, String)> {
-    let original_url = extract_header(req, ORIGINAL_URL_HEADER)?;
-    let original_method = extract_header(req, ORIGINAL_METHOD_HEADER)?;
+    let original_url = extract_header(req, ORIGINAL_URL_NGINX_HEADER, ORIGINAL_URL_TRAEFIK_HEADER)?;
+    let original_method = extract_header(req, ORIGINAL_METHOD_NGINX_HEADER, ORIGINAL_METHOD_TRAEFIK_HEADER)?;
     Ok((original_url, original_method))
 }
 
-fn extract_header(req: &HttpRequest, header_name: &'static str) -> anyhow::Result<String> {
+fn extract_header(req: &HttpRequest, header_name: &'static str, fallback: &'static str) -> anyhow::Result<String> {
     let header_value = req
         .headers()
         .get(header_name)
+        .or_else(|| req.headers().get(fallback))
         .ok_or(anyhow::Error::msg("Missing original URL header").context(header_name))?
         .to_str()?
         .to_owned();
