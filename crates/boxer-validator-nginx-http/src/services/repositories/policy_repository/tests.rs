@@ -4,17 +4,17 @@ use crate::services::repositories::policy_repository;
 use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
 use crate::services::repositories::policy_repository::read_only::PolicyRepositoryData;
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcherRunner;
-use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
 use boxer_core::services::service_provider::ServiceProvider;
 use boxer_core::testing::api_extensions::WaitForResource;
-use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::SpinLockKubernetesResourceManagerTestContext;
+use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::GenericKubernetesResourceManagerTestContext;
 use cedar_policy::PolicySet;
 use kube::Api;
 use log::LevelFilter;
 use std::sync::Arc;
 use std::time::Duration;
-use test_context::{AsyncTestContext, test_context};
+use test_context::{test_context, AsyncTestContext};
 
 const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(10);
 struct KubernetesSchemaRepositoryTest {
@@ -25,17 +25,18 @@ struct KubernetesSchemaRepositoryTest {
 }
 impl AsyncTestContext for KubernetesSchemaRepositoryTest {
     async fn setup() -> KubernetesSchemaRepositoryTest {
-        let parent = SpinLockKubernetesResourceManagerTestContext::setup().await;
+        let parent = GenericKubernetesResourceManagerTestContext::setup().await;
 
         let lookup_trie = policy_repository::read_only::new();
         let mut readonly_repository = ReadOnlyRepositoryBackend::new(lookup_trie.clone(), lookup_trie);
         readonly_repository.start(parent.config.clone()).await.unwrap();
         let readonly_repository = Arc::new(readonly_repository);
 
-        let readwrite_repository = Arc::new(KubernetesRepository {
-            resource_manager: parent.manager,
-            operation_timeout: parent.config.operation_timeout,
-        });
+        let readwrite_repository = Arc::new(
+            KubernetesRepository::start(parent.manager, parent.config.operation_timeout.clone())
+                .await
+                .unwrap(),
+        );
 
         Self {
             readonly_repository,

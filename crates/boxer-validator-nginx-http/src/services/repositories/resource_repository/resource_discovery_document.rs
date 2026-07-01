@@ -4,8 +4,8 @@ use crate::http::controllers::v1::resource_set::models::{
 use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource};
 use crate::services::repositories::models::path_segment::PathSegment;
 use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
+use boxer_core::services::backends::kubernetes::kubernetes_repository::soft_delete_resource::SoftDeleteResource;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
-use boxer_core::services::backends::kubernetes::repositories::SoftDeleteResource;
 use cedar_policy::EntityUid;
 use futures::Stream;
 use futures::StreamExt;

@@ -2,7 +2,7 @@ use crate::services::base::schema_provider::SchemaProvider;
 use anyhow::{Error, Result};
 use async_trait::async_trait;
 use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
-use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use cedar_policy::Schema;
 use log::debug;
 use std::sync::Arc;

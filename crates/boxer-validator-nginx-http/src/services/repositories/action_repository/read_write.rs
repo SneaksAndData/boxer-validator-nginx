@@ -1,7 +1,8 @@
 use crate::http::controllers::v1::action_set::models::SchemaBoundActionSetRegistration;
 use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
-use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::GenericKubernetesResourceManager;
 use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
 
 pub type ActionDataRepository = dyn UpsertRepositoryWithDelete<
@@ -13,6 +14,6 @@ pub type ActionDataRepository = dyn UpsertRepositoryWithDelete<
     >;
 
 impl UpsertRepositoryWithDelete<(String, String), SchemaBoundActionSetRegistration>
-    for KubernetesRepository<ActionDiscoveryDocument>
+    for KubernetesRepository<ActionDiscoveryDocument, GenericKubernetesResourceManager<ActionDiscoveryDocument>>
 {
 }
