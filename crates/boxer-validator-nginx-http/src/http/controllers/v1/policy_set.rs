@@ -2,10 +2,10 @@ pub mod models;
 
 use crate::http::controllers::v1::policy_set::models::PolicySetRegistration;
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
+use actix_web::Result;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
-use actix_web::Result;
-use actix_web::{delete, get, post, web, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder, delete, get, post, web};
 use std::sync::Arc;
 
 #[utoipa::path(context_path = "/policy_set/",

@@ -6,7 +6,7 @@ use crate::services::cedar_validation_service::CedarValidationService;
 use actix_web::http::StatusCode;
 use actix_web::middleware::Condition;
 use actix_web::web::Data;
-use actix_web::{get, web, HttpResponse};
+use actix_web::{HttpResponse, get, web};
 use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
 use boxer_core::services::audit::AuditService;
 use log::{error, info};

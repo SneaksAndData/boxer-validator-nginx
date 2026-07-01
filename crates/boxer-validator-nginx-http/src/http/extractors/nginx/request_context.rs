@@ -1,8 +1,8 @@
 use crate::models::request_context::RequestContext;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{FromRequest, HttpRequest};
-use boxer_core::services::observability::open_telemetry::tracing::{start_trace, ErrorExt};
-use futures_util::future::{ready, Ready};
+use boxer_core::services::observability::open_telemetry::tracing::{ErrorExt, start_trace};
+use futures_util::future::{Ready, ready};
 
 const ORIGINAL_URL_NGINX_HEADER: &str = "X-Original-URL";
 const ORIGINAL_METHOD_NGINX_HEADER: &str = "X-Original-Method";

@@ -5,12 +5,12 @@ use boxer_core::services::backends::kubernetes::repositories::KubernetesReposito
 use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
 
 pub type ResourceDiscoveryDocumentRepository = dyn UpsertRepositoryWithDelete<
-    (String, String),
-    SchemaBoundResourceSetRegistration,
-    DeleteError = Status,
-    Error = Status,
-    ReadError = Status,
->;
+        (String, String),
+        SchemaBoundResourceSetRegistration,
+        DeleteError = Status,
+        Error = Status,
+        ReadError = Status,
+    >;
 
 impl UpsertRepositoryWithDelete<(String, String), SchemaBoundResourceSetRegistration>
     for KubernetesRepository<ResourceDiscoveryDocument>

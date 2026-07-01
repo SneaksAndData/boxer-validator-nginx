@@ -1,12 +1,12 @@
 use crate::models::token::BoxerToken;
 use crate::services::authorizer::Authorizer;
-use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
+use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready};
 use actix_web::error::ErrorUnauthorized;
 use actix_web::{Error, HttpMessage};
 use boxer_core::contracts::dynamic_claims_collection::DynamicClaimsCollection;
-use boxer_core::services::audit::events::token_validation_event::TokenValidationEvent;
 use boxer_core::services::audit::AuditService;
-use boxer_core::services::observability::open_telemetry::tracing::{start_trace, ErrorExt};
+use boxer_core::services::audit::events::token_validation_event::TokenValidationEvent;
+use boxer_core::services::observability::open_telemetry::tracing::{ErrorExt, start_trace};
 use collection_macros::hashset;
 use futures_util::future::LocalBoxFuture;
 use log::{debug, error};
