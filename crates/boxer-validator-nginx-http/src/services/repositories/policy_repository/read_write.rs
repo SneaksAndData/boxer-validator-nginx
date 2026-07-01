@@ -1,8 +1,8 @@
 use crate::http::controllers::v1::policy_set::models::SchemaBoundPolicySetRegistration;
 use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::GenericKubernetesResourceManager;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
 
 pub type PolicyDataRepository = dyn UpsertRepositoryWithDelete<

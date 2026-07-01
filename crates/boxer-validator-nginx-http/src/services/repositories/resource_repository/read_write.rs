@@ -1,8 +1,8 @@
 use crate::http::controllers::v1::resource_set::models::SchemaBoundResourceSetRegistration;
 use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
-use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::GenericKubernetesResourceManager;
+use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
 use boxer_core::services::base::upsert_repository::UpsertRepositoryWithDelete;
 
 pub type ResourceDiscoveryDocumentRepository = dyn UpsertRepositoryWithDelete<
