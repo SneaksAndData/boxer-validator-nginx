@@ -1,81 +1,36 @@
-mod http;
-mod models;
-mod services;
+pub mod http;
+pub mod models;
+pub mod services;
 
 use crate::http::controllers::v1;
-use crate::http::openapi::ApiDoc;
 use crate::services::authorizer::Authorizer;
-use crate::services::backends;
 use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::schema_provider::KubernetesSchemaProvider;
+use actix_web::dev::Server;
 use actix_web::middleware::{from_fn, Logger};
 use actix_web::{web, App, HttpServer};
-use anyhow::Result;
 use boxer_core::http::middleware::logging::custom_error_logging;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
-use boxer_core::services::backends::BackendConfiguration;
-use boxer_core::services::observability::composed_logger::ComposedLogger;
-use boxer_core::services::observability::open_telemetry;
-use boxer_core::services::observability::open_telemetry::metrics::init_metrics;
 use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
-use boxer_core::services::observability::open_telemetry::tracing::init_tracer;
 use boxer_core::services::service_provider::ServiceProvider;
-use env_filter::Builder;
+use http::openapi::ApiDoc;
 use log::info;
 use opentelemetry_instrumentation_actix_web::RequestTracing;
+use services::backends::kubernetes::KubernetesBackend;
 use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-const ROOT_METRICS_NAMESPACE: &str = "boxer-validator";
-
-#[actix_web::main]
-async fn main() -> Result<()> {
-    let mut builder = Builder::new();
-
-    let filter = if let Ok(ref filter) = std::env::var("RUST_LOG") {
-        builder.parse(filter);
-        builder.build()
-    } else {
-        Builder::default().parse("info").build()
-    };
-
-    let cm = AppSettings::new()?;
-
-    let logger = ComposedLogger::new();
-    let logger = {
-        if cm.opentelemetry.log_settings.enabled {
-            logger.with_logger(open_telemetry::logging::init_logger(cm.deploy_environment.clone())?)
-        } else {
-            logger
-        }
-    };
-
-    logger
-        .with_logger(Box::new(env_logger::Builder::from_default_env().build()))
-        .with_global_level(filter)
-        .init()?;
-
-    info!("Configuration manager started");
-
-    if cm.opentelemetry.tracing_settings.enabled {
-        info!("Tracing is enabled, starting tracer...");
-        init_tracer()?;
-    }
-
-    if cm.opentelemetry.metrics_settings.enabled {
-        info!("Metrics is enabled, starting metrics...");
-        init_metrics()?;
-    }
-    let current_backend = backends::new()
-        .configure(&cm.backend.kubernetes, cm.instance_name.clone())
-        .await?;
-
+pub fn start_api_server(
+    current_backend: Arc<KubernetesBackend>,
+    app_settings: AppSettings,
+    root_metrics_namespace: &'static str,
+) -> Result<Server, anyhow::Error> {
     let schema_provider = Arc::new(KubernetesSchemaProvider::new(current_backend.get()));
     let action_repository = current_backend.get();
     let resource_repository = current_backend.get();
@@ -87,7 +42,7 @@ async fn main() -> Result<()> {
         resource_repository,
         policy_repository,
         audit_service.clone(),
-        MetricsProvider::new(ROOT_METRICS_NAMESPACE, cm.instance_name.clone()),
+        MetricsProvider::new(root_metrics_namespace, app_settings.instance_name.clone()),
     ));
 
     let action_repository: Arc<ActionDataRepository> = current_backend.get();
@@ -98,9 +53,16 @@ async fn main() -> Result<()> {
 
     let schema_repository: Arc<SchemaRepository> = current_backend.get();
 
-    info!("listening on {}:{}", &cm.listen_address.ip(), &cm.listen_address.port());
-    let authorizer = Arc::new(Authorizer::new(cm.get_signatures()?, cm.token_settings));
-    HttpServer::new(move || {
+    info!(
+        "listening on {}:{}",
+        &app_settings.listen_address.ip(),
+        &app_settings.listen_address.port()
+    );
+    let authorizer = Arc::new(Authorizer::new(
+        app_settings.get_signatures()?,
+        app_settings.token_settings,
+    ));
+    let http_server_builder = HttpServer::new(move || {
         App::new()
             .wrap(RequestTracing::new())
             .wrap(Logger::default())
@@ -115,8 +77,7 @@ async fn main() -> Result<()> {
             .service(v1::urls(production_mode, authorizer.clone(), audit_service.clone()))
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
-    .bind(cm.listen_address)?
-    .run()
-    .await
-    .map_err(anyhow::Error::from)
+    .bind(app_settings.listen_address)?;
+
+    Ok(http_server_builder.run())
 }

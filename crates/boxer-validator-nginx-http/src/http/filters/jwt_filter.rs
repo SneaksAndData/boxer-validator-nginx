@@ -126,7 +126,8 @@ where
             debug!("Token validated successfully");
 
             match validation_result {
-                Err(_) => {
+                Err(err) => {
+                    error!("Token validation result: {:?}", err);
                     return Err(ErrorUnauthorized("Unauthorized"));
                 }
                 Ok(claims) => {
