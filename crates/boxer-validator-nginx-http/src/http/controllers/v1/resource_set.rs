@@ -1,0 +1,71 @@
+pub mod models;
+
+use crate::http::controllers::v1::resource_set::models::ResourceSetRegistration;
+use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
+use actix_web::dev::HttpServiceFactory;
+use actix_web::web::{Data, Json, Path};
+use actix_web::{HttpResponse, Responder, Result, delete, get, post, web};
+use std::sync::Arc;
+
+#[utoipa::path(context_path = "/resource_set/",
+    responses(
+        (status = OK)
+    ),
+    request_body = ResourceSetRegistration,
+    security(
+        ("internal" = [])
+    )
+)]
+#[post("{schema}/{id}")]
+async fn post_resource_set(
+    id: Path<(String, String)>,
+    request: Json<ResourceSetRegistration>,
+    data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
+) -> Result<impl Responder> {
+    let (schema, id) = id.into_inner();
+    data.upsert((schema.clone(), id), request.into_inner().with_schema(schema))
+        .await?;
+    Ok(HttpResponse::Ok().finish())
+}
+
+#[utoipa::path(context_path = "/resource_set/",
+    responses(
+        (status = OK, body = ResourceSetRegistration),
+        (status = NOT_FOUND, description = "Resource set does not exist")
+    ),
+    security(
+        ("internal" = [])
+    )
+)]
+#[get("{schema}/{id}")]
+async fn get_resource_set(
+    id: Path<(String, String)>,
+    data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
+) -> Result<impl Responder> {
+    let resource_set: ResourceSetRegistration = data.get(id.into_inner()).await?.into();
+    Ok(Json(resource_set))
+}
+
+#[utoipa::path(context_path = "/resource_set/",
+    responses(
+        (status = OK)
+    ),
+    security(
+        ("internal" = [])
+    )
+)]
+#[delete("{schema}/{id}")]
+async fn delete_resource_set(
+    id: Path<(String, String)>,
+    data: Data<Arc<ResourceDiscoveryDocumentRepository>>,
+) -> Result<impl Responder> {
+    data.delete(id.into_inner()).await?;
+    Ok(HttpResponse::Ok().finish())
+}
+
+pub fn crud() -> impl HttpServiceFactory {
+    web::scope("/resource_set")
+        .service(post_resource_set)
+        .service(get_resource_set)
+        .service(delete_resource_set)
+}
