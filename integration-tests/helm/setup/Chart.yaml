@@ -8,3 +8,7 @@ dependencies:
   - name: boxer-crd
     version: "v0.0.5"
     repository: "oci://ghcr.io/sneaksanddata/helm"
+  - name: boxer-issuer
+    version: "v0.0.15"
+    repository: "oci://ghcr.io/sneaksanddata/helm"
+
