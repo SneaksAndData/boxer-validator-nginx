@@ -1,4 +1,3 @@
-use crate::MockAuditWriter;
 use actix_web::dev::ServerHandle;
 use anyhow::{anyhow, Result};
 use boxer_core::services::backends::BackendConfiguration;
@@ -17,7 +16,6 @@ use kube::{Api, Client};
 use rstest::fixture;
 use serde_json::{from_str, Value};
 use std::net::SocketAddr;
-use std::sync::Arc;
 use tokio::task::JoinHandle;
 
 #[fixture]
@@ -112,10 +110,6 @@ pub async fn with_test_server() -> TestServerHandles {
         .await
         .expect("Failed to configure Kubernetes backend");
 
-    let mut audit_writer = MockAuditWriter::new();
-    audit_writer.expect_write().returning(|_event| ());
-
-    let audit_writer = Arc::new(audit_writer);
     let server = start_api_server(current_backend, app_settings, "test").expect("Start api server failed");
 
     let handle = server.handle();
