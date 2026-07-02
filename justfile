@@ -1,7 +1,7 @@
 default:
     @just --list
 
-up: start-kind-cluster build-deps token-secret integration-tests keycloak ingress-controller wait-for-services ingress configure-keycloak bootstrap
+up: start-kind-cluster build-deps integration-tests keycloak ingress-controller wait-for-services ingress configure-keycloak bootstrap
 
 fresh: stop up
 
@@ -22,8 +22,8 @@ key := `openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
 integration-tests:
     helm upgrade --install --namespace default integration-tests integration-tests/helm/setup \
       --set-literal 'boxer-issuer.issuer.config.tokenSettings.key={{ key }}' \
-      --set 'boxer-issuer.issuer.config.config.listenIp=0.0.0.0' \
-      --set 'boxer-issuer.issuer.config.config.backend.kubernetes.resourceOwnerLabel=application/boxer-issuer' \
+      --set 'boxer-issuer.issuer.config.listenIp=0.0.0.0' \
+      --set 'boxer-issuer.issuer.config.backend.kubernetes.resourceOwnerLabel=application/boxer-issuer' \
       --set 'boxer-issuer.issuer.replicas=1'
 
 keycloak:
@@ -45,9 +45,6 @@ ingress:
     sleep 10
     # Create ingress rules for boxer-issuer and boxer-validator-nginx
     kubectl apply -f ./integration-tests/ingress.yaml
-
-token-secret:
-    kubectl create secret generic boxer-issuer-token-settings --from-literal=BOXER__TOKEN_SETTINGS__KEY='{{ key }}'
 
 configure-keycloak:
     # Wait a bit for Keycloak to be ready to accept admin commands

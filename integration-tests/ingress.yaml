@@ -11,10 +11,10 @@ spec:
     - http:
         paths:
           - pathType: ImplementationSpecific
-            path: /validator(/|$)(.*)
+            path: /issuer(/|$)(.*)
             backend:
               service:
-                name: boxer-validator-nginx
+                name: boxer-issuer
                 port:
                   number: 80
 ---
