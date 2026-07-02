@@ -1,5 +1,5 @@
 use actix_web::dev::ServerHandle;
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use boxer_core::services::backends::BackendConfiguration;
 use boxer_core::services::observability::open_telemetry::logging::settings::LogSettings;
 use boxer_core::services::observability::open_telemetry::metrics::settings::MetricsSettings;
@@ -14,7 +14,7 @@ use boxer_validator_nginx_http::start_api_server;
 use k8s_openapi::api::core::v1::Secret;
 use kube::{Api, Client};
 use rstest::fixture;
-use serde_json::{from_str, Value};
+use serde_json::{Value, from_str};
 use std::net::SocketAddr;
 use tokio::task::JoinHandle;
 
