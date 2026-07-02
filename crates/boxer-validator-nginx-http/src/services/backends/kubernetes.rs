@@ -13,7 +13,7 @@ use crate::services::repositories::resource_repository::ResourceReadOnlyReposito
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
 use boxer_core::services::backends::Backend;
-use boxer_core::services::backends::kubernetes::repositories::schema_repository::SchemaRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::service_provider::ServiceProvider;
 use cedar_policy::{EntityUid, PolicySet};
 use std::sync::Arc;

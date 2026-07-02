@@ -4,12 +4,12 @@ use crate::models::request_context::RequestContext;
 use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcherRunner;
-use boxer_core::services::backends::kubernetes::repositories::KubernetesRepository;
 use boxer_core::services::service_provider::ServiceProvider;
 use boxer_core::testing::api_extensions::{WaitForDelete, WaitForResource};
-use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::SpinLockKubernetesResourceManagerTestContext;
+use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::GenericKubernetesResourceManagerTestContext;
 use cedar_policy::EntityUid;
 use kube::Api;
 use std::sync::Arc;
@@ -32,7 +32,7 @@ struct KubernetesActionRepositoryTest {
 
 impl AsyncTestContext for KubernetesActionRepositoryTest {
     async fn setup() -> Self {
-        let parent = SpinLockKubernetesResourceManagerTestContext::setup().await;
+        let parent = GenericKubernetesResourceManagerTestContext::setup().await;
         let owner_mark = parent.config.owner_mark.clone();
         let operation_timeout = parent.config.operation_timeout.clone();
         let config = KubernetesResourceManagerConfig {
@@ -44,10 +44,12 @@ impl AsyncTestContext for KubernetesActionRepositoryTest {
         let lookup_trie = Arc::new(SchemaBoundedTrieRepositoryData::<RequestSegment>::new());
         let mut lookup = ReadOnlyRepositoryBackend::new(lookup_trie.clone(), lookup_trie.clone());
         lookup.start(config).await.unwrap();
-        let repository = Arc::new(KubernetesRepository {
-            resource_manager: parent.manager,
-            operation_timeout: parent.config.operation_timeout,
-        });
+        let repository = Arc::new(
+            KubernetesRepository::start(parent.manager, parent.config.operation_timeout.clone())
+                .await
+                .unwrap(),
+        );
+
         Self {
             repository,
             api: parent.api_context.api,

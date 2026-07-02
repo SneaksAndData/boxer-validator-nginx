@@ -2,8 +2,9 @@ use crate::services::repositories::resource_repository::resource_discovery_docum
     ResourceDiscoveryDocument, ResourceDiscoveryDocumentSpec,
 };
 use boxer_core::services::audit::audit_facade::to_audit_record::ToAuditRecord;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::to_resource::ToResource;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::try_from_resource::TryFromResource;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::status::Status;
-use boxer_core::services::backends::kubernetes::repositories::{ToResource, TryFromResource};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

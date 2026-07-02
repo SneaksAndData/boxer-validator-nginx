@@ -17,12 +17,16 @@ use boxer_core::services::audit::audit_facade::WithAuditFacade;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::BackendConfiguration;
 use boxer_core::services::backends::kubernetes::kubeconfig_loader::{from_cluster, from_command, from_file};
+use boxer_core::services::backends::kubernetes::kubernetes_repository::KubernetesRepository;
+use boxer_core::services::backends::kubernetes::kubernetes_repository::soft_delete_resource::SoftDeleteResource;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::object_owner_mark::ObjectOwnerMark;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::{
-    KubernetesResourceManagerConfig, UpdateLabels,
+    GenericKubernetesResourceManager, KubernetesResourceManagerConfig, UpdateLabels,
 };
-use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcherRunner;
-use boxer_core::services::backends::kubernetes::repositories::{KubernetesRepository, SoftDeleteResource};
+use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::{
+    KubernetesResourceWatcher, KubernetesResourceWatcherRunner,
+};
+use boxer_core::services::backends::kubernetes::logging_update_handler::LoggingUpdateHandler;
 use boxer_core::services::observability::open_telemetry::tracing::tracing_facade::WithTracingFacade;
 use cedar_policy::{EntityUid, PolicySet};
 use k8s_openapi::NamespaceResourceScope;
@@ -147,7 +151,7 @@ impl BackendBuilder {
         kubeconfig: Config,
         owner_mark: ObjectOwnerMark,
         operation_timeout: Duration,
-    ) -> anyhow::Result<Arc<KubernetesRepository<R>>>
+    ) -> anyhow::Result<Arc<KubernetesRepository<R, GenericKubernetesResourceManager<R>>>>
     where
         R: kube::Resource<Scope = NamespaceResourceScope>
             + SoftDeleteResource
@@ -164,7 +168,9 @@ impl BackendBuilder {
             owner_mark,
             operation_timeout,
         };
-        KubernetesRepository::<R>::start(config)
+        let (resource_manager, _readiness_rx) =
+            GenericKubernetesResourceManager::start(config, Arc::new(LoggingUpdateHandler)).await?;
+        KubernetesRepository::<R, GenericKubernetesResourceManager<R>>::start(resource_manager, operation_timeout)
             .await
             .map(Arc::new)
             .map_err(|e| e.into())
