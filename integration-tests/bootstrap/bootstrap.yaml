@@ -11,7 +11,7 @@ spec:
   oidc:
     audiences:
       - account
-    discoveryUrl: http://localhost:5555/auth/realms/master/
+    discoveryUrl: http://keycloak-keycloakx-http/auth/realms/master/
     issuers:
       - http://localhost:5555/auth/realms/master
     userIdClaim: preferred_username
