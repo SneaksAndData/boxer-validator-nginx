@@ -515,12 +515,9 @@ dependencies = [
  "schemars 0.8.22",
  "serde",
  "serde_json",
- "strum 0.27.2",
- "strum_macros",
  "test-case",
  "test-context",
  "tokio",
- "url",
  "utoipa",
  "utoipa-swagger-ui",
 ]
@@ -557,7 +554,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
- "strum 0.28.0",
+ "strum",
  "strum_macros",
  "test-context",
  "tokio",
@@ -4018,12 +4015,6 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
-
-[[package]]
-name = "strum"
-version = "0.27.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af23d6f6c1a224baef9d3f61e287d2761385a5b88fdab4eb4c6f11aeb54c4bcf"
 
 [[package]]
 name = "strum"
