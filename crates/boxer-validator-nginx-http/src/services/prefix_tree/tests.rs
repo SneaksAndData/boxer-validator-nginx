@@ -1,4 +1,5 @@
-use crate::services::prefix_tree::naive_tree::{NaiveTrie, ParametrizedMatcher};
+use crate::services::prefix_tree::naive_tree::NaiveTrie;
+use crate::services::prefix_tree::parametrized_matcher::ParametrizedMatcher;
 use crate::services::prefix_tree::trie_bucket::hash_bucket::HashTrieBucket;
 use crate::services::prefix_tree::trie_bucket::request_segment_bucket::PrioritizedBucket;
 use crate::services::prefix_tree::MutablePrefixTree;

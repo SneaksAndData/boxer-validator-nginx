@@ -1,6 +1,7 @@
+use crate::services::prefix_tree::parametrized_matcher::ParametrizedMatcher;
+use crate::services::prefix_tree::trie_bucket::TrieBucket;
 use crate::services::prefix_tree::MutablePrefixTree;
 use crate::services::prefix_tree::PrefixTree;
-use crate::services::prefix_tree::trie_bucket::TrieBucket;
 use async_trait::async_trait;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -93,10 +94,4 @@ where
         let last = keys.last().expect("keys should always have at least one key");
         current.clear(last).await
     }
-}
-
-/// A trait to identify if a key is a parameter (e.g., in URL routing).
-pub trait ParametrizedMatcher {
-    /// Returns true if the key is a parameter.
-    fn is_parameter(&self) -> bool;
 }

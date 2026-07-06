@@ -1,17 +1,18 @@
 use log::{info, warn};
 
+use crate::services::prefix_tree::naive_tree::NaiveTrie;
+use crate::services::prefix_tree::parametrized_matcher::ParametrizedMatcher;
+use crate::services::prefix_tree::trie_bucket::request_segment_bucket::PrioritizedBucket;
 use crate::services::prefix_tree::MutablePrefixTree;
 use crate::services::prefix_tree::PrefixTree;
-use crate::services::prefix_tree::naive_tree::{NaiveTrie, ParametrizedMatcher};
-use crate::services::prefix_tree::trie_bucket::request_segment_bucket::PrioritizedBucket;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::{CanDelete, ReadOnlyRepository, UpsertRepository};
 use cedar_policy::EntityUid;
 use futures::StreamExt;
-use kube::Resource;
 use kube::runtime::watcher::Error;
+use kube::Resource;
 use std::fmt::Debug;
 use std::hash::Hash;
 use tokio::sync::RwLock;

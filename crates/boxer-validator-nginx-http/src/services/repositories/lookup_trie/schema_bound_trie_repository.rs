@@ -1,13 +1,13 @@
 use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource, TrieRepositoryData};
 use anyhow::anyhow;
 
-use crate::services::prefix_tree::naive_tree::ParametrizedMatcher;
+use crate::services::prefix_tree::parametrized_matcher::ParametrizedMatcher;
 use async_trait::async_trait;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::ResourceUpdateHandler;
 use boxer_core::services::base::upsert_repository::ReadOnlyRepository;
 use cedar_policy::EntityUid;
-use kube::Resource;
 use kube::runtime::watcher;
+use kube::Resource;
 use log::{info, warn};
 use std::collections::HashMap;
 use std::fmt::Debug;
