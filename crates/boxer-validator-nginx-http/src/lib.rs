@@ -4,20 +4,22 @@ pub mod services;
 
 use crate::http::controllers::v1;
 use crate::services::authorizer::Authorizer;
-use crate::services::cedar_validation_service::CedarValidationService;
 use crate::services::configuration::models::AppSettings;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::schema_provider::KubernetesSchemaProvider;
 use actix_web::dev::Server;
-use actix_web::middleware::{Logger, from_fn};
-use actix_web::{App, HttpServer, web};
+use actix_web::middleware::{from_fn, Logger};
+use actix_web::{web, App, HttpServer};
+use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
 use boxer_core::http::middleware::logging::custom_error_logging;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use boxer_core::services::service_provider::ServiceProvider;
+use boxer_core::services::validation_service::cedar_validation_service::CedarValidationService;
+use boxer_core::services::validation_service::schema_provider::SchemaProvider;
 use http::openapi::ApiDoc;
 use log::info;
 use opentelemetry_instrumentation_actix_web::RequestTracing;
@@ -31,7 +33,8 @@ pub fn start_api_server(
     app_settings: AppSettings,
     root_metrics_namespace: &'static str,
 ) -> Result<Server, anyhow::Error> {
-    let schema_provider = Arc::new(KubernetesSchemaProvider::new(current_backend.get()));
+    let schema_provider: Arc<dyn SchemaProvider<BoxerClaims>> =
+        Arc::new(KubernetesSchemaProvider::new(current_backend.get()));
     let action_repository = current_backend.get();
     let resource_repository = current_backend.get();
     let policy_repository = current_backend.get();

@@ -1,11 +1,11 @@
 use crate::http::controllers::v1::action_set::models::{ActionRouteRegistration, SchemaBoundActionSetRegistration};
 use crate::services::repositories::lookup_trie::{EntityCollectionResource, SchemaBoundResource};
-use crate::services::repositories::models::http_method::HTTPMethod;
-use crate::services::repositories::models::path_segment::PathSegment::{Parameter, Static};
-use crate::services::repositories::models::request_segment::RequestSegment;
-use crate::services::repositories::models::request_segment::RequestSegment::{Hostname, Path, Verb};
 use boxer_core::services::backends::kubernetes::kubernetes_repository::soft_delete_resource::SoftDeleteResource;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::UpdateLabels;
+use boxer_core::services::validation_service::http_method::HTTPMethod;
+use boxer_core::services::validation_service::path_segment::PathSegment::{Parameter, Static};
+use boxer_core::services::validation_service::request_segment::RequestSegment;
+use boxer_core::services::validation_service::request_segment::RequestSegment::{Hostname, Path, Verb};
 use cedar_policy::EntityUid;
 use futures::Stream;
 use futures::StreamExt;

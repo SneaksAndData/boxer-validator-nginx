@@ -1,6 +1,5 @@
 use super::*;
 use crate::http::controllers::v1::resource_set::models::{ResourceRouteRegistration, ResourceSetRegistration};
-use crate::models::request_context::RequestContext;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
@@ -8,13 +7,14 @@ use boxer_core::services::backends::kubernetes::kubernetes_repository::Kubernete
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcherRunner;
 use boxer_core::services::service_provider::ServiceProvider;
+use boxer_core::services::validation_service::request_context::RequestContext;
 use boxer_core::testing::api_extensions::WaitForResource;
 use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::GenericKubernetesResourceManagerTestContext;
 use cedar_policy::EntityUid;
 use kube::Api;
 use std::sync::Arc;
 use std::time::Duration;
-use test_context::{AsyncTestContext, test_context};
+use test_context::{test_context, AsyncTestContext};
 
 const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(10);
 

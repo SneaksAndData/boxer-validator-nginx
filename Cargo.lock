@@ -515,7 +515,7 @@ dependencies = [
  "schemars 0.8.22",
  "serde",
  "serde_json",
- "strum",
+ "strum 0.27.2",
  "strum_macros",
  "test-case",
  "test-context",
@@ -528,13 +528,13 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.27#d033621e772efcfe4a2121719227a3b1e86a1861"
 dependencies = [
  "actix-web",
  "anyhow",
  "assert_matches",
  "async-trait",
  "cedar-policy",
+ "collection_macros",
  "duration-string",
  "env_filter 0.1.4",
  "futures",
@@ -556,8 +556,11 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
+ "strum 0.28.0",
+ "strum_macros",
  "test-context",
  "tokio",
+ "url",
  "uuid",
 ]
 
@@ -4020,6 +4023,12 @@ name = "strum"
 version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af23d6f6c1a224baef9d3f61e287d2761385a5b88fdab4eb4c6f11aeb54c4bcf"
+
+[[package]]
+name = "strum"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9628de9b8791db39ceda2b119bbe13134770b56c138ec1d3af810d045c04f9bd"
 
 [[package]]
 name = "strum_macros"

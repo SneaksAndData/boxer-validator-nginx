@@ -1,12 +1,12 @@
-use crate::models::request_context::RequestContext;
-use crate::services::prefix_tree::MutablePrefixTree;
-use crate::services::prefix_tree::PrefixTree;
 use crate::services::prefix_tree::naive_tree::{NaiveTrie, ParametrizedMatcher};
 use crate::services::prefix_tree::trie_bucket::hash_bucket::HashTrieBucket;
 use crate::services::prefix_tree::trie_bucket::request_segment_bucket::PrioritizedBucket;
-use crate::services::repositories::models::http_method::HTTPMethod;
-use crate::services::repositories::models::path_segment::PathSegment;
-use crate::services::repositories::models::request_segment::RequestSegment;
+use crate::services::prefix_tree::MutablePrefixTree;
+use crate::services::prefix_tree::PrefixTree;
+use boxer_core::services::validation_service::http_method::HTTPMethod;
+use boxer_core::services::validation_service::path_segment::PathSegment;
+use boxer_core::services::validation_service::request_context::RequestContext;
+use boxer_core::services::validation_service::request_segment::RequestSegment;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 

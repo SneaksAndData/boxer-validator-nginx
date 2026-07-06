@@ -1,20 +1,20 @@
 mod configuration;
 
-use crate::services::repositories::action_repository::ActionReadOnlyRepository;
 use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
+use crate::services::repositories::action_repository::ActionReadOnlyRepository;
 use crate::services::repositories::lookup_trie::backend::{AssociatedRepository, ReadOnlyRepositoryBackend};
-use crate::services::repositories::models::path_segment::PathSegment;
-use crate::services::repositories::models::request_segment::RequestSegment;
 use crate::services::repositories::policy_repository::policy_document::PolicyDocument;
 use crate::services::repositories::policy_repository::read_only::PolicyRepositoryData;
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
-use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::repositories::resource_repository::resource_discovery_document::ResourceDiscoveryDocument;
-use boxer_core::services::backends::Backend;
+use crate::services::repositories::resource_repository::ResourceReadOnlyRepository;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
+use boxer_core::services::backends::Backend;
 use boxer_core::services::service_provider::ServiceProvider;
+use boxer_core::services::validation_service::path_segment::PathSegment;
+use boxer_core::services::validation_service::request_segment::RequestSegment;
 use cedar_policy::{EntityUid, PolicySet};
 use std::sync::Arc;
 
