@@ -1,7 +1,7 @@
-use crate::services::prefix_tree::parametrized_matcher::ParametrizedMatcher;
-use crate::services::prefix_tree::trie_bucket::TrieBucket;
 use crate::services::prefix_tree::MutablePrefixTree;
 use crate::services::prefix_tree::PrefixTree;
+use crate::services::prefix_tree::parametrized_matcher::ParametrizedMatcher;
+use crate::services::prefix_tree::trie_bucket::TrieBucket;
 use async_trait::async_trait;
 use std::fmt::Debug;
 use std::hash::Hash;

@@ -3,11 +3,11 @@ use crate::services::authorizer::Authorizer;
 use actix_web::http::StatusCode;
 use actix_web::middleware::Condition;
 use actix_web::web::Data;
-use actix_web::{get, web, HttpResponse};
+use actix_web::{HttpResponse, get, web};
 use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
 use boxer_core::services::audit::AuditService;
-use boxer_core::services::validation_service::request_context::RequestContext;
 use boxer_core::services::validation_service::ValidationService;
+use boxer_core::services::validation_service::request_context::RequestContext;
 use log::{error, info};
 use std::sync::Arc;
 

@@ -1,9 +1,9 @@
+use crate::services::prefix_tree::MutablePrefixTree;
+use crate::services::prefix_tree::PrefixTree;
 use crate::services::prefix_tree::naive_tree::NaiveTrie;
 use crate::services::prefix_tree::parametrized_matcher::ParametrizedMatcher;
 use crate::services::prefix_tree::trie_bucket::hash_bucket::HashTrieBucket;
 use crate::services::prefix_tree::trie_bucket::request_segment_bucket::PrioritizedBucket;
-use crate::services::prefix_tree::MutablePrefixTree;
-use crate::services::prefix_tree::PrefixTree;
 use boxer_core::services::validation_service::http_method::HTTPMethod;
 use boxer_core::services::validation_service::path_segment::PathSegment;
 use boxer_core::services::validation_service::request_context::RequestContext;
