@@ -10,8 +10,8 @@ use crate::services::repositories::policy_repository::read_write::PolicyDataRepo
 use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use crate::services::schema_provider::KubernetesSchemaProvider;
 use actix_web::dev::Server;
-use actix_web::middleware::{Logger, from_fn};
-use actix_web::{App, HttpServer, web};
+use actix_web::middleware::{from_fn, Logger};
+use actix_web::{web, App, HttpServer};
 use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
 use boxer_core::http::middleware::logging::custom_error_logging;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
@@ -20,6 +20,7 @@ use boxer_core::services::observability::open_telemetry::metrics::provider::Metr
 use boxer_core::services::service_provider::ServiceProvider;
 use boxer_core::services::validation_service::cedar_validation_service::CedarValidationService;
 use boxer_core::services::validation_service::schema_provider::SchemaProvider;
+use boxer_core::services::validation_service::ValidationService;
 use http::openapi::ApiDoc;
 use log::info;
 use opentelemetry_instrumentation_actix_web::RequestTracing;
@@ -39,7 +40,7 @@ pub fn start_api_server(
     let resource_repository = current_backend.get();
     let policy_repository = current_backend.get();
     let audit_service = Arc::new(LogAuditService::new());
-    let cedar_validation_service = Arc::new(CedarValidationService::new(
+    let cedar_validation_service: Arc<dyn ValidationService<BoxerClaims>> = Arc::new(CedarValidationService::new(
         schema_provider,
         action_repository,
         resource_repository,
