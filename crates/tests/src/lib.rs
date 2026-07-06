@@ -21,9 +21,6 @@ async fn test_internal_token_issuance(
     #[future] internal_token: Result<String>,
 ) -> () {
     // Arrange
-    // rustls::crypto::ring::default_provider()
-    //     .install_default()
-    //     .expect("Failed to install rustls crypto provider");
 
     let (server_handle, thread_handle, server_address) = with_test_server.await;
     let internal_token = internal_token.await.expect("failed to get internal_token");
