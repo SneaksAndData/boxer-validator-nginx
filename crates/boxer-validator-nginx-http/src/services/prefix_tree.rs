@@ -2,6 +2,7 @@ use async_trait::async_trait;
 
 pub mod naive_tree;
 
+pub mod parametrized_matcher;
 #[cfg(test)]
 mod tests;
 pub mod trie_bucket;

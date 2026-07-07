@@ -1,6 +1,5 @@
 use super::*;
 use crate::http::controllers::v1::action_set::models::{ActionRouteRegistration, SchemaBoundActionSetRegistration};
-use crate::models::request_context::RequestContext;
 use crate::services::repositories::action_repository::action_discovery_document::ActionDiscoveryDocument;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::lookup_trie::backend::ReadOnlyRepositoryBackend;
@@ -8,6 +7,7 @@ use boxer_core::services::backends::kubernetes::kubernetes_repository::Kubernete
 use boxer_core::services::backends::kubernetes::kubernetes_resource_manager::KubernetesResourceManagerConfig;
 use boxer_core::services::backends::kubernetes::kubernetes_resource_watcher::KubernetesResourceWatcherRunner;
 use boxer_core::services::service_provider::ServiceProvider;
+use boxer_core::services::validation_service::request_context::RequestContext;
 use boxer_core::testing::api_extensions::{WaitForDelete, WaitForResource};
 use boxer_core::testing::spin_lock_kubernetes_resource_manager_context::GenericKubernetesResourceManagerTestContext;
 use cedar_policy::EntityUid;
