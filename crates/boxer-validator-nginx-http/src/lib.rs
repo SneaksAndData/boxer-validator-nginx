@@ -3,6 +3,7 @@ pub mod models;
 pub mod services;
 
 use crate::http::controllers::v1;
+use crate::http::health;
 use crate::services::authorizer::Authorizer;
 use crate::services::configuration::models::AppSettings;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
@@ -24,7 +25,7 @@ use boxer_core::services::validation_service::schema_provider::SchemaProvider;
 use http::openapi::ApiDoc;
 use log::info;
 use opentelemetry_instrumentation_actix_web::RequestTracing;
-use services::backends::kubernetes::KubernetesBackend;
+use services::backends::kubernetes::{KubernetesBackend, ValidatorBackend};
 use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -37,6 +38,7 @@ pub fn start_api_server(
     let schema_provider: Arc<dyn SchemaProvider<BoxerClaims>> =
         Arc::new(KubernetesSchemaProvider::new(current_backend.get()));
     let action_repository = current_backend.get();
+    let readiness_state = current_backend.readiness_state();
     let resource_repository = current_backend.get();
     let policy_repository = current_backend.get();
     let audit_service = Arc::new(LogAuditService::new());
@@ -76,9 +78,11 @@ pub fn start_api_server(
             .app_data(web::Data::new(action_repository.clone()))
             .app_data(web::Data::new(resource_repository.clone()))
             .app_data(web::Data::new(policy_repository.clone()))
+            .app_data(web::Data::new(readiness_state.clone()))
             // The last middleware in the chain should always be InternalTokenMiddleware
             // to ensure that the token is valid in the beginning of the request processing
             .service(v1::urls(production_mode, authorizer.clone(), audit_service.clone()))
+            .service(health::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })
     .bind(app_settings.listen_address)?;

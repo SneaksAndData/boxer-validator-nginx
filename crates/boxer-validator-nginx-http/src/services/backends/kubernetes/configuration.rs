@@ -34,7 +34,9 @@ use kube::Config;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
+use tokio;
 
 #[async_trait]
 impl BackendConfiguration for BackendBuilder {
@@ -49,14 +51,14 @@ impl BackendConfiguration for BackendBuilder {
         let kubeconfig = Self::get_kubeconfig(settings).await?;
         let owner_mark = ObjectOwnerMark::new(&settings.resource_owner_label, &instance_name);
 
-        let schema_repository = Self::create_repository(
+        let (schema_repository, schema_repository_readiness) = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?
-        .with_audit(Arc::new(LogAuditService::new()));
+        .await?;
+        let schema_repository = schema_repository.with_audit(Arc::new(LogAuditService::new()));
 
         let action_lookup_table_listener = Self::create_lookup_trie(
             &settings.namespace,
@@ -67,14 +69,16 @@ impl BackendConfiguration for BackendBuilder {
         )
         .await?;
 
-        let action_repository: Arc<ActionDataRepository> = Self::create_repository(
-            &settings.namespace,
-            kubeconfig.clone(),
-            owner_mark.clone(),
-            settings.operation_timeout.into(),
-        )
-        .await?
-        .with_audit(Arc::new(LogAuditService::new()));
+        let (action_repository, action_repository_readiness): (_, tokio::sync::oneshot::Receiver<()>) =
+            Self::create_repository(
+                &settings.namespace,
+                kubeconfig.clone(),
+                owner_mark.clone(),
+                settings.operation_timeout.into(),
+            )
+            .await?;
+        let action_repository: Arc<ActionDataRepository> =
+            action_repository.with_audit(Arc::new(LogAuditService::new()));
 
         let resource_lookup_table_listener = Self::create_lookup_trie(
             &settings.namespace,
@@ -85,14 +89,16 @@ impl BackendConfiguration for BackendBuilder {
         )
         .await?;
 
-        let resource_repository: Arc<ResourceDiscoveryDocumentRepository> = Self::create_repository(
-            &settings.namespace,
-            kubeconfig.clone(),
-            owner_mark.clone(),
-            settings.operation_timeout.into(),
-        )
-        .await?
-        .with_audit(Arc::new(LogAuditService::new()));
+        let (resource_repository, resource_repository_readiness): (_, tokio::sync::oneshot::Receiver<()>) =
+            Self::create_repository(
+                &settings.namespace,
+                kubeconfig.clone(),
+                owner_mark.clone(),
+                settings.operation_timeout.into(),
+            )
+            .await?;
+        let resource_repository: Arc<ResourceDiscoveryDocumentRepository> =
+            resource_repository.with_audit(Arc::new(LogAuditService::new()));
 
         let policy_lookup_watcher = Self::create_readonly_repository::<PathSegment>(
             &settings.namespace,
@@ -102,20 +108,31 @@ impl BackendConfiguration for BackendBuilder {
         )
         .await?;
 
-        let policy_repository = Self::create_repository(
+        let (policy_repository, policy_repository_readiness) = Self::create_repository(
             &settings.namespace,
             kubeconfig.clone(),
             owner_mark.clone(),
             settings.operation_timeout.into(),
         )
-        .await?
-        .with_audit(Arc::new(LogAuditService::new()));
+        .await?;
+        let policy_repository = policy_repository.with_audit(Arc::new(LogAuditService::new()));
+
+        let readiness_state = Arc::new(AtomicBool::new(false));
+        let readiness_state_update = readiness_state.clone();
+        tokio::spawn(async move {
+            let is_ready = schema_repository_readiness.await.is_ok()
+                && action_repository_readiness.await.is_ok()
+                && resource_repository_readiness.await.is_ok()
+                && policy_repository_readiness.await.is_ok();
+            readiness_state_update.store(is_ready, Ordering::Release);
+        });
 
         Ok(Arc::new(KubernetesBackend {
             schema_repository,
             action_repository,
             resource_repository,
             policy_repository,
+            readiness_state,
             action_lookup_table_listener,
             resource_lookup_table_listener,
             policy_lookup_watcher,
@@ -151,7 +168,10 @@ impl BackendBuilder {
         kubeconfig: Config,
         owner_mark: ObjectOwnerMark,
         operation_timeout: Duration,
-    ) -> anyhow::Result<Arc<KubernetesRepository<R, GenericKubernetesResourceManager<R>>>>
+    ) -> anyhow::Result<(
+        Arc<KubernetesRepository<R, GenericKubernetesResourceManager<R>>>,
+        tokio::sync::oneshot::Receiver<()>,
+    )>
     where
         R: kube::Resource<Scope = NamespaceResourceScope>
             + SoftDeleteResource
@@ -168,12 +188,13 @@ impl BackendBuilder {
             owner_mark,
             operation_timeout,
         };
-        let (resource_manager, _readiness_rx) =
+        let (resource_manager, readiness_rx) =
             GenericKubernetesResourceManager::start(config, Arc::new(LoggingUpdateHandler)).await?;
-        KubernetesRepository::<R, GenericKubernetesResourceManager<R>>::start(resource_manager, operation_timeout)
-            .await
-            .map(Arc::new)
-            .map_err(|e| e.into())
+        let repository =
+            KubernetesRepository::<R, GenericKubernetesResourceManager<R>>::start(resource_manager, operation_timeout)
+                .await
+                .map(Arc::new)?;
+        Ok((repository, readiness_rx))
     }
 
     pub async fn create_lookup_trie<R, K>(
