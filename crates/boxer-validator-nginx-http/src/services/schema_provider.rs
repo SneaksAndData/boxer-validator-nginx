@@ -1,6 +1,6 @@
 use anyhow::{Error, Result};
 use async_trait::async_trait;
-use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
+use boxer_core::contracts::internal_token::v2::boxer_claims::BoxerClaims;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::validation_service::required_claims::RequiredClaims;
 use boxer_core::services::validation_service::schema_provider::SchemaProvider;
