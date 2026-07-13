@@ -12,7 +12,7 @@ use crate::services::schema_provider::KubernetesSchemaProvider;
 use actix_web::dev::Server;
 use actix_web::middleware::{Logger, from_fn};
 use actix_web::{App, HttpServer, web};
-use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
+use boxer_core::contracts::internal_token::v2::boxer_claims::BoxerClaims;
 use boxer_core::http::middleware::logging::custom_error_logging;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;

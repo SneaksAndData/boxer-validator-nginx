@@ -1,7 +1,7 @@
 use actix_web::error::ErrorUnauthorized;
-use actix_web::web::Data;
+use actix_web::web::{Data, ReqData};
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, get, web};
-use boxer_core::contracts::internal_token::v1::boxer_claims::BoxerClaims;
+use boxer_core::contracts::internal_token::v2::boxer_claims::BoxerClaims;
 use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
 use boxer_core::http::middleware::audit::audit_scope::AuditScope;
 use boxer_core::services::audit::chained::audit_event::AuditEvent;
@@ -20,7 +20,7 @@ use std::sync::Arc;
 )]
 #[get("/review")]
 async fn token_review(
-    boxer_claims: BoxerClaims,
+    boxer_claims: ReqData<BoxerClaims>,
     request_context: RequestContext,
     cedar_validation_service: Data<Arc<dyn ValidationService<BoxerClaims>>>,
     http_request: HttpRequest,
@@ -31,7 +31,7 @@ async fn token_review(
         ErrorUnauthorized("No audit event found in request extensions")
     })?;
     cedar_validation_service
-        .validate(boxer_claims, request_context, event)
+        .validate(boxer_claims.into_inner(), request_context, event)
         .await
         .map_err(ErrorUnauthorized)?;
     Ok(HttpResponse::Ok().finish())
