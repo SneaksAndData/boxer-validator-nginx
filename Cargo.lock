@@ -498,17 +498,14 @@ dependencies = [
  "async-trait",
  "boxer_core",
  "cedar-policy",
- "collection_macros",
  "config",
  "duration-string",
  "env_logger",
  "futures",
  "futures-util",
- "josekit",
  "k8s-openapi",
  "kube",
  "log",
- "opentelemetry",
  "opentelemetry-instrumentation-actix-web",
  "pretty_assertions",
  "rstest 0.25.0",
@@ -525,7 +522,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.29#1486fbf959557b8c0257a2a3d9f31c4933ba5680"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.31#19bef44ca672d84148798746b1fbe3bb4a0df70b"
 dependencies = [
  "actix-web",
  "anyhow",

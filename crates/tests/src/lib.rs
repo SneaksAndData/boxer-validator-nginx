@@ -36,7 +36,8 @@ async fn test_internal_token_issuance(
         .expect("Failed to call token review endpoint");
 
     // Assert
-    assert_eq!(validation_result.status(), 200);
+    println!("Token review endpoint returned: {:#?}", validation_result);
+    assert_eq!(validation_result.status(), 200,);
 
     // Cleanup
     server_handle.stop(true).await;
