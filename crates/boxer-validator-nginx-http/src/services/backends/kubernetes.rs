@@ -17,12 +17,14 @@ use boxer_core::services::validation_service::path_segment::PathSegment;
 use boxer_core::services::validation_service::request_segment::RequestSegment;
 use cedar_policy::{EntityUid, PolicySet};
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 pub struct KubernetesBackend {
     schema_repository: Arc<SchemaRepository>,
     action_repository: Arc<ActionDataRepository>,
     resource_repository: Arc<ResourceDiscoveryDocumentRepository>,
     policy_repository: Arc<PolicyDataRepository>,
+    readiness_state: Arc<AtomicBool>,
 
     action_lookup_table_listener: Arc<
         ReadOnlyRepositoryBackend<
@@ -87,4 +89,14 @@ impl ServiceProvider<Arc<PolicyDataRepository>> for KubernetesBackend {
 
 impl Backend for KubernetesBackend {
     // This is marker trait, so no methods are required here
+}
+
+pub trait ValidatorBackend: Send + Sync + Backend {
+    fn readiness_state(&self) -> Arc<AtomicBool>;
+}
+
+impl ValidatorBackend for KubernetesBackend {
+    fn readiness_state(&self) -> Arc<AtomicBool> {
+        self.readiness_state.clone()
+    }
 }
