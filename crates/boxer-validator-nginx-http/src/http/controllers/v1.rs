@@ -1,7 +1,7 @@
-use crate::services::authorizer::Authorizer;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
-use boxer_core::services::audit::AuditService;
+use boxer_core::http::middleware::audit::audit_recorder::audit_writer::AuditWriter;
+use boxer_core::services::token_decryption_service::TokenDecryptionService;
 use std::sync::Arc;
 use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
 use utoipa::{Modify, OpenApi};
@@ -40,15 +40,11 @@ impl Modify for SecurityAddon {
         components.add_security_scheme("internal", SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)));
     }
 }
-pub fn urls(
-    production_mode: bool,
-    authorizer: Arc<Authorizer>,
-    audit_service: Arc<dyn AuditService>,
-) -> impl HttpServiceFactory {
+pub fn urls(audit_writer: Arc<dyn AuditWriter>, decryptor: Arc<TokenDecryptionService>) -> impl HttpServiceFactory {
     web::scope("/api/v1")
         .service(schema::crud())
         .service(action_set::crud())
         .service(resource_set::crud())
         .service(policy_set::crud())
-        .service(token_review::routes(production_mode, authorizer, audit_service))
+        .service(token_review::routes(audit_writer, decryptor))
 }

@@ -4,7 +4,6 @@ pub mod services;
 
 use crate::http::controllers::v1;
 use crate::http::health;
-use crate::services::authorizer::Authorizer;
 use crate::services::configuration::models::AppSettings;
 use crate::services::repositories::action_repository::read_write::ActionDataRepository;
 use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
@@ -19,6 +18,7 @@ use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
 use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use boxer_core::services::service_provider::ServiceProvider;
+use boxer_core::services::token_decryption_service::TokenDecryptionService;
 use boxer_core::services::validation_service::ValidationService;
 use boxer_core::services::validation_service::cedar_validation_service::CedarValidationService;
 use boxer_core::services::validation_service::schema_provider::SchemaProvider;
@@ -47,15 +47,12 @@ pub fn start_api_server(
         action_repository,
         resource_repository,
         policy_repository,
-        audit_service.clone(),
         MetricsProvider::new(root_metrics_namespace, app_settings.instance_name.clone()),
     ));
 
     let action_repository: Arc<ActionDataRepository> = current_backend.get();
     let resource_repository: Arc<ResourceDiscoveryDocumentRepository> = current_backend.get();
     let policy_repository: Arc<PolicyDataRepository> = current_backend.get();
-
-    let production_mode = !std::env::var("BOXER_ISSUER_DEBUG").is_ok();
 
     let schema_repository: Arc<SchemaRepository> = current_backend.get();
 
@@ -64,7 +61,7 @@ pub fn start_api_server(
         &app_settings.listen_address.ip(),
         &app_settings.listen_address.port()
     );
-    let authorizer = Arc::new(Authorizer::new(
+    let decryptor = Arc::new(TokenDecryptionService::new(
         app_settings.get_signatures()?,
         app_settings.token_settings,
     ));
@@ -81,7 +78,7 @@ pub fn start_api_server(
             .app_data(web::Data::new(readiness_state.clone()))
             // The last middleware in the chain should always be InternalTokenMiddleware
             // to ensure that the token is valid in the beginning of the request processing
-            .service(v1::urls(production_mode, authorizer.clone(), audit_service.clone()))
+            .service(v1::urls(audit_service.clone(), decryptor.clone()))
             .service(health::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
     })

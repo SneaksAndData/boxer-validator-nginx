@@ -5,10 +5,11 @@ use boxer_core::services::observability::open_telemetry::logging::settings::LogS
 use boxer_core::services::observability::open_telemetry::metrics::settings::MetricsSettings;
 use boxer_core::services::observability::open_telemetry::settings::OpenTelemetrySettings;
 use boxer_core::services::observability::open_telemetry::tracing::settings::TracingSettings;
+use boxer_core::services::token_decryption_service::token_settings::TokenValidationSettings;
 use boxer_core::testing::get_kubeconfig;
 use boxer_validator_nginx_http::services::backends;
 use boxer_validator_nginx_http::services::configuration::models::{
-    AppSettings, BackendSettings, KubernetesBackendSettings, TokenSettings,
+    AppSettings, BackendSettings, KubernetesBackendSettings,
 };
 use boxer_validator_nginx_http::start_api_server;
 use k8s_openapi::api::core::v1::Secret;
@@ -98,7 +99,7 @@ pub async fn with_test_server() -> TestServerHandles {
                 resource_owner_label: "application/boxer-validator-nginx".to_string(),
             },
         },
-        token_settings: TokenSettings {
+        token_settings: TokenValidationSettings {
             issuer: "boxer.sneaksanddata.com".to_string(),
             audience: "boxer.sneaksanddata.com".to_string(),
             keys: format!("{{\"default\": \"{}\"}}", signing_key).to_string(),

@@ -1,4 +1,3 @@
-pub mod authorizer;
 pub mod backends;
 pub mod configuration;
 pub mod prefix_tree;

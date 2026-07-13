@@ -1,6 +1,7 @@
-use crate::services::configuration::signature_settings::EncryptionKeys;
 use anyhow::Result;
 use boxer_core::services::observability::open_telemetry::settings::OpenTelemetrySettings;
+use boxer_core::services::token_decryption_service::encryption_keys::EncryptionKeys;
+use boxer_core::services::token_decryption_service::token_settings::TokenValidationSettings;
 use duration_string::DurationString;
 use serde::Deserialize;
 use std::net::SocketAddr;
@@ -21,24 +22,13 @@ pub struct BackendSettings {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct TokenSettings {
-    pub audience: String,
-    pub issuer: String,
-
-    // We use JSON-encoded string for signature settings since the validator must support multiple
-    // signatures for seamless key rotation. Unfortunately, the config-rs crate does not support
-    // deserializing directly into a Vec or HashMap from environment variables.
-    pub keys: String,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct AppSettings {
     pub deploy_environment: String,
     pub listen_address: SocketAddr,
     pub instance_name: String,
     pub backend: BackendSettings,
     pub opentelemetry: OpenTelemetrySettings,
-    pub token_settings: TokenSettings,
+    pub token_settings: TokenValidationSettings,
 }
 
 impl AppSettings {
