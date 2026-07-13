@@ -69,6 +69,36 @@ spec:
         {{- end }}
           image: "{{ include "app.image" . }}"
           imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          {{- if (default true .Values.validator.probes.startup.enabled) }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.validator.probes.startup.path | quote }}
+              port: {{ .Values.validator.probes.startup.port }}
+            initialDelaySeconds: {{ .Values.validator.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.validator.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.validator.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.validator.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- if (default true .Values.validator.probes.liveness.enabled) }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.validator.probes.liveness.path | quote }}
+              port: {{ .Values.validator.probes.liveness.port }}
+            initialDelaySeconds: {{ .Values.validator.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.validator.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.validator.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.validator.probes.liveness.failureThreshold }}
+          {{- end }}
+          {{- if (default true .Values.validator.probes.readiness.enabled) }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.validator.probes.readiness.path | quote }}
+              port: {{ .Values.validator.probes.readiness.port }}
+            initialDelaySeconds: {{ .Values.validator.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.validator.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.validator.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.validator.probes.readiness.failureThreshold }}
+          {{- end }}
           {{- if .Values.validator.config.enabled }}
           envFrom:
             - secretRef:
