@@ -4,6 +4,6 @@ dependencies:
   version: v0.0.5
 - name: boxer-issuer
   repository: oci://ghcr.io/sneaksanddata/helm
-  version: v0.0.16-1-g7bdf159
-digest: sha256:50fa49c92ec069d8decced6e71f3c4f530c5df765272e5b6b3a55d1694546654
-generated: "2026-08-11T13:34:18.473908+02:00"
+  version: v0.0.17
+digest: sha256:9c1ce3551e4bb8059e44a514a2c1d3691ec88e2364fbd760eb01d4233bad6429
+generated: "2026-08-11T14:36:01.657168+02:00"
