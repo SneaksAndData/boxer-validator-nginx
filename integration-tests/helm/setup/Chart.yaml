@@ -9,6 +9,6 @@ dependencies:
     version: "v0.0.5"
     repository: "oci://ghcr.io/sneaksanddata/helm"
   - name: boxer-issuer
-    version: "v0.0.16"
+    version: "v0.0.16-1-g7bdf159"
     repository: "oci://ghcr.io/sneaksanddata/helm"
 
