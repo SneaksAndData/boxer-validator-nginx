@@ -583,7 +583,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.36#d7986f72a898be5eefc2ddbb1a93102c0b8c7337"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=fix-reason-event-loss#e62d7da3dcf3b1daed4f9d8d84f3ee94a7f44178"
 dependencies = [
  "actix-web",
  "anyhow",
