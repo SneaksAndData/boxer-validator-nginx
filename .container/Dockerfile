@@ -18,9 +18,7 @@ RUN yum update -y && yum install -y unzip curl \
   # into /usr/local/bin of the final stage without
   # accidentally copying over any other executables that
   # may be present in /usr/local/bin of the installer stage.
-    && ./aws/install --bin-dir /aws-cli-bin/ \
-    && curl -L "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/$TARGETARCH/kubectl" -o /usr/local/bin/kubectl \
-    && chmod +x /usr/local/bin/kubectl
+    && ./aws/install --bin-dir /aws-cli-bin/
 
 FROM debian:bookworm-slim AS build-release-stage
 
@@ -37,7 +35,6 @@ COPY --from=build-env /app/src/settings.toml /app/settings.toml
 
 COPY --from=aws-cli-stage /usr/local/aws-cli/ /usr/local/aws-cli/
 COPY --from=aws-cli-stage /aws-cli-bin/ /usr/local/bin/
-COPY --from=aws-cli-stage /usr/local/bin/kubectl /usr/local/bin/
 
 
 USER 65534:65534
