@@ -146,12 +146,12 @@ impl BackendBuilder {
             KubernetesBackendSettings { in_cluster: true, .. } => from_cluster().load(),
 
             KubernetesBackendSettings {
-                kubeconfig: Some(path), ..
-            } => from_file().load(&path).await,
+                exec: Some(command), ..
+            } => from_command().load(command).await,
 
             KubernetesBackendSettings {
-                exec: Some(command), ..
-            } => from_command().load(&command).await,
+                kubeconfig: Some(path), ..
+            } => from_file().load(path).await,
 
             KubernetesBackendSettings {
                 kubeconfig: None,
