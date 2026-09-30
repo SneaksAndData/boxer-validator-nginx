@@ -583,7 +583,7 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=add-new-fields-to-audit-event#d90246a4025ef06542770c28b9994970738d92b8"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=add-new-fields-to-audit-event#341f9f65df18bf318e026a09df92c99536d88d1b"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -3642,7 +3642,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4353,10 +4353,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
