@@ -12,6 +12,11 @@ use reqwest::Client;
 use rstest::rstest;
 use std::time::Duration;
 
+const ORIGINAL_METHOD_TRAEFIK_HEADER: &str = "X-Forwarded-Method";
+const ORIGINAL_PROTOCOL_TRAEFIK_HEADER: &str = "X-Forwarded-Proto";
+const ORIGINAL_HOST_TRAEFIK_HEADER: &str = "X-Forwarded-Host";
+const ORIGINAL_URL_TRAEFIK_HEADER: &str = "X-Forwarded-Uri";
+
 #[rstest]
 #[timeout(Duration::from_secs(15))]
 #[actix_web::test]
@@ -28,8 +33,10 @@ async fn test_internal_token_issuance(
     // Act
     let validation_result = Client::new()
         .get(get_token_review_endpoint(server_address))
-        .header("X-Original-Url", "http://example.com/api/v1/example/")
-        .header("X-Original-Method", "GET")
+        .header(ORIGINAL_METHOD_TRAEFIK_HEADER, "GET")
+        .header(ORIGINAL_PROTOCOL_TRAEFIK_HEADER, "http")
+        .header(ORIGINAL_HOST_TRAEFIK_HEADER, "example.com")
+        .header(ORIGINAL_URL_TRAEFIK_HEADER, "/api/v1/example/")
         .bearer_auth(internal_token)
         .send()
         .await
