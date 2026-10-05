@@ -16,7 +16,7 @@ use k8s_openapi::api::core::v1::Secret;
 use kube::{Api, Client};
 use rstest::fixture;
 use serde_json::{Value, from_str};
-use std::net::SocketAddr;
+use std::net::{SocketAddr, TcpListener};
 use tokio::task::JoinHandle;
 
 #[fixture]
@@ -76,14 +76,20 @@ pub async fn external_token() -> String {
 pub type TestServerHandles = (ServerHandle, JoinHandle<std::io::Result<()>>, SocketAddr);
 #[fixture]
 pub async fn with_test_server() -> TestServerHandles {
-    let server_address = "127.0.0.1:8080".parse().unwrap();
+    let server_address = {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to allocate a random local port");
+        let addr = listener
+            .local_addr()
+            .expect("Failed to get local address for test listener");
+        addr
+    };
 
     let signing_key = get_singing_key().await.expect("Couldn't get singing key");
 
     let app_settings = AppSettings {
         deploy_environment: "integration-tests".to_string(),
         instance_name: "integration-tests".to_string(),
-        listen_address: SocketAddr::from(server_address),
+        listen_address: server_address,
         opentelemetry: OpenTelemetrySettings {
             log_settings: LogSettings { enabled: false },
             metrics_settings: MetricsSettings { enabled: false },

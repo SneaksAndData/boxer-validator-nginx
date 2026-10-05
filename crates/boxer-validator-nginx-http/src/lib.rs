@@ -76,11 +76,10 @@ pub fn start_api_server(
             .app_data(web::Data::new(resource_repository.clone()))
             .app_data(web::Data::new(policy_repository.clone()))
             .app_data(web::Data::new(readiness_state.clone()))
-            // The last middleware in the chain should always be InternalTokenMiddleware
-            // to ensure that the token is valid in the beginning of the request processing
             .service(v1::urls(audit_service.clone(), decryptor.clone()))
             .service(health::urls())
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
+            .default_service(web::to(|| async { actix_web::HttpResponse::Unauthorized().finish() }))
     })
     .bind(app_settings.listen_address)?;
 

@@ -51,6 +51,31 @@ async fn test_internal_token_issuance(
     thread_handle.await.unwrap().expect("Failed to join server thread");
 }
 
+#[rstest]
+#[timeout(Duration::from_secs(15))]
+#[actix_web::test]
+async fn test_validation_without_internal_token(
+    _with_logging: (),
+    #[future] with_test_server: TestServerHandles,
+) -> () {
+    let (server_handle, thread_handle, server_address) = with_test_server.await;
+
+    let validation_result = Client::new()
+        .get(get_token_review_endpoint(server_address))
+        .header(ORIGINAL_METHOD_TRAEFIK_HEADER, "GET")
+        .header(ORIGINAL_PROTOCOL_TRAEFIK_HEADER, "http")
+        .header(ORIGINAL_HOST_TRAEFIK_HEADER, "example.com")
+        .header(ORIGINAL_URL_TRAEFIK_HEADER, "/api/v1/example/")
+        .send()
+        .await;
+
+    server_handle.stop(true).await;
+    thread_handle.await.unwrap().expect("Failed to join server thread");
+
+    let validation_result = validation_result.expect("Failed to call token review endpoint");
+    assert_eq!(validation_result.status(), reqwest::StatusCode::UNAUTHORIZED);
+}
+
 mock! {
     pub AuditWriter {}
 
