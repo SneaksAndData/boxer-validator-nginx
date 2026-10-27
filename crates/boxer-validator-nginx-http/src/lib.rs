@@ -1,14 +1,8 @@
 pub mod http;
 pub mod models;
-pub mod services;
 
 use crate::http::controllers::v1;
 use crate::http::health;
-use crate::services::configuration::models::AppSettings;
-use crate::services::repositories::action_repository::read_write::ActionDataRepository;
-use crate::services::repositories::policy_repository::read_write::PolicyDataRepository;
-use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
-use crate::services::schema_provider::KubernetesSchemaProvider;
 use actix_web::dev::Server;
 use actix_web::middleware::{Logger, from_fn};
 use actix_web::{App, HttpServer, web};
@@ -16,6 +10,12 @@ use boxer_core::contracts::internal_token::v2::boxer_claims::BoxerClaims;
 use boxer_core::http::middleware::logging::custom_error_logging;
 use boxer_core::services::audit::log_audit_service::LogAuditService;
 use boxer_core::services::backends::kubernetes::kubernetes_repository::schema_repository::SchemaRepository;
+use boxer_core::services::legacy::backends::kubernetes::{KubernetesBackend, ValidatorBackend};
+use boxer_core::services::legacy::configuration::models::AppSettings;
+use boxer_core::services::legacy::repositories::action_repository::read_write::ActionDataRepository;
+use boxer_core::services::legacy::repositories::policy_repository::read_write::PolicyDataRepository;
+use boxer_core::services::legacy::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
+use boxer_core::services::legacy::schema_provider::KubernetesSchemaProvider;
 use boxer_core::services::observability::open_telemetry::metrics::provider::MetricsProvider;
 use boxer_core::services::service_provider::ServiceProvider;
 use boxer_core::services::token_decryption_service::TokenDecryptionService;
@@ -25,7 +25,6 @@ use boxer_core::services::validation_service::schema_provider::SchemaProvider;
 use http::openapi::ApiDoc;
 use log::info;
 use opentelemetry_instrumentation_actix_web::RequestTracing;
-use services::backends::kubernetes::{KubernetesBackend, ValidatorBackend};
 use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -81,7 +80,7 @@ pub fn start_api_server(
             .service(SwaggerUi::new("/swagger/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()))
             .default_service(web::to(|| async { actix_web::HttpResponse::Unauthorized().finish() }))
     })
-    .bind(app_settings.listen_address)?;
+        .bind(app_settings.listen_address)?;
 
     Ok(http_server_builder.run())
 }

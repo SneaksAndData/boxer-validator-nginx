@@ -544,7 +544,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "boxer-validator-nginx-http",
- "boxer_core",
+ "boxer_core 0.1.0 (git+https://github.com/SneaksAndData/boxer-core.git?branch=move-services-from-boxer-validator-nginx)",
  "env_filter 0.1.4",
  "env_logger",
  "log",
@@ -557,7 +557,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "async-trait",
- "boxer_core",
+ "boxer_core 0.1.0",
  "cedar-policy",
  "config",
  "duration-string",
@@ -583,7 +583,6 @@ dependencies = [
 [[package]]
 name = "boxer_core"
 version = "0.1.0"
-source = "git+https://github.com/SneaksAndData/boxer-core.git?tag=v0.0.40#2a958541507a225021bafeabdd19e5307cb8cb39"
 dependencies = [
  "actix-web",
  "anyhow",
@@ -591,8 +590,10 @@ dependencies = [
  "async-trait",
  "cedar-policy",
  "collection_macros",
+ "config",
  "duration-string",
  "env_filter 0.1.4",
+ "env_logger",
  "futures",
  "futures-util",
  "josekit",
@@ -615,9 +616,56 @@ dependencies = [
  "serde_norway",
  "strum",
  "strum_macros",
+ "test-case",
  "test-context",
  "tokio",
  "url",
+ "utoipa",
+ "uuid",
+]
+
+[[package]]
+name = "boxer_core"
+version = "0.1.0"
+source = "git+https://github.com/SneaksAndData/boxer-core.git?branch=move-services-from-boxer-validator-nginx#29564b7f81c4352cdad9e698eb9e0f9ad1428bdf"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "assert_matches",
+ "async-trait",
+ "cedar-policy",
+ "collection_macros",
+ "config",
+ "duration-string",
+ "env_filter 0.1.4",
+ "env_logger",
+ "futures",
+ "futures-util",
+ "josekit",
+ "jsonwebtoken 10.4.0",
+ "jwt-authorizer",
+ "k8s-openapi",
+ "kube",
+ "log",
+ "maplit",
+ "md5",
+ "opentelemetry",
+ "opentelemetry-appender-log",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "regex",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "serde_norway",
+ "strum",
+ "strum_macros",
+ "test-case",
+ "test-context",
+ "tokio",
+ "url",
+ "utoipa",
  "uuid",
 ]
 
@@ -4435,7 +4483,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "boxer-validator-nginx-http",
- "boxer_core",
+ "boxer_core 0.1.0",
  "env_logger",
  "k8s-openapi",
  "kube",

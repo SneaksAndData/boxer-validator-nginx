@@ -1,16 +1,14 @@
 use actix_web::dev::ServerHandle;
 use anyhow::{Result, anyhow};
 use boxer_core::services::backends::BackendConfiguration;
+use boxer_core::services::legacy::backends;
+use boxer_core::services::legacy::configuration::models::{AppSettings, BackendSettings, KubernetesBackendSettings};
 use boxer_core::services::observability::open_telemetry::logging::settings::LogSettings;
 use boxer_core::services::observability::open_telemetry::metrics::settings::MetricsSettings;
 use boxer_core::services::observability::open_telemetry::settings::OpenTelemetrySettings;
 use boxer_core::services::observability::open_telemetry::tracing::settings::TracingSettings;
 use boxer_core::services::token_decryption_service::token_settings::TokenValidationSettings;
 use boxer_core::testing::get_kubeconfig;
-use boxer_validator_nginx_http::services::backends;
-use boxer_validator_nginx_http::services::configuration::models::{
-    AppSettings, BackendSettings, KubernetesBackendSettings,
-};
 use boxer_validator_nginx_http::start_api_server;
 use k8s_openapi::api::core::v1::Secret;
 use kube::{Api, Client};
