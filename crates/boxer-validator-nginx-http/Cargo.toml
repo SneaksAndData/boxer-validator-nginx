@@ -25,8 +25,8 @@ futures = "0.3.31"
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 schemars = "0.8.6"
 
-#boxer_core = { path = "../../../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.40" }
+boxer_core = { path = "../../../boxer-core/" }
+#boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "move-services-from-boxer-validator-nginx" }
 
 # opentelemety
 opentelemetry-instrumentation-actix-web = "0.22.0"
@@ -39,5 +39,5 @@ test-case = "3.3.1"
 # This line is for development, to be removed in the future,
 #before moving to production
 #boxer_core = { path = "../../../boxer-core/" }
-boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", tag = "v0.0.40" }
+boxer_core = { git = "https://github.com/SneaksAndData/boxer-core.git", branch = "move-services-from-boxer-validator-nginx" }
 

@@ -1,11 +1,11 @@
 use anyhow::Result;
 use boxer_core::services::backends::BackendConfiguration;
+use boxer_core::services::legacy::backends;
+use boxer_core::services::legacy::configuration::models::AppSettings;
 use boxer_core::services::observability::composed_logger::ComposedLogger;
 use boxer_core::services::observability::open_telemetry;
 use boxer_core::services::observability::open_telemetry::metrics::init_metrics;
 use boxer_core::services::observability::open_telemetry::tracing::init_tracer;
-use boxer_validator_nginx_http::services::backends;
-use boxer_validator_nginx_http::services::configuration::models::AppSettings;
 use env_filter::Builder;
 use log::info;
 

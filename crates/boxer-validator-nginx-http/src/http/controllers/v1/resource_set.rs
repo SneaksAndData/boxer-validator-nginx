@@ -1,10 +1,8 @@
-pub mod models;
-
-use crate::http::controllers::v1::resource_set::models::ResourceSetRegistration;
-use crate::services::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
 use actix_web::dev::HttpServiceFactory;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder, Result, delete, get, post, web};
+use boxer_core::services::legacy::repositories::resource_repository::read_write::ResourceDiscoveryDocumentRepository;
+use boxer_core::services::legacy::repositories::resource_repository::resource_set_registration::ResourceSetRegistration;
 use std::sync::Arc;
 
 #[utoipa::path(context_path = "/resource_set/",
